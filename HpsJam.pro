@@ -3,11 +3,12 @@
 #
 TEMPLATE	= app
 CONFIG		+= qt release
-QT		+= core gui widgets
+QT		+= core gui svg widgets
 
 HEADERS		+= src/compressor.h
 HEADERS		+= src/equalizer.h
 HEADERS		+= src/hpsjam.h
+HEADERS		+= src/mixerdlg.h
 HEADERS		+= src/multiply.h
 HEADERS		+= src/peer.h
 HEADERS		+= src/protocol.h
@@ -16,6 +17,7 @@ HEADERS		+= src/socket.h
 SOURCES		+= src/compressor.cpp
 SOURCES		+= src/equalizer.cpp
 SOURCES		+= src/hpsjam.cpp
+SOURCES		+= src/mixerdlg.cpp
 SOURCES		+= src/multiply.cpp
 SOURCES		+= src/peer.cpp
 SOURCES		+= src/protocol.cpp
