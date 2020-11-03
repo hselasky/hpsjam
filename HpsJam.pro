@@ -6,6 +6,7 @@ CONFIG		+= qt release
 QT		+= core gui svg widgets
 
 HEADERS		+= src/chatdlg.h
+HEADERS		+= src/clientdlg.h
 HEADERS		+= src/compressor.h
 HEADERS		+= src/configdlg.h
 HEADERS		+= src/connectdlg.h
@@ -20,6 +21,7 @@ HEADERS		+= src/socket.h
 HEADERS		+= src/statsdlg.h
 
 SOURCES		+= src/chatdlg.cpp
+SOURCES		+= src/clientdlg.cpp
 SOURCES		+= src/compressor.cpp
 SOURCES		+= src/configdlg.cpp
 SOURCES		+= src/connectdlg.cpp
