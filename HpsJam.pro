@@ -17,6 +17,7 @@ HEADERS		+= src/multiply.h
 HEADERS		+= src/peer.h
 HEADERS		+= src/protocol.h
 HEADERS		+= src/socket.h
+HEADERS		+= src/statsdlg.h
 
 SOURCES		+= src/chatdlg.cpp
 SOURCES		+= src/compressor.cpp
@@ -30,6 +31,7 @@ SOURCES		+= src/multiply.cpp
 SOURCES		+= src/peer.cpp
 SOURCES		+= src/protocol.cpp
 SOURCES		+= src/socket.cpp
+SOURCES		+= src/statsdlg.cpp
 
 RESOURCES	+= HpsJam.qrc
 
