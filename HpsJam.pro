@@ -6,6 +6,7 @@ CONFIG		+= qt release
 QT		+= core gui widgets
 
 HEADERS		+= src/compressor.h
+HEADERS		+= src/equalizer.h
 HEADERS		+= src/hpsjam.h
 HEADERS		+= src/multiply.h
 HEADERS		+= src/peer.h
@@ -13,6 +14,7 @@ HEADERS		+= src/protocol.h
 HEADERS		+= src/socket.h
 
 SOURCES		+= src/compressor.cpp
+SOURCES		+= src/equalizer.cpp
 SOURCES		+= src/hpsjam.cpp
 SOURCES		+= src/multiply.cpp
 SOURCES		+= src/peer.cpp
@@ -22,6 +24,8 @@ SOURCES		+= src/socket.cpp
 RESOURCES	+= HpsJam.qrc
 
 TARGET		= HpsJam
+
+LIBS		+= -L${PREFIX}/lib -lfftw3
 
 target.path	= $${PREFIX}/bin
 INSTALLS	+= target
