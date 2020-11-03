@@ -5,6 +5,7 @@ TEMPLATE	= app
 CONFIG		+= qt release
 QT		+= core gui svg widgets
 
+HEADERS		+= src/chatdlg.h
 HEADERS		+= src/compressor.h
 HEADERS		+= src/connectdlg.h
 HEADERS		+= src/equalizer.h
@@ -15,6 +16,7 @@ HEADERS		+= src/peer.h
 HEADERS		+= src/protocol.h
 HEADERS		+= src/socket.h
 
+SOURCES		+= src/chatdlg.cpp
 SOURCES		+= src/compressor.cpp
 SOURCES		+= src/connectdlg.cpp
 SOURCES		+= src/equalizer.cpp
