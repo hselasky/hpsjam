@@ -1,0 +1,99 @@
+/*-
+ * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+#ifndef _HPSJAM_CONFIGDLG_H_
+#define	_HPSJAM_CONFIGDLG_H_
+
+#include <QWidget>
+#include <QPushButton>
+#include <QGridLayout>
+#include <QGroupBox>
+
+#define	HPSJAM_AUDIO_FORMAT_MAX 8
+
+struct hpsjam_audio_format {
+	uint8_t format;
+	const char *descr;
+};
+
+extern const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX];
+
+class HpsJamConfigFormat : public QGroupBox {
+	Q_OBJECT;
+public:
+	HpsJamConfigFormat() : gl(this) {
+		for (unsigned x = 0; x != HPSJAM_AUDIO_FORMAT_MAX; x++) {
+			b[x].setFlat(x != 0);
+			b[x].setText(QString(hpsjam_audio_format[x].descr));
+			connect(&b[x], SIGNAL(released()), this, SLOT(handle_selection()));
+			gl.addWidget(b + x, x / 4, x % 4);
+		}
+		format = hpsjam_audio_format[0].format;
+	};
+	uint8_t format;
+	QPushButton b[HPSJAM_AUDIO_FORMAT_MAX];
+	QGridLayout gl;
+
+	void setIndex(unsigned index) {
+		for (unsigned x = 0; x != HPSJAM_AUDIO_FORMAT_MAX; x++) {
+			b[x].setFlat(x != index);
+			if (x == index) {
+				if (hpsjam_audio_format[x].format != format) {
+					format = hpsjam_audio_format[x].format;
+					valueChanged();
+				}
+			}
+		}
+	};
+public slots:
+	void handle_selection();
+signals:
+	void valueChanged();
+};
+
+class HpsJamConfig : public QWidget {
+	Q_OBJECT;
+public:
+	HpsJamConfig() : gl(this) {
+		up_fmt.setTitle(tr("Uplink audio format"));
+		down_fmt.setTitle(tr("Downlink audio format"));
+
+		gl.addWidget(&up_fmt, 0,0);
+		gl.addWidget(&down_fmt, 1,0);
+		gl.setRowStretch(2,1);
+
+		connect(&up_fmt, SIGNAL(valueChanged()), this, SLOT(handle_config()));
+		connect(&down_fmt, SIGNAL(valueChanged()), this, SLOT(handle_config()));
+	};
+	QGridLayout gl;
+	HpsJamConfigFormat up_fmt;
+	HpsJamConfigFormat down_fmt;
+public slots:
+	void handle_config();
+signals:
+	void configChanged();
+};
+
+#endif		/* _HPSJAM_CONFIGDLG_H_ */

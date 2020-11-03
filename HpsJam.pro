@@ -7,6 +7,7 @@ QT		+= core gui svg widgets
 
 HEADERS		+= src/chatdlg.h
 HEADERS		+= src/compressor.h
+HEADERS		+= src/configdlg.h
 HEADERS		+= src/connectdlg.h
 HEADERS		+= src/equalizer.h
 HEADERS		+= src/hpsjam.h
@@ -18,6 +19,7 @@ HEADERS		+= src/socket.h
 
 SOURCES		+= src/chatdlg.cpp
 SOURCES		+= src/compressor.cpp
+SOURCES		+= src/configdlg.cpp
 SOURCES		+= src/connectdlg.cpp
 SOURCES		+= src/equalizer.cpp
 SOURCES		+= src/hpsjam.cpp
