@@ -56,7 +56,7 @@ hpsjam_socket_receive(void *arg)
 		warn("Cannot bind to IP port");
 	} else while (1) {
 		ret = ps->recvfrom((char *)&frame, sizeof(frame));
-		if (ret >= sizeof(frame.hdr)) {
+		if (ret >= (int)sizeof(frame.hdr)) {
 			/* zero end of frame to avoid garbage */
 			memset(frame.raw + ret, 0, sizeof(frame) - ret);
 			/* process frame */
