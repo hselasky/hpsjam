@@ -31,6 +31,8 @@
 #define	HPSJAM_RATE 48000
 #define	HPSJAM_WINDOW_TITLE "HPS Online Jamming"
 #define	HPSJAM_PEERS_MAX 256
+#define	HPSJAM_DEFAULT_PORT 22124
+#define	HPSJAM_DEFAULT_PORT_STR "22124"
 
 class hpsjam_server_peer;
 class hpsjam_client_peer;
