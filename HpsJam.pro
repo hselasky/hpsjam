@@ -5,11 +5,13 @@ TEMPLATE	= app
 CONFIG		+= qt release
 QT		+= core gui widgets
 
+HEADERS		+= src/compressor.h
 HEADERS		+= src/hpsjam.h
 HEADERS		+= src/peer.h
 HEADERS		+= src/protocol.h
 HEADERS		+= src/socket.h
 
+SOURCES		+= src/compressor.cpp
 SOURCES		+= src/hpsjam.cpp
 SOURCES		+= src/peer.cpp
 SOURCES		+= src/protocol.cpp
