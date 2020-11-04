@@ -121,5 +121,6 @@ public:
 
 extern void hpsjam_peer_receive(const struct hpsjam_socket_address &,
     const union hpsjam_frame &);
+extern void hpsjam_server_tick();
 
 #endif		/* _HPSJAM_PEER_H_ */

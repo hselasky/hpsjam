@@ -347,7 +347,7 @@ hpsjam_server_peer :: audio_import()
 }
 
 Q_DECL_EXPORT void
-hpsjam_server_tick(void)
+hpsjam_server_tick()
 {
 	/* get audio */
 	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
