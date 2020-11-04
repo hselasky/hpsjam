@@ -164,3 +164,414 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 		    out_peak, left[x], right[x]);
 	}
 }
+
+void
+hpsjam_server_peer :: audio_export()
+{
+	const union hpsjam_frame *pkt;
+	const struct hpsjam_packet *ptr;
+	float temp[HPSJAM_MAX_PKT];
+	size_t num;
+
+	input_pkt.recovery();
+
+	while ((pkt = input_pkt.first_pkt())) {
+		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {
+			switch (ptr->type) {
+			case HPSJAM_TYPE_AUDIO_8_BIT_1CH:
+				num = ptr->get8Bit1ChSample(temp);
+				assert(num <= HPSJAM_MAX_PKT);
+				in_audio[0].addSamples(temp, num);
+				in_audio[1].addSamples(temp, num);
+				break;
+			case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
+				num = ptr->get16Bit1ChSample(temp);
+				assert(num <= HPSJAM_MAX_PKT);
+				in_audio[0].addSamples(temp, num);
+				in_audio[1].addSamples(temp, num);
+				break;
+			case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
+				num = ptr->get24Bit1ChSample(temp);
+				assert(num <= HPSJAM_MAX_PKT);
+				in_audio[0].addSamples(temp, num);
+				in_audio[1].addSamples(temp, num);
+				break;
+			case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
+				num = ptr->get32Bit1ChSample(temp);
+				assert(num <= HPSJAM_MAX_PKT);
+				in_audio[0].addSamples(temp, num);
+				in_audio[1].addSamples(temp, num);
+				break;
+			case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
+				num = ptr->get8Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
+				assert(num <= (HPSJAM_MAX_PKT / 2));
+				in_audio[0].addSamples(temp, num);
+				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				break;
+			case HPSJAM_TYPE_AUDIO_16_BIT_2CH:
+				num = ptr->get16Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
+				assert(num <= (HPSJAM_MAX_PKT / 2));
+				in_audio[0].addSamples(temp, num);
+				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				break;
+			case HPSJAM_TYPE_AUDIO_24_BIT_2CH:
+				num = ptr->get24Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
+				assert(num <= (HPSJAM_MAX_PKT / 2));
+				in_audio[0].addSamples(temp, num);
+				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				break;
+			case HPSJAM_TYPE_AUDIO_32_BIT_2CH:
+				num = ptr->get32Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
+				assert(num <= (HPSJAM_MAX_PKT / 2));
+				in_audio[0].addSamples(temp, num);
+				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				break;
+			case HPSJAM_TYPE_AUDIO_32_BIT_2CH + 1 ... HPSJAM_TYPE_AUDIO_MAX:
+				/* for the future */
+				break;
+			default:
+				/* check if other side received packet */
+				if (ptr->getPeerSeqNo() == output_pkt.pend_seqno)
+					output_pkt.advance();
+				/* check if sequence number matches */
+				if (ptr->getLocalSeqNo() != output_pkt.peer_seqno)
+					continue;
+				/* advance expected sequence number */
+				output_pkt.peer_seqno++;
+
+				switch (ptr->type) {
+				case HPSJAM_TYPE_CONFIGURE_REQUEST:
+					if (ptr->getConfigure(output_fmt))
+						break;
+					output_fmt = HPSJAM_TYPE_END;
+					break;
+				case HPSJAM_TYPE_PING_REQUEST:
+				case HPSJAM_TYPE_PING_REPLY:
+				case HPSJAM_TYPE_FADER_GAIN_REQUEST:
+				case HPSJAM_TYPE_FADER_GAIN_REPLY:
+				case HPSJAM_TYPE_FADER_PAN_REQUEST:
+				case HPSJAM_TYPE_FADER_PAN_REPLY:
+				case HPSJAM_TYPE_FADER_ICON_REQUEST:
+				case HPSJAM_TYPE_FADER_ICON_REPLY:
+				case HPSJAM_TYPE_FADER_NAME_REQUEST:
+				case HPSJAM_TYPE_FADER_NAME_REPLY:
+				case HPSJAM_TYPE_LYRICS_REQUEST:
+				case HPSJAM_TYPE_LYRICS_REPLY:
+				case HPSJAM_TYPE_CHAT_REQUEST:
+				case HPSJAM_TYPE_CHAT_REPLY:
+				default:
+					break;
+				}
+			}
+		}
+	}
+
+	/* extract samples for this tick */
+	in_audio[0].remSamples(tmp_audio[0], HPSJAM_SAMPLE_RATE / 1000);
+	in_audio[1].remSamples(tmp_audio[1], HPSJAM_SAMPLE_RATE / 1000);
+
+	/* clear output audio */
+	memset(out_audio, 0, sizeof(out_audio));
+}
+
+void
+hpsjam_server_peer :: audio_import()
+{
+	struct hpsjam_packet_entry entry = {};
+
+	/* run compressor before sending audio */
+	switch (output_fmt) {
+	case HPSJAM_TYPE_AUDIO_8_BIT_1CH:
+	case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
+	case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
+	case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
+		for (unsigned int x = 0; x != (HPSJAM_SAMPLE_RATE / 1000); x++) {
+			out_audio[0][x] = (out_audio[0][x] + out_audio[1][x]) / 2.0f;
+
+			hpsjam_mono_compressor(HPSJAM_SAMPLE_RATE,
+			    out_peak, out_audio[0][x]);
+		}
+		break;
+	case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
+	case HPSJAM_TYPE_AUDIO_16_BIT_2CH:
+	case HPSJAM_TYPE_AUDIO_24_BIT_2CH:
+	case HPSJAM_TYPE_AUDIO_32_BIT_2CH:
+		for (unsigned int x = 0; x != (HPSJAM_SAMPLE_RATE / 1000); x++) {
+			hpsjam_stereo_compressor(HPSJAM_SAMPLE_RATE,
+			    out_peak, out_audio[0][x], out_audio[1][x]);
+		}
+		break;
+	default:
+		break;
+	}
+
+	switch (output_fmt) {
+	case HPSJAM_TYPE_AUDIO_8_BIT_1CH:
+		entry.packet.put8Bit1ChSample(out_audio[0], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
+		entry.packet.put16Bit1ChSample(out_audio[0], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
+		entry.packet.put24Bit1ChSample(out_audio[0], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
+		entry.packet.put8Bit1ChSample(out_audio[0], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
+		entry.packet.put8Bit2ChSample(out_audio[0], out_audio[1], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_16_BIT_2CH:
+		entry.packet.put16Bit2ChSample(out_audio[0], out_audio[1], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_24_BIT_2CH:
+		entry.packet.put24Bit2ChSample(out_audio[0], out_audio[1], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_32_BIT_2CH:
+		entry.packet.put32Bit2ChSample(out_audio[0], out_audio[1], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	default:
+		break;
+	}
+
+	/* send a packet */
+	output_pkt.send(address);
+}
+
+Q_DECL_EXPORT void
+hpsjam_server_tick(void)
+{
+	/* get audio */
+	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+		QMutexLocker locker(&hpsjam_locks[x]);
+
+		if (hpsjam_server_peers[x].valid == false) {
+			memset(hpsjam_server_peers[x].tmp_audio, 0,
+			       sizeof(hpsjam_server_peers[x].tmp_audio));
+			continue;
+		}
+		hpsjam_server_peers[x].audio_export();
+	}
+
+	/* mix everything */
+	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+		QMutexLocker locker(&hpsjam_locks[x]);
+
+		if (hpsjam_server_peers[x].valid == false)
+			continue;
+
+		for (unsigned y = 0; y != hpsjam_num_server_peers; y++) {
+			if (hpsjam_server_peers[x].bits[y] & HPSJAM_BIT_SOLO)
+				goto do_solo;
+		}
+
+		for (unsigned y = 0; y != hpsjam_num_server_peers; y++) {
+			if (hpsjam_server_peers[x].bits[y] & HPSJAM_BIT_MUTE)
+				continue;
+			if (hpsjam_server_peers[x].bits[y] & HPSJAM_BIT_INVERT) {
+				for (unsigned z = 0; z != (HPSJAM_SAMPLE_RATE / 1000); z++) {
+					hpsjam_server_peers[x].out_audio[0][z] -= hpsjam_server_peers[y].tmp_audio[0][z];
+					hpsjam_server_peers[x].out_audio[1][z] -= hpsjam_server_peers[y].tmp_audio[1][z];
+				}
+			} else {
+				for (unsigned z = 0; z != (HPSJAM_SAMPLE_RATE / 1000); z++) {
+					hpsjam_server_peers[x].out_audio[0][z] += hpsjam_server_peers[y].tmp_audio[0][z];
+					hpsjam_server_peers[x].out_audio[1][z] += hpsjam_server_peers[y].tmp_audio[1][z];
+				}
+			}
+		}
+		continue;
+	do_solo:
+		for (unsigned y = 0; y != hpsjam_num_server_peers; y++) {
+			if (~hpsjam_server_peers[x].bits[y] & HPSJAM_BIT_SOLO)
+				continue;
+			if (hpsjam_server_peers[x].bits[y] & HPSJAM_BIT_INVERT) {
+				for (unsigned z = 0; z != (HPSJAM_SAMPLE_RATE / 1000); z++) {
+					hpsjam_server_peers[x].out_audio[0][z] -= hpsjam_server_peers[y].tmp_audio[0][z];
+					hpsjam_server_peers[x].out_audio[1][z] -= hpsjam_server_peers[y].tmp_audio[1][z];
+				}
+			} else {
+				for (unsigned z = 0; z != (HPSJAM_SAMPLE_RATE / 1000); z++) {
+					hpsjam_server_peers[x].out_audio[0][z] += hpsjam_server_peers[y].tmp_audio[0][z];
+					hpsjam_server_peers[x].out_audio[1][z] += hpsjam_server_peers[y].tmp_audio[1][z];
+				}
+			}
+		}
+	}
+
+	/* send audio */
+	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+		QMutexLocker locker(&hpsjam_locks[x]);
+
+		if (hpsjam_server_peers[x].valid == false)
+			continue;
+		hpsjam_server_peers[x].audio_import();
+	}
+}
+
+void
+hpsjam_client_peer :: tick()
+{
+	QMutexLocker locker(&hpsjam_locks[0]);
+	struct hpsjam_packet_entry entry = {};
+	const union hpsjam_frame *pkt;
+	const struct hpsjam_packet *ptr;
+	union {
+		float temp[HPSJAM_MAX_PKT];
+		float audio[2][HPSJAM_SAMPLE_RATE / 1000];
+	};
+	size_t num;
+
+	input_pkt.recovery();
+
+	while ((pkt = input_pkt.first_pkt())) {
+		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {
+			switch (ptr->type) {
+			case HPSJAM_TYPE_AUDIO_8_BIT_1CH:
+				num = ptr->get8Bit1ChSample(temp);
+				assert(num <= HPSJAM_MAX_PKT);
+				out_audio[0].addSamples(temp, num);
+				out_audio[1].addSamples(temp, num);
+				break;
+			case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
+				num = ptr->get16Bit1ChSample(temp);
+				assert(num <= HPSJAM_MAX_PKT);
+				out_audio[0].addSamples(temp, num);
+				out_audio[1].addSamples(temp, num);
+				break;
+			case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
+				num = ptr->get24Bit1ChSample(temp);
+				assert(num <= HPSJAM_MAX_PKT);
+				out_audio[0].addSamples(temp, num);
+				out_audio[1].addSamples(temp, num);
+				break;
+			case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
+				num = ptr->get32Bit1ChSample(temp);
+				assert(num <= HPSJAM_MAX_PKT);
+				out_audio[0].addSamples(temp, num);
+				out_audio[1].addSamples(temp, num);
+				break;
+			case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
+				num = ptr->get8Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
+				assert(num <= (HPSJAM_MAX_PKT / 2));
+				out_audio[0].addSamples(temp, num);
+				out_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				break;
+			case HPSJAM_TYPE_AUDIO_16_BIT_2CH:
+				num = ptr->get16Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
+				assert(num <= (HPSJAM_MAX_PKT / 2));
+				out_audio[0].addSamples(temp, num);
+				out_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				break;
+			case HPSJAM_TYPE_AUDIO_24_BIT_2CH:
+				num = ptr->get24Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
+				assert(num <= (HPSJAM_MAX_PKT / 2));
+				out_audio[0].addSamples(temp, num);
+				out_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				break;
+			case HPSJAM_TYPE_AUDIO_32_BIT_2CH:
+				num = ptr->get32Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
+				assert(num <= (HPSJAM_MAX_PKT / 2));
+				out_audio[0].addSamples(temp, num);
+				out_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				break;
+			case HPSJAM_TYPE_AUDIO_32_BIT_2CH + 1 ... HPSJAM_TYPE_AUDIO_MAX:
+				/* for the future */
+				break;
+			default:
+				/* check if other side received packet */
+				if (ptr->getPeerSeqNo() == output_pkt.pend_seqno)
+					output_pkt.advance();
+				/* check if sequence number matches */
+				if (ptr->getLocalSeqNo() != output_pkt.peer_seqno)
+					continue;
+				/* advance expected sequence number */
+				output_pkt.peer_seqno++;
+
+				switch (ptr->type) {
+				case HPSJAM_TYPE_CONFIGURE_REQUEST:
+				case HPSJAM_TYPE_PING_REQUEST:
+				case HPSJAM_TYPE_PING_REPLY:
+				case HPSJAM_TYPE_FADER_GAIN_REQUEST:
+				case HPSJAM_TYPE_FADER_GAIN_REPLY:
+				case HPSJAM_TYPE_FADER_PAN_REQUEST:
+				case HPSJAM_TYPE_FADER_PAN_REPLY:
+				case HPSJAM_TYPE_FADER_ICON_REQUEST:
+				case HPSJAM_TYPE_FADER_ICON_REPLY:
+				case HPSJAM_TYPE_FADER_NAME_REQUEST:
+				case HPSJAM_TYPE_FADER_NAME_REPLY:
+				case HPSJAM_TYPE_LYRICS_REQUEST:
+				case HPSJAM_TYPE_LYRICS_REPLY:
+				case HPSJAM_TYPE_CHAT_REQUEST:
+				case HPSJAM_TYPE_CHAT_REPLY:
+				default:
+					break;
+				}
+			}
+		}
+	}
+
+	/* extract samples for this tick */
+	in_audio[0].remSamples(audio[0], HPSJAM_SAMPLE_RATE / 1000);
+	in_audio[1].remSamples(audio[1], HPSJAM_SAMPLE_RATE / 1000);
+
+	switch (out_format) {
+	case HPSJAM_TYPE_AUDIO_8_BIT_1CH:
+	case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
+	case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
+	case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
+		for (unsigned int x = 0; x != (HPSJAM_SAMPLE_RATE / 1000); x++)
+			audio[0][x] = (audio[0][x] + audio[1][x]) / 2.0f;
+		break;
+	default:
+		break;
+	}
+
+	switch (out_format) {
+	case HPSJAM_TYPE_AUDIO_8_BIT_1CH:
+		entry.packet.put8Bit1ChSample(audio[0], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
+		entry.packet.put16Bit1ChSample(audio[0], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
+		entry.packet.put24Bit1ChSample(audio[0], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
+		entry.packet.put8Bit1ChSample(audio[0], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
+		entry.packet.put8Bit2ChSample(audio[0], audio[1], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_16_BIT_2CH:
+		entry.packet.put16Bit2ChSample(audio[0], audio[1], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_24_BIT_2CH:
+		entry.packet.put24Bit2ChSample(audio[0], audio[1], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	case HPSJAM_TYPE_AUDIO_32_BIT_2CH:
+		entry.packet.put32Bit2ChSample(audio[0], audio[1], HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
+		break;
+	default:
+		break;
+	}
+
+	/* send a packet */
+	output_pkt.send(address);
+}

@@ -49,6 +49,7 @@ enum {
 	HPSJAM_TYPE_AUDIO_24_BIT_2CH,
 	HPSJAM_TYPE_AUDIO_32_BIT_1CH,
 	HPSJAM_TYPE_AUDIO_32_BIT_2CH,
+	HPSJAM_TYPE_AUDIO_MAX = 63,
 	HPSJAM_TYPE_CONFIGURE_REQUEST,	
 	HPSJAM_TYPE_PING_REQUEST,
 	HPSJAM_TYPE_PING_REPLY,
@@ -98,7 +99,7 @@ struct hpsjam_packet {
 			return (true);
 	}; 
 
-	struct hpsjam_packet *next() {
+	const struct hpsjam_packet *next() const {
 		return (this + length);
 	};
 
@@ -305,27 +306,22 @@ struct hpsjam_packet {
 		memcpy(sequence + 2, p, len);
 	};
   
-	bool getConfigure(uint8_t &out_mix, uint8_t &in_mix,
-	    uint8_t &out_format, uint8_t &in_format) const {
+	bool getConfigure(uint8_t &out_format) const {
 		if (length >= 2) {
-			out_mix = getS8(0);
-			in_mix = getS8(1);
-			out_format = getS8(2);
-			in_format = getS8(3);
+			out_format = getS8(0);
 			return (true);
 		}
 		return (false);
 	};
 
-	void setConfigure(uint8_t out_mix, uint8_t in_mix,
-	    uint8_t out_format, uint8_t in_format) {
+	void setConfigure(uint8_t out_format) {
 		length = 2;
 		sequence[0] = 0;
 		sequence[1] = 0;
-		putS8(0, out_mix);
-		putS8(1, in_mix);
-		putS8(2, out_format);
-		putS8(3, in_format);
+		putS8(0, out_format);
+		putS8(1, 0);
+		putS8(2, 0);
+		putS8(3, 0);
 	};
 
 	bool getPing(uint16_t &packets, uint16_t &time_ms, uint64_t &passwd) const {
@@ -368,7 +364,7 @@ struct hpsjam_packet_entry {
 		TAILQ_INSERT_HEAD(phead, this, entry);
 		return (*this);
 	};
-	struct hpsjam_packet_entry & remove_head(hpsjam_packet_head_t *phead)
+	struct hpsjam_packet_entry & remove(hpsjam_packet_head_t *phead)
 	{
 		TAILQ_REMOVE(phead, this, entry);
 		return (*this);

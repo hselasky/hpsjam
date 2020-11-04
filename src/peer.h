@@ -40,9 +40,10 @@ class hpsjam_server_peer {
 public:
 	struct hpsjam_socket_address address;
 	struct hpsjam_input_packetizer input_pkt;
-	struct hpsjam_output_packetizer output_pkt;
+	class hpsjam_output_packetizer output_pkt;
 	class hpsjam_audio_buffer in_audio[2];
-	class hpsjam_audio_buffer out_audio[2];
+	float tmp_audio[2][HPSJAM_SAMPLE_RATE / 1000];
+	float out_audio[2][HPSJAM_SAMPLE_RATE / 1000];
 
 	QString name;
 	QByteArray icon;
@@ -52,7 +53,7 @@ public:
 #define	HPSJAM_BIT_INVERT (1 << 2)
 	float gain;
 	float pan;
-	uint8_t input_fmt;
+	float out_peak;
 	uint8_t output_fmt;
 	bool valid;
 
@@ -61,16 +62,18 @@ public:
 		output_pkt.init();
 		in_audio[0].clear();
 		in_audio[1].clear();
-		out_audio[0].clear();
-		out_audio[1].clear();
+		memset(out_audio, 0, sizeof(out_audio));
 		name = QString();
 		icon = QByteArray();
-		input_fmt = 0;
 		output_fmt = 0;
 		gain = 1.0f;
 		pan = 0.0f;
+		out_peak = 0.0f;
 		valid = false;
 	};
+
+	void audio_export();
+	void audio_import();
 
 	hpsjam_server_peer() {
 		init();
@@ -81,7 +84,7 @@ class hpsjam_client_peer {
 public:
 	struct hpsjam_socket_address address;
 	struct hpsjam_input_packetizer input_pkt;
-	struct hpsjam_output_packetizer output_pkt;
+	class hpsjam_output_packetizer output_pkt;
 	class hpsjam_audio_buffer in_audio[2];
 	class hpsjam_audio_buffer out_audio[2];
 	class hpsjam_equalizer eq;
@@ -91,6 +94,7 @@ public:
 	float in_peak;
 	float out_peak;
 	uint8_t bits;
+	uint8_t out_format;
 	bool valid[256];
 
 	void init() {
@@ -106,11 +110,13 @@ public:
 		in_pan = 0.0f;
 		in_peak = 0.0;
 		out_peak = 0.0;
+		out_format = HPSJAM_TYPE_END;
 	};
 	hpsjam_client_peer() {
 		init();
 	};
 	void sound_process(float *, float *, size_t);
+	void tick();
 };
 
 extern void hpsjam_peer_receive(const struct hpsjam_socket_address &,
