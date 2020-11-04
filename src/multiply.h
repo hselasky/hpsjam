@@ -26,6 +26,7 @@
 #ifndef _HPSJAM_MULTIPLY_
 #define	_HPSJAM_MULTIPLY_
 
+#include <stdint.h>
 #include <sys/types.h>
 
 extern void hpsjam_x3_multiply_float(const float *, const float *, float *, const size_t);
