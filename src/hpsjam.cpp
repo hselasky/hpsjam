@@ -29,6 +29,8 @@
 
 #include "clientdlg.h"
 
+#include "timer.h"
+
 #include <QApplication>
 #include <QMessageBox>
 #include <QMutex>
@@ -145,6 +147,9 @@ main(int argc, char **argv)
 
 	/* create sockets, if any */
 	hpsjam_socket_init(port);
+
+	/* create timer, if any */
+	hpsjam_timer_init();
 
 	return (app.exec());
 }
