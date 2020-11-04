@@ -43,6 +43,24 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 			}
 		}
 
+		/* all new connections must start on a ping request */
+		if (frame.start[0].valid(frame.end) == false ||
+		    frame.start[0].type != HPSJAM_TYPE_PING_REQUEST)
+			return;
+
+		uint16_t packets;
+		uint16_t time_ms;
+		uint64_t passwd;
+
+		/* check if ping message is valid */
+		if (frame.start[0].getPing(packets, time_ms, passwd) == false)
+			return;
+
+		/* don't respond if password is invalid */
+		if (hpsjam_server_passwd != 0 && passwd != hpsjam_server_passwd)
+			return;
+
+		/* create new connection */
 		for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
 			if (hpsjam_server_peers[x].valid == false)
 				continue;

@@ -37,6 +37,7 @@
 #include <err.h>
 
 unsigned hpsjam_num_server_peers;
+uint64_t hpsjam_server_passwd;
 class hpsjam_server_peer *hpsjam_server_peers;
 class hpsjam_client_peer *hpsjam_client_peer;
 struct hpsjam_socket_address hpsjam_v4;
