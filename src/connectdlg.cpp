@@ -23,7 +23,13 @@
  * SUCH DAMAGE.
  */
 
+#include "hpsjam.h"
+
+#include "peer.h"
+
 #include "connectdlg.h"
+
+#include <QMessageBox>
 
 void
 HpsJamConnectList :: selectionChanged(const QItemSelection &cur, const QItemSelection &prev)
@@ -72,6 +78,35 @@ HpsJamConnect :: handle_refresh()
 void
 HpsJamConnect :: handle_connect()
 {
+	QString text = server.edit.text().trimmed();
+	QByteArray host;
+	QByteArray port;
+
+	auto parts = text.split(QString(":"));
+
+	switch (parts.length()) {
+	case 1:
+		host = parts[0].toLatin1();
+		port = HPSJAM_DEFAULT_PORT_STR;
+		break;
+	case 2:
+		host = parts[0].toLatin1();
+		port = parts[1].toLatin1();
+		break;
+	default:
+		QMessageBox::information(this, tr("CONNECT"),
+		    tr("Invalid server name: %1").arg(text));
+		return;
+	}
+
+	if (hpsjam_v4.resolve(host.constData(), port.constData(), hpsjam_client_peer->address) == false) {
+		if (hpsjam_v6.resolve(host.constData(), port.constData(), hpsjam_client_peer->address) == false) {
+			QMessageBox::information(this, tr("CONNECT"),
+			    tr("Could not resolve server at: %1").arg(text));
+			return;
+		}
+	}
+
 	buttons.b_connect.setEnabled(false);
 	buttons.b_disconnect.setEnabled(true);
 }
@@ -81,4 +116,6 @@ HpsJamConnect :: handle_disconnect()
 {
 	buttons.b_connect.setEnabled(true);
 	buttons.b_disconnect.setEnabled(false);
+
+	hpsjam_client_peer->address.clear();
 }
