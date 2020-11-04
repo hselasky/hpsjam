@@ -132,7 +132,9 @@ main(int argc, char **argv)
 #ifdef HAVE_JACK_AUDIO
 		if (hpsjam_sound_init(jackname, jackconnect)) {
 			QMessageBox::information(client, QObject::tr("NO AUDIO"),
-				QObject::tr("Cannot connect to JACK server or sample rate is different from %1Hz").arg(HPSJAM_SAMPLE_RATE));
+				QObject::tr("Cannot connect to JACK server or \n"
+					    "sample rate is different from %1Hz or \n"
+					    "latency is too high").arg(HPSJAM_SAMPLE_RATE));
 		}
 #endif
 		client->show();
