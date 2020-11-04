@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <QMutexLocker>
+
 #include "hpsjam.h"
 
 #include "peer.h"
@@ -32,10 +34,14 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
     const union hpsjam_frame &frame)
 {
 	if (hpsjam_num_server_peers == 0) {
+		QMutexLocker locker(&hpsjam_locks[0]);
+
 		if (hpsjam_client_peer->address == src)
 			hpsjam_client_peer->input_pkt.receive(frame);
 	} else {
 		for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+			QMutexLocker locker(&hpsjam_locks[x]);
+
 			if (hpsjam_server_peers[x].valid &&
 			    hpsjam_server_peers[x].address == src) {
 				hpsjam_server_peers[x].input_pkt.receive(frame);
@@ -62,6 +68,8 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 
 		/* create new connection */
 		for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+			QMutexLocker locker(&hpsjam_locks[x]);
+
 			if (hpsjam_server_peers[x].valid == false)
 				continue;
 			hpsjam_server_peers[x].valid = true;

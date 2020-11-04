@@ -38,6 +38,7 @@
 
 class hpsjam_server_peer;
 class hpsjam_client_peer;
+class QMutex;
 struct hpsjam_socket_address;
 
 extern uint64_t hpsjam_server_passwd;
@@ -46,12 +47,12 @@ extern class hpsjam_server_peer *hpsjam_server_peers;
 extern class hpsjam_client_peer *hpsjam_client_peer;
 extern struct hpsjam_socket_address hpsjam_v4;
 extern struct hpsjam_socket_address hpsjam_v6;
+extern QMutex *hpsjam_locks;
 
 extern void hpsjam_socket_init(unsigned short port);
 
 /* sound APIs */
 extern bool hpsjam_sound_init(const char *, bool);
 extern void hpsjam_sound_uninit();
-extern void hpsjam_sound_process(float *, float *, size_t);
 
 #endif		/* _HPSJAM_H_ */
