@@ -74,6 +74,7 @@ public:
 			dst += fwd;
 			num -= fwd;
 			consumer += fwd;
+			total -= fwd;
 			if (consumer == HPSJAM_MAX_SAMPLES) {
 				consumer = 0;
 				fwd = HPSJAM_MAX_SAMPLES;
