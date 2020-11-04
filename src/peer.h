@@ -98,6 +98,7 @@ public:
 	bool valid[256];
 
 	void init() {
+		address.clear();
 		memset(valid, 0, sizeof(valid));
 		input_pkt.init();
 		output_pkt.init();
