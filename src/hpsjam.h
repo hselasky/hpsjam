@@ -28,8 +28,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/types.h>
 
-#define	HPSJAM_RATE 48000
+#define	HPSJAM_SAMPLE_RATE 48000
 #define	HPSJAM_WINDOW_TITLE "HPS Online Jamming"
 #define	HPSJAM_PEERS_MAX 256
 #define	HPSJAM_DEFAULT_PORT 22124
@@ -47,5 +48,10 @@ extern struct hpsjam_socket_address hpsjam_v4;
 extern struct hpsjam_socket_address hpsjam_v6;
 
 extern void hpsjam_socket_init(unsigned short port);
+
+/* sound APIs */
+extern bool hpsjam_sound_init(const char *, bool);
+extern void hpsjam_sound_uninit();
+extern void hpsjam_sound_process(float *, float *, size_t);
 
 #endif		/* _HPSJAM_H_ */

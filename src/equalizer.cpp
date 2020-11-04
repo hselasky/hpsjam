@@ -173,7 +173,7 @@ hpsjam_equalizer :: init(size_t size, const char *pfilter)
 	if (size != 0 && pfilter[0] != 0) {
 		struct equalizer eq;
 
-		eq.init(HPSJAM_RATE, size);
+		eq.init(HPSJAM_SAMPLE_RATE, size);
 
 		if (eq.load(pfilter)) {
 			eq.cleanup();

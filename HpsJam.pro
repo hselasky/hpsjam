@@ -35,6 +35,13 @@ SOURCES		+= src/protocol.cpp
 SOURCES		+= src/socket.cpp
 SOURCES		+= src/statsdlg.cpp
 
+isEmpty(WITHOUT_AUDIO) {
+# JACK audio backend
+SOURCES		+= linux/sound_jack.cpp
+LIBS		+= -L${PREFIX}/lib -ljack
+DEFINES		+= HAVE_JACK_AUDIO
+}
+
 RESOURCES	+= HpsJam.qrc
 
 TARGET		= HpsJam

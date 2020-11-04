@@ -30,6 +30,7 @@
 #include "clientdlg.h"
 
 #include <QApplication>
+#include <QMessageBox>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +51,8 @@ static const struct option hpsjam_opts[] = {
 	{ "peers", required_argument, NULL, 'P' },
 	{ "password", required_argument, NULL, 'K' },
 	{ "daemon", no_argument, NULL, 'B' },
+	{ "jacknoconnect", no_argument, NULL, 'J' },
+	{ "jackname", required_argument, NULL, 'n' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -57,7 +60,8 @@ static void
 usage(void)
 {
         fprintf(stderr, "HpsJam [--server --peers 16] [--port " HPSJAM_DEFAULT_PORT_STR "] "
-		"[--daemon] [--password <64_bit_hex_password>]\n");
+		"[--daemon] [--password <64_bit_hex_password>] \\\n"
+		"	[--jacknoconnect] [--jackname <name>]\n");
         exit(1);
 }
 
@@ -67,13 +71,15 @@ main(int argc, char **argv)
 	int c;
 	int port = HPSJAM_DEFAULT_PORT;
 	int do_fork = 0;
+	bool jackconnect = true;
+	const char *jackname = "hpsjam";
 
 	QApplication app(argc, argv);
 
 	/* set consistent double click interval */
 	app.setDoubleClickInterval(250);
 
-	while ((c = getopt_long_only(argc, argv, "p:sP:h", hpsjam_opts, NULL)) != -1) {
+	while ((c = getopt_long_only(argc, argv, "p:sP:hBJ:n:K:", hpsjam_opts, NULL)) != -1) {
 		switch (c) {
 		case 's':
 			if (hpsjam_num_server_peers == 0)
@@ -94,6 +100,12 @@ main(int argc, char **argv)
 		case 'B':
 			do_fork = 1;
 			break;
+		case 'J':
+			jackconnect = false;
+			break;
+		case 'n':
+			jackname = optarg;
+			break;
 		case 'K':
 			if (sscanf(optarg, "%llx", (long long *)&hpsjam_server_passwd) != 1)
 				usage();
@@ -112,8 +124,15 @@ main(int argc, char **argv)
 
 	if (hpsjam_num_server_peers == 0) {
 		hpsjam_client_peer = new class hpsjam_client_peer;
+		auto client = new HpsJamClient();
 
-		(new HpsJamClient())->show();
+#ifdef HAVE_JACK_AUDIO
+		if (hpsjam_sound_init(jackname, jackconnect)) {
+			QMessageBox::information(client, QObject::tr("NO AUDIO"),
+				QObject::tr("Cannot connect to JACK server or sample rate is different from %1Hz").arg(HPSJAM_SAMPLE_RATE));
+		}
+#endif
+		client->show();
 	} else {
 		hpsjam_server_peers = new class hpsjam_server_peer [hpsjam_num_server_peers];
 	}
