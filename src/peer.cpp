@@ -31,7 +31,7 @@
 
 #include "compressor.h"
 
-void
+Q_DECL_EXPORT void
 hpsjam_peer_receive(const struct hpsjam_socket_address &src,
     const union hpsjam_frame &frame)
 {
