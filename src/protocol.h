@@ -26,6 +26,8 @@
 #ifndef	_HPSJAM_PROTOCOL_H_
 #define	_HPSJAM_PROTOCOL_H_
 
+#include "socket.h"
+
 #include <assert.h>
 
 #include <stdint.h>
@@ -389,25 +391,47 @@ union hpsjam_frame {
 	};
 };
 
-struct hpsjam_output_packetizer {
+class hpsjam_output_packetizer {
+public:
 	union hpsjam_frame current;
 	union hpsjam_frame mask;
+	hpsjam_packet_head_t head;
+	struct hpsjam_packet_entry *pending;
+	uint16_t pend_count; /* pending tick count */
+	uint8_t pend_seqno; /* pending sequence number */
+	uint8_t peer_seqno; /* peer sequence number */
 	uint8_t d_cur;	/* current distance between XOR frames */
 	uint8_t d_max;	/* maximum distance between XOR frames */
 	uint8_t seqno;	/* current sequence number */
 	size_t offset;	/* current data offset */
 	size_t d_len;	/* maximum XOR frame length */
 
+	hpsjam_output_packetizer() {
+		TAILQ_INIT(&head);
+		pending = 0;
+		init();
+	};
+
 	void init(uint8_t distance = 2) {
+		struct hpsjam_packet_entry *pkt;
 		d_cur = 0;
 		d_max = distance % HPSJAM_SEQ_MAX;
+		pend_count = 0;
+		pend_seqno = 0;
+		peer_seqno = 0;
 		seqno = 0;
 		offset = 0;
 		current.clear();
 		mask.clear();
-	};
 
-	void do_send(const union hpsjam_frame &, size_t);
+		while ((pkt = TAILQ_FIRST(&head))) {
+			pkt->remove(&head);
+			delete pkt;
+		}
+
+		delete pending;
+		pending = 0;
+	};
 
 	bool append(const struct hpsjam_packet_entry &entry)
 	{
@@ -422,16 +446,40 @@ struct hpsjam_output_packetizer {
 		return (false);
 	};
 
-	void send() {
+	void advance() {
+		delete pending;
+		pending = 0;
+	};
+
+	void send(const struct hpsjam_socket_address &addr) {
 		if (d_cur == d_max) {
+			/* finalize XOR packet */
 			mask.hdr.setSequence(seqno, d_max);
-			do_send(mask, d_len + sizeof(current.hdr));
+			addr.sendto((const char *)&mask, d_len + sizeof(current.hdr));
 			mask.clear();
 			d_cur = 0;
 			d_len = 0;
 		} else {
+			/* add a control packet, if possible */
+			if (pending == 0) {
+				pending = TAILQ_FIRST(&head);
+				if (pending != 0) {
+					pending->remove(&head);
+					pending->packet.setLocalSeqNo(pend_seqno);
+					pending->packet.setPeerSeqNo(peer_seqno);
+					pend_count = 0;
+					pend_seqno++;
+					append(*pending);
+				}
+			} else {
+				if (++pend_count == 50) {
+					pend_count = 0;
+					pending->packet.setPeerSeqNo(peer_seqno);
+					append(*pending);
+				}
+			}
 			current.hdr.setSequence(seqno, 0);
-			do_send(current, offset + sizeof(current.hdr));
+			addr.sendto((const char *)&current, offset + sizeof(current.hdr));
 			mask.do_xor(current);
 			current.clear();
 			seqno++;
@@ -463,8 +511,43 @@ struct hpsjam_input_packetizer {
 		jitter = 0;
 	};
 
-	void do_receive(const union hpsjam_frame &, size_t);
+	const union hpsjam_frame *first_pkt() {
+		unsigned mask = 0;
+		unsigned start;
+		unsigned min_x;
+		unsigned pkts;
 
+		for (uint8_t x = pkts = 0; x != HPSJAM_SEQ_MAX; x++) {
+			if (valid[x] & 1) {
+				mask |= (1 << x);
+				pkts++;
+			}
+			if (valid[x] & 2) {
+				pkts++;
+			}
+		}
+
+		start = mask;
+		for (uint8_t x = min_x = 0; x != HPSJAM_SEQ_MAX; x++) {
+			if (start > mask) {
+				start = mask;
+				min_x = x;
+			}
+			if (mask & 1)
+				mask |= 1 << HPSJAM_SEQ_MAX;
+			mask >>= 1;
+		}
+
+		/*
+		 * Consume if there are tree consequtive valid
+		 * packets, or if jitter amount is exceeded:
+		 */
+		if (((start & 7) == 7) || pkts >= jitter) {
+			valid[min_x] = 0;
+			return (current + min_x);
+		}
+		return (0);
+	};
 	void recovery() {
 		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
 			if (~valid[x] & 2)
