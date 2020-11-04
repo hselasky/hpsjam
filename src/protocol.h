@@ -538,7 +538,7 @@ struct hpsjam_input_packetizer {
 		 * Consume if there are tree consequtive valid
 		 * packets, or if jitter amount is exceeded:
 		 */
-		if (((start & 7) == 7) || pkts >= jitter) {
+		if (((start & 7) == 7) || (start != 0 && pkts >= jitter)) {
 			valid[min_x] = 0;
 			return (current + min_x);
 		}
