@@ -30,6 +30,7 @@
 #include <QByteArray>
 
 #include "audiobuffer.h"
+#include "equalizer.h"
 #include "socket.h"
 #include "protocol.h"
 
@@ -50,6 +51,7 @@ public:
 #define	HPSJAM_BIT_SOLO (1 << 1)
 #define	HPSJAM_BIT_INVERT (1 << 2)
 	float gain;
+	float pan;
 	uint8_t input_fmt;
 	uint8_t output_fmt;
 	bool valid;
@@ -66,6 +68,7 @@ public:
 		input_fmt = 0;
 		output_fmt = 0;
 		gain = 1.0f;
+		pan = 0.0f;
 		valid = false;
 	};
 
@@ -81,6 +84,13 @@ public:
 	struct hpsjam_output_packetizer output_pkt;
 	class hpsjam_audio_buffer in_audio[2];
 	class hpsjam_audio_buffer out_audio[2];
+	class hpsjam_equalizer eq;
+	float mon_gain;
+	float in_gain;
+	float in_pan;
+	float in_peak;
+	float out_peak;
+	uint8_t bits;
 	bool valid[256];
 
 	void init() {
@@ -91,6 +101,11 @@ public:
 		in_audio[1].clear();
 		out_audio[0].clear();
 		out_audio[1].clear();
+		in_gain = 1.0f;
+		mon_gain = 0.0f;
+		in_pan = 0.0f;
+		in_peak = 0.0;
+		out_peak = 0.0;
 	};
 	hpsjam_client_peer() {
 		init();

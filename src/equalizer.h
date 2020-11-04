@@ -26,9 +26,14 @@
 #ifndef _HPSJAM_EQUALIZER_
 #define	_HPSJAM_EQUALIZER_
 
+#include <string.h>
 #include <sys/types.h>
 
-struct hpsjam_equalizer {
+class hpsjam_equalizer {
+public:
+	hpsjam_equalizer() {
+		memset(this, 0, sizeof(*this));
+	};
 	size_t filter_size;
 	size_t filter_offset;
 	float *filter_data;
