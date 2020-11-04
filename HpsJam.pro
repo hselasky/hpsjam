@@ -39,7 +39,7 @@ RESOURCES	+= HpsJam.qrc
 
 TARGET		= HpsJam
 
-LIBS		+= -L${PREFIX}/lib -lfftw3
+LIBS		+= -L${PREFIX}/lib -lfftw3 -pthread
 
 target.path	= $${PREFIX}/bin
 INSTALLS	+= target
