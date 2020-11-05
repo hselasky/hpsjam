@@ -38,6 +38,7 @@
 
 class hpsjam_server_peer;
 class hpsjam_client_peer;
+class HpsJamClient;
 class QMutex;
 struct hpsjam_socket_address;
 
@@ -45,6 +46,7 @@ extern uint64_t hpsjam_server_passwd;
 extern unsigned hpsjam_num_server_peers;
 extern class hpsjam_server_peer *hpsjam_server_peers;
 extern class hpsjam_client_peer *hpsjam_client_peer;
+extern class HpsJamClient *hpsjam_client;
 extern struct hpsjam_socket_address hpsjam_v4;
 extern struct hpsjam_socket_address hpsjam_v6;
 

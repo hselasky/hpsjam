@@ -31,7 +31,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 
-#define	HPSJAM_AUDIO_FORMAT_MAX 8
+#define	HPSJAM_AUDIO_FORMAT_MAX 9
 
 struct hpsjam_audio_format {
 	uint8_t format;
@@ -45,12 +45,15 @@ class HpsJamConfigFormat : public QGroupBox {
 public:
 	HpsJamConfigFormat() : gl(this) {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_FORMAT_MAX; x++) {
-			b[x].setFlat(x != 0);
+			b[x].setFlat(x != 1);
 			b[x].setText(QString(hpsjam_audio_format[x].descr));
 			connect(&b[x], SIGNAL(released()), this, SLOT(handle_selection()));
-			gl.addWidget(b + x, x / 4, x % 4);
+			if (x == 0)
+				gl.addWidget(b + x, 0, 0);
+			else
+				gl.addWidget(b + x, 1 + ((x - 1) / 4), (x - 1) % 4);
 		}
-		format = hpsjam_audio_format[0].format;
+		format = hpsjam_audio_format[1].format;
 	};
 	uint8_t format;
 	QPushButton b[HPSJAM_AUDIO_FORMAT_MAX];
@@ -84,16 +87,15 @@ public:
 		gl.addWidget(&down_fmt, 1,0);
 		gl.setRowStretch(2,1);
 
-		connect(&up_fmt, SIGNAL(valueChanged()), this, SLOT(handle_config()));
-		connect(&down_fmt, SIGNAL(valueChanged()), this, SLOT(handle_config()));
+		connect(&up_fmt, SIGNAL(valueChanged()), this, SLOT(handle_up_config()));
+		connect(&down_fmt, SIGNAL(valueChanged()), this, SLOT(handle_down_config()));
 	};
 	QGridLayout gl;
 	HpsJamConfigFormat up_fmt;
 	HpsJamConfigFormat down_fmt;
 public slots:
-	void handle_config();
-signals:
-	void configChanged();
+	void handle_up_config();
+	void handle_down_config();
 };
 
 #endif		/* _HPSJAM_CONFIGDLG_H_ */

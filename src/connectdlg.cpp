@@ -27,11 +27,10 @@
 #include <QMessageBox>
 
 #include "hpsjam.h"
-
 #include "peer.h"
-
 #include "connectdlg.h"
-
+#include "clientdlg.h"
+#include "configdlg.h"
 #include "timer.h"
 
 void
@@ -86,6 +85,7 @@ HpsJamConnect :: handle_connect()
 	QString text = server.edit.text().trimmed();
 	QString passwd = password.edit.text().trimmed();
 	struct hpsjam_socket_address address;
+	struct hpsjam_packet_entry *pkt;
 	unsigned long long key = 0;
 	QByteArray host;
 	QByteArray port;
@@ -133,9 +133,19 @@ HpsJamConnect :: handle_connect()
 	hpsjam_client_peer->address = address;
 
 	/* send initial ping */
-	struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
+	pkt = new struct hpsjam_packet_entry;
 	pkt->packet.setPing(0, hpsjam_ticks, key);
+	pkt->packet.type = HPSJAM_TYPE_PING_REQUEST;
 	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
+
+	/* send initial configuration */
+	pkt = new struct hpsjam_packet_entry;
+	pkt->packet.setConfigure(hpsjam_client->w_config->down_fmt.format);
+	pkt->packet.type = HPSJAM_TYPE_CONFIGURE_REQUEST;
+	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
+
+	/* set local format */
+	hpsjam_client_peer->out_format = hpsjam_client->w_config->up_fmt.format;
 }
 
 void

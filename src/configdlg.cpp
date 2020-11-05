@@ -23,11 +23,15 @@
  * SUCH DAMAGE.
  */
 
-#include "protocol.h"
+#include <QMutexLocker>
 
+#include "hpsjam.h"
+#include "protocol.h"
+#include "peer.h"
 #include "configdlg.h"
 
 const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = {
+	{ HPSJAM_TYPE_END, "DISABLE" },
 	{ HPSJAM_TYPE_AUDIO_8_BIT_1CH, "1CH@8Bit" },
 	{ HPSJAM_TYPE_AUDIO_16_BIT_1CH, "1CH@16Bit" },
 	{ HPSJAM_TYPE_AUDIO_24_BIT_1CH, "1CH@24Bit" },
@@ -48,7 +52,23 @@ HpsJamConfigFormat :: handle_selection()
 }
 
 void
-HpsJamConfig :: handle_config()
+HpsJamConfig :: handle_up_config()
 {
-	configChanged();
+	QMutexLocker locker(&hpsjam_client_peer->lock);
+
+	if (hpsjam_client_peer->address.valid())
+		hpsjam_client_peer->out_format = up_fmt.format;
+}
+
+void
+HpsJamConfig :: handle_down_config()
+{
+	QMutexLocker locker(&hpsjam_client_peer->lock);
+
+	if (hpsjam_client_peer->address.valid()) {
+		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
+		pkt->packet.setConfigure(down_fmt.format);
+		pkt->packet.type = HPSJAM_TYPE_CONFIGURE_REQUEST;
+		pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
+	}
 }

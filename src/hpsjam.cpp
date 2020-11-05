@@ -24,11 +24,8 @@
  */
 
 #include "hpsjam.h"
-
 #include "peer.h"
-
 #include "clientdlg.h"
-
 #include "timer.h"
 
 #include <QApplication>
@@ -43,6 +40,7 @@ unsigned hpsjam_num_server_peers;
 uint64_t hpsjam_server_passwd;
 class hpsjam_server_peer *hpsjam_server_peers;
 class hpsjam_client_peer *hpsjam_client_peer;
+class HpsJamClient *hpsjam_client;
 struct hpsjam_socket_address hpsjam_v4;
 struct hpsjam_socket_address hpsjam_v6;
 
@@ -126,17 +124,17 @@ main(int argc, char **argv)
 
 	if (hpsjam_num_server_peers == 0) {
 		hpsjam_client_peer = new class hpsjam_client_peer;
-		auto client = new HpsJamClient();
+		hpsjam_client = new HpsJamClient();
 
 #ifdef HAVE_JACK_AUDIO
 		if (hpsjam_sound_init(jackname, jackconnect)) {
-			QMessageBox::information(client, QObject::tr("NO AUDIO"),
+			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot connect to JACK server or \n"
 					    "sample rate is different from %1Hz or \n"
 					    "latency is too high").arg(HPSJAM_SAMPLE_RATE));
 		}
 #endif
-		client->show();
+		hpsjam_client->show();
 	} else {
 		hpsjam_server_peers = new class hpsjam_server_peer [hpsjam_num_server_peers];
 	}
