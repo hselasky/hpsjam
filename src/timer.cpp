@@ -38,6 +38,8 @@
 #include "timer.h"
 #include "peer.h"
 
+uint16_t hpsjam_ticks;
+
 static void *
 hpsjam_timer_loop(void *arg)
 {
@@ -76,6 +78,8 @@ hpsjam_timer_loop(void *arg)
 			hpsjam_client_peer->tick();
 		else
 			hpsjam_server_tick();
+
+		hpsjam_ticks++;
 	}
 	return (0);
 }

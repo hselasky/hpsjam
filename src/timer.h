@@ -26,6 +26,10 @@
 #ifndef	_HPSJAM_TIMER_H_
 #define	_HPSJAM_TIMER_H_
 
+#include <stdint.h>
+
+extern uint16_t hpsjam_ticks;
+
 extern void hpsjam_timer_init();
 
 #endif		/* _HPSJAM_TIMER_H_ */
