@@ -108,6 +108,7 @@ public slots:
 
 signals:
 	void valueChanged(int);
+	void bitsChanged(int);
 };
 
 class HpsJamMixer : public QScrollArea {

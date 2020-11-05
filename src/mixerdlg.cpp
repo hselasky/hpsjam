@@ -220,7 +220,7 @@ HpsJamStrip :: handleInv()
 	else
 		w_inv.setFlat(true);
 
-	emit valueChanged(id);
+	emit bitsChanged(id);
 }
 
 void
@@ -231,7 +231,7 @@ HpsJamStrip :: handleSolo()
 	else
 		w_solo.setFlat(true);
 
-	emit valueChanged(id);
+	emit bitsChanged(id);
 }
 
 void
@@ -242,5 +242,5 @@ HpsJamStrip :: handleMute()
 	else
 		w_mute.setFlat(true);
 
-	emit valueChanged(id);
+	emit bitsChanged(id);
 }
