@@ -518,9 +518,6 @@ struct hpsjam_input_packetizer {
 	union hpsjam_frame current[HPSJAM_SEQ_MAX];
 	union hpsjam_frame mask[HPSJAM_SEQ_MAX];
 	uint8_t valid[HPSJAM_SEQ_MAX];
-	float histogram[HPSJAM_SEQ_MAX];
-	uint8_t seqno;
-	uint8_t jitter;	
 
 	void init() {
 		for (size_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
@@ -528,9 +525,6 @@ struct hpsjam_input_packetizer {
 			mask[x].clear();
 		}
 		memset(valid, 0, sizeof(valid));
-		memset(histogram, 0, sizeof(histogram));
-		seqno = 0;
-		jitter = 0;
 	};
 
 	const union hpsjam_frame *first_pkt() {
@@ -561,16 +555,17 @@ struct hpsjam_input_packetizer {
 		}
 
 		/*
-		 * Consume if there are tree consequtive valid
-		 * packets, or if jitter amount is exceeded:
+		 * Consume while there are tree consequtive valid
+		 * packets:
 		 */
-		if (((start & 7) == 7) || (start != 0 && pkts >= jitter)) {
+		if (start & (start / 2) & (start / 4)) {
 			assert(valid[min_x] != 0);
 			valid[min_x] = 0;
 			return (current + min_x);
 		}
 		return (0);
 	};
+
 	void recovery() {
 		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
 			if (~valid[x] & 2)
@@ -610,28 +605,6 @@ struct hpsjam_input_packetizer {
 		} else {
 			current[rx_seqno] = frame;
 			valid[rx_seqno] |= 1;
-		}
-
-		const uint8_t index = (HPSJAM_SEQ_MAX + rx_seqno - seqno) % HPSJAM_SEQ_MAX;
-
-		histogram[index] += 1.0f;
-
-		if (histogram[index] >= HPSJAM_SEQ_MAX) {
-			uint8_t x, xmax;
-
-			for (x = 0; x != HPSJAM_SEQ_MAX; x++)
-				histogram[x] /= 2.0f;
-
-			/* find width of peak */
-			for (x = xmax = 1; x != (HPSJAM_SEQ_MAX - 1) / 2; x++) {
-				if (histogram[(index + x) % HPSJAM_SEQ_MAX] >= 0.5f ||
-				    histogram[(HPSJAM_SEQ_MAX + index - x) % HPSJAM_SEQ_MAX] >= 0.5f) {
-					xmax = x + 1;
-				}
-			}
-
-			/* update jitter setting */
-			jitter = 2 * xmax;
 		}
 	};
 };
