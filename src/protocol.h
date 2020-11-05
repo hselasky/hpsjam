@@ -26,6 +26,8 @@
 #ifndef	_HPSJAM_PROTOCOL_H_
 #define	_HPSJAM_PROTOCOL_H_
 
+#include <QObject>
+
 #include "socket.h"
 
 #include <assert.h>
@@ -387,7 +389,8 @@ union hpsjam_frame {
 	};
 };
 
-class hpsjam_output_packetizer {
+class hpsjam_output_packetizer : public QObject {
+	Q_OBJECT;
 public:
 	union hpsjam_frame current;
 	union hpsjam_frame mask;
@@ -406,6 +409,10 @@ public:
 		TAILQ_INIT(&head);
 		pending = 0;
 		init();
+	};
+
+	bool empty() const {
+		return (TAILQ_FIRST(&head) == 0);
 	};
 
 	void init(uint8_t distance = 2) {
@@ -468,11 +475,15 @@ public:
 					append(*pending);
 				}
 			} else {
-				if (++pend_count == 50) {
-					pend_count = 0;
+				pend_count++;
+				if ((pend_count % 64) == 0) {
 					pending->packet.setPeerSeqNo(peer_seqno);
 					append(*pending);
 				}
+				if (pend_count == 1000)
+					emit pendingWatchdog();
+				else if (pend_count == 2000)
+					emit pendingTimeout();
 			}
 			current.hdr.setSequence(seqno, 0);
 			addr.sendto((const char *)&current, offset + sizeof(current.hdr));
@@ -486,6 +497,9 @@ public:
 			offset = 0;
 		}
 	};
+signals:
+	void pendingWatchdog();
+	void pendingTimeout();
 };
 
 struct hpsjam_input_packetizer {
