@@ -63,7 +63,7 @@ static const struct option hpsjam_opts[] = {
 static void
 usage(void)
 {
-        fprintf(stderr, "HpsJam [--server --peers 16] [--port " HPSJAM_DEFAULT_PORT_STR "] "
+        fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_PORT_STR "] "
 		"[--daemon] [--password <64_bit_hex_password>] \\\n"
 		"	[--jacknoconnect] [--jackname <name>]\n");
         exit(1);
