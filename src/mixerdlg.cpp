@@ -46,6 +46,7 @@ HpsJamSlider :: HpsJamSlider()
 	value = 0;
 	level = 0;
 	active = false;
+	setMinimumHeight(128);
 }
 
 void
@@ -70,7 +71,56 @@ HpsJamSlider :: setLevel(float _level)
 void
 HpsJamSlider :: paintEvent(QPaintEvent *event)
 {
+	QRect frame(0, 0, width(), height());
+
 	QPainter paint(this);
+
+	/* select foreground color */
+	const QColor fg(0, 0, 0);
+
+	/* select background color */
+	const QColor bg(255, 255, 255);
+
+	const QColor lc[3] = {
+		QColor(255, 0, 0),
+		QColor(255, 255, 0),
+		QColor(0, 255, 0),
+	};
+
+	paint.fillRect(frame, bg);
+
+	const unsigned dots = height() / dsize;
+	if (dots < 2)
+		return;
+
+	const unsigned dist[3] = {
+		0,
+		(dots + 7) / 8,
+		(dots + 7) / 8 + (dots + 4) / 5,
+	};
+
+	const unsigned ldots = dots * level;
+
+	unsigned y = 2;
+	for (unsigned x = ldots; x--; ) {
+		while (y != 0 && dist[y] >= x)
+			y--;
+		paint.setPen(QPen(QBrush(lc[y]), dsize,
+		    Qt::SolidLine, Qt::RoundCap));
+		paint.drawPoint(QPoint(width() / 2, x * dsize + dsize / 2));
+	}
+
+	target = QRect(2, (1.0f - value) * (height() - dsize),
+		       width() - 4, dsize);
+
+	paint.setPen(QPen(QBrush(fg), 2));
+	paint.drawRect(target);
+
+	QRect circle((target.width() - dsize) / 2,
+		     (1.0f - value) * (height() - dsize),
+		     dsize, dsize);
+	paint.setBrush(QBrush(fg));
+	paint.drawEllipse(circle);
 }
 
 void
@@ -85,19 +135,24 @@ HpsJamSlider :: mousePressEvent(QMouseEvent *event)
 void
 HpsJamSlider :: mouseMoveEvent(QMouseEvent *event)
 {
+	if (height() < (int)dsize)
+		return;
 	if (active == true) {
-		QPoint delta = event->pos() - start;
-		float offset = (float)delta.x() / (float)height();
+		const QPoint delta = event->pos() - start;
+		const float offset = (float)delta.y() / (float)(height() - dsize);
+
 		start = event->pos();
 
-		value += offset;
+		value -= offset;
 		if (value < 0.0f)
 			value = 0.0f;
 		else if (value > 1.0f)
 			value = 1.0f;
 
-		if (offset != 0.0f)
+		if (offset != 0.0f) {
 			emit valueChanged();
+			update();
+		}
 	}
 }
 
@@ -105,47 +160,33 @@ void
 HpsJamSlider :: mouseReleaseEvent(QMouseEvent *event)
 {
 	if (active) {
-		QPoint delta = event->pos() - start;
-		float offset = (float)delta.x() / (float)height();
-		value += offset;
-		if (value < 0.0f)
-			value = 0.0f;
-		else if (value > 1.0f)
-			value = 1.0f;
-
-		if (offset != 0.0f)
-			emit valueChanged();
-
+		mouseMoveEvent(event);
 		active = false;
 	}
 }
 
-HpsJamStrip :: HpsJamStrip(int _id)
+HpsJamStrip :: HpsJamStrip() : gl(this),
+    w_eq(tr("EQ")),
+    w_inv(tr("INV")),
+    w_mute(tr("MUTE")),
+    w_solo(tr("SOLO"))
 {
-	id = _id;
-	gl = new QGridLayout(this);
-	w_name = new QLabel();
-	w_icon = new HpsJamIcon();
-	w_slider = new HpsJamSlider();
-	w_eq = new QPushButton(tr("EQ"));
-	w_inv = new QPushButton(tr("INV"));
-	w_solo = new QPushButton(tr("SOLO"));
-	w_mute = new QPushButton(tr("MUTE"));
+	id = -1;
 
-	connect(w_slider, SIGNAL(valueChanged()), this, SLOT(handleSlider()));
-	connect(w_eq, SIGNAL(released()), this, SLOT(handleEQ()));
-	connect(w_inv, SIGNAL(released()), this, SLOT(handleInv()));
-	connect(w_solo, SIGNAL(released()), this, SLOT(handleSolo()));
-	connect(w_mute, SIGNAL(released()), this, SLOT(handleMute()));
+	connect(&w_slider, SIGNAL(valueChanged()), this, SLOT(handleSlider()));
+	connect(&w_eq, SIGNAL(released()), this, SLOT(handleEQ()));
+	connect(&w_inv, SIGNAL(released()), this, SLOT(handleInv()));
+	connect(&w_solo, SIGNAL(released()), this, SLOT(handleSolo()));
+	connect(&w_mute, SIGNAL(released()), this, SLOT(handleMute()));
 
-	gl->addWidget(w_icon, 0,0);
-	gl->addWidget(w_name, 1,0);
-	gl->addWidget(w_eq, 2,0);
-	gl->addWidget(w_inv, 3,0);
-	gl->addWidget(w_slider, 4,0);
-	gl->setRowStretch(4,1);
-	gl->addWidget(w_solo, 5,0);
-	gl->addWidget(w_mute, 6,0);
+	gl.addWidget(&w_icon, 0,0);
+	gl.addWidget(&w_name, 1,0);
+	gl.addWidget(&w_eq, 2,0);
+	gl.addWidget(&w_inv, 3,0);
+	gl.addWidget(&w_slider, 4,0);
+	gl.setRowStretch(4,1);
+	gl.addWidget(&w_solo, 5,0);
+	gl.addWidget(&w_mute, 6,0);
 }
 
 void
@@ -163,10 +204,10 @@ HpsJamStrip :: handleSlider()
 void
 HpsJamStrip :: handleInv()
 {
-	if (w_inv->isFlat())
-		w_inv->setFlat(false);
+	if (w_inv.isFlat())
+		w_inv.setFlat(false);
 	else
-		w_inv->setFlat(true);
+		w_inv.setFlat(true);
 
 	emit valueChanged(id);
 }
@@ -174,10 +215,10 @@ HpsJamStrip :: handleInv()
 void
 HpsJamStrip :: handleSolo()
 {
-	if (w_solo->isFlat())
-		w_solo->setFlat(false);
+	if (w_solo.isFlat())
+		w_solo.setFlat(false);
 	else
-		w_solo->setFlat(true);
+		w_solo.setFlat(true);
 
 	emit valueChanged(id);
 }
@@ -185,10 +226,10 @@ HpsJamStrip :: handleSolo()
 void
 HpsJamStrip :: handleMute()
 {
-	if (w_mute->isFlat())
-		w_mute->setFlat(false);
+	if (w_mute.isFlat())
+		w_mute.setFlat(false);
 	else
-		w_mute->setFlat(true);
+		w_mute.setFlat(true);
 
 	emit valueChanged(id);
 }

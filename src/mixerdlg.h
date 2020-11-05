@@ -34,6 +34,10 @@
 #include <QPoint>
 #include <QSvgRenderer>
 #include <QLabel>
+#include <QScrollArea>
+#include <QGroupBox>
+
+#include "hpsjam.h"
 
 class HpsJamIcon : public QWidget {
 public:
@@ -47,6 +51,8 @@ public:
 class HpsJamSlider : public QWidget {
 	Q_OBJECT;
 public:
+	static constexpr unsigned dsize = 16;	/* dot size in pixels */
+
 	HpsJamSlider();
 
 	bool active;
@@ -66,21 +72,21 @@ signals:
 	void valueChanged();
 };
 
-class HpsJamStrip : public QWidget {
+class HpsJamStrip : public QGroupBox {
 	Q_OBJECT;
 public:
-	HpsJamStrip(int);
+	HpsJamStrip();
 
 	int id;
 
-	QGridLayout *gl;
-	QLabel *w_name;
-	HpsJamIcon *w_icon;
-	HpsJamSlider *w_slider;
-	QPushButton *w_eq;
-	QPushButton *w_inv;
-	QPushButton *w_mute;
-	QPushButton *w_solo;
+	QGridLayout gl;
+	QLabel w_name;
+	HpsJamIcon w_icon;
+	HpsJamSlider w_slider;
+	QPushButton w_eq;
+	QPushButton w_inv;
+	QPushButton w_mute;
+	QPushButton w_solo;
 
 public slots:
 	void handleSlider();
@@ -93,8 +99,21 @@ signals:
 	void valueChanged(int);
 };
 
-class HpsJamMixer : public QWidget {
-
+class HpsJamMixer : public QScrollArea {
+public:
+	HpsJamMixer() : gl(&w_main) {
+		self_strip.setTitle(QString("Local"));
+		gl.addWidget(&self_strip, 0, 0);
+		for (unsigned x = 0; x != HPSJAM_PEERS_MAX; x++) {
+			peer_strip[x].setTitle(QString("Mix%1").arg(1 + x));
+			gl.addWidget(peer_strip + x, (1 + x) / 8, (1 + x) % 8);
+		}
+		setWidget(&w_main);
+	};
+	QWidget w_main;
+	QGridLayout gl;
+	HpsJamStrip self_strip;
+	HpsJamStrip peer_strip[HPSJAM_PEERS_MAX];
 };
 
 #endif		/* _HPSJAM_MIXERDLG_H_ */
