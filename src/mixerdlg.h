@@ -114,9 +114,11 @@ class HpsJamMixer : public QScrollArea {
 public:
 	HpsJamMixer() : gl(&w_main) {
 		self_strip.setTitle(QString("Local"));
+		self_strip.id = 0;
 		gl.addWidget(&self_strip, 0, 0);
 		for (unsigned x = 0; x != HPSJAM_PEERS_MAX; x++) {
 			peer_strip[x].setTitle(QString("Mix%1").arg(1 + x));
+			peer_strip[x].id = 1 + x;
 			gl.addWidget(peer_strip + x, (1 + x) / 8, (1 + x) % 8);
 		}
 		setWidget(&w_main);
