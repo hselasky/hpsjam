@@ -24,6 +24,7 @@
  */
 
 #include <QMutexLocker>
+#include <QMessageBox>
 
 #include "hpsjam.h"
 
@@ -32,8 +33,6 @@
 #include "connectdlg.h"
 
 #include "timer.h"
-
-#include <QMessageBox>
 
 void
 HpsJamConnectList :: selectionChanged(const QItemSelection &cur, const QItemSelection &prev)
@@ -145,7 +144,13 @@ HpsJamConnect :: handle_disconnect()
 	buttons.b_connect.setEnabled(true);
 	buttons.b_disconnect.setEnabled(false);
 
-	QMutexLocker locker(&hpsjam_locks[0]);
+	if (1) {
+		QMutexLocker locker(&hpsjam_locks[0]);
+		hpsjam_client_peer->init();
+	}
 
-	hpsjam_client_peer->init();
+	if (!isVisible()) {
+		QMessageBox::information(this, tr("DISCONNECTED"),
+		    tr("You were disconnected from the server!"));
+	}
 }
