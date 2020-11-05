@@ -60,7 +60,7 @@ audio_decode(int input, int max)
 size_t
 hpsjam_packet::get8Bit2ChSample(float *left, float *right) const
 {
-	size_t samples = length * 2;
+	const size_t samples = (length - 1) * 2;
 
 	for (size_t x = 0; x != samples; x++) {
 		left[x] = audio_decode(getS8(x * 2), 127);
@@ -72,7 +72,7 @@ hpsjam_packet::get8Bit2ChSample(float *left, float *right) const
 size_t
 hpsjam_packet::get16Bit2ChSample(float *left, float *right) const
 {
-	size_t samples = length;
+	const size_t samples = (length - 1);
 
 	for (size_t x = 0; x != samples; x++) {
 		left[x] = audio_decode(getS16(x * 4), 0x7fff);
@@ -84,7 +84,7 @@ hpsjam_packet::get16Bit2ChSample(float *left, float *right) const
 size_t
 hpsjam_packet::get24Bit2ChSample(float *left, float *right) const
 {
-	size_t samples = (length * 4) / 6;
+	const size_t samples = ((length - 1) * 4) / 6;
 
 	for (size_t x = 0; x != samples; x++) {
 		left[x] = audio_decode(getS24(x * 6), 0x7fffff);
@@ -96,7 +96,7 @@ hpsjam_packet::get24Bit2ChSample(float *left, float *right) const
 size_t
 hpsjam_packet::get32Bit2ChSample(float *left, float *right) const
 {
-	size_t samples = length / 2;
+	const size_t samples = (length - 1) / 2;
 
 	for (size_t x = 0; x != samples; x++) {
 		left[x] = audio_decode(getS32(x * 8), 0x7fffffff);
@@ -108,7 +108,7 @@ hpsjam_packet::get32Bit2ChSample(float *left, float *right) const
 size_t
 hpsjam_packet::get8Bit1ChSample(float *left) const
 {
-	size_t samples = length * 4;
+	const size_t samples = (length - 1) * 4;
 
 	for (size_t x = 0; x != samples; x++) {
 		left[x] = audio_decode(getS8(x), 127);
@@ -119,7 +119,7 @@ hpsjam_packet::get8Bit1ChSample(float *left) const
 size_t
 hpsjam_packet::get16Bit1ChSample(float *left) const
 {
-	size_t samples = length * 2;
+	const size_t samples = (length - 1) * 2;
 
 	for (size_t x = 0; x != samples; x++) {
 		left[x] = audio_decode(getS16(2 * x), 0x7fff);
@@ -130,7 +130,7 @@ hpsjam_packet::get16Bit1ChSample(float *left) const
 size_t
 hpsjam_packet::get24Bit1ChSample(float *left) const
 {
-	size_t samples = (length * 4) / 3;
+	const size_t samples = ((length - 1) * 4) / 3;
 
 	for (size_t x = 0; x != samples; x++) {
 		left[x] = audio_decode(getS24(3 * x), 0x7fffff);
@@ -141,7 +141,7 @@ hpsjam_packet::get24Bit1ChSample(float *left) const
 size_t
 hpsjam_packet::get32Bit1ChSample(float *left) const
 {
-	size_t samples = length;
+	const size_t samples = length - 1;
 
 	for (size_t x = 0; x != samples; x++) {
 		left[x] = audio_decode(getS32(4 * x), 0x7fffffff);
@@ -175,7 +175,7 @@ hpsjam_packet::put16Bit2ChSample(float *left, float *right, size_t samples)
 
 	for (size_t x = 0; x != samples; x++) {
 		putS16(x * 4, audio_encode(left[x], 0x7fff));
-		putS16(x * 4 + 1, audio_encode(right[x], 0x7fff));
+		putS16(x * 4 + 2, audio_encode(right[x], 0x7fff));
 	}
 }
 
