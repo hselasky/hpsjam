@@ -62,8 +62,10 @@ public:
 
 		/* fill missing samples with last value */
 		if (total < num) {
-			for (size_t x = total; x != num; x++)
+			for (size_t x = total; x != num; x++) {
 				dst[x] = last_sample;
+				last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
+			}
 			num = total;
 		}
 
