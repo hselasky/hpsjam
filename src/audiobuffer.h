@@ -104,11 +104,12 @@ public:
 	};
 
 	uint8_t getLowWater() const {
-		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++) {
+		uint8_t x;
+		for (x = 0; x != HPSJAM_SEQ_MAX * 2; x++) {
 			if (stats[x] >= 0.5f)
-				return (x);
+				break;
 		}
-		return (HPSJAM_SEQ_MAX * 2);
+		return (x);
 	};
 
 	/* remove samples from buffer, must be called periodically */
