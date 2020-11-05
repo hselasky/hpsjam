@@ -48,6 +48,14 @@ public:
 		clear();
 	};
 
+	uint8_t getLowWater() const {
+		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++) {
+			if (stats[x] >= 0.5f)
+				return (x);
+		}
+		return (HPSJAM_SEQ_MAX * 2);
+	};
+
 	/* remove samples from buffer, must be called periodically */
 	void remSamples(float *dst, size_t num) {
 		size_t fwd = HPSJAM_MAX_SAMPLES - consumer;
@@ -67,6 +75,17 @@ public:
 		if (stats[index] >= HPSJAM_SEQ_MAX * 2) {
 			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++)
 				stats[x] /= 2.0f;
+
+			const uint8_t low = getLowWater();
+
+			/*
+			 * Grow or shrink the buffer depending on the
+			 * amount of supplied data:
+			 */
+			if (total < HPSJAM_MAX_SAMPLES && low < 1)
+				grow();
+			else if (total > num && low > 2)
+				shrink();
 		}
 
 		/* copy samples from ring-buffer */
