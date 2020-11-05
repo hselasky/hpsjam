@@ -61,6 +61,7 @@ public:
 	bool valid;
 
 	void init() {
+		address.clear();
 		input_pkt.init();
 		output_pkt.init();
 		in_audio[0].clear();
