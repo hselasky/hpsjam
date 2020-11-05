@@ -25,6 +25,8 @@
 
 #include <QObject>
 
+#include <stdlib.h>
+
 #include "../src/peer.h"
 
 #include <jack/jack.h>
@@ -84,6 +86,7 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 
 	if (jack_get_sample_rate(jack_client) != HPSJAM_SAMPLE_RATE) {
 		jack_client_close(jack_client);
+		jack_client = 0;
 		return (true);
 	}
 
@@ -102,11 +105,13 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	if ((input_port_left == 0) || (input_port_right == 0) ||
 	    (output_port_left == 0) || (output_port_right == 0)) {
 		jack_client_close(jack_client);
+		jack_client = 0;
 		return (true);
 	}
 
 	if (jack_activate(jack_client)) {
 		jack_client_close(jack_client);
+		jack_client = 0;
 		return (true);
 	}
 
@@ -139,16 +144,25 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 			jack_free(ports);
 		}
 	}
+	atexit(&hpsjam_sound_uninit);
 	return (false);			/* success */
 }
 
 Q_DECL_EXPORT void
 hpsjam_sound_uninit()
 {
+	if (jack_client == 0)
+		return;
+
+	jack_port_disconnect(jack_client, input_port_left);
+	jack_port_disconnect(jack_client, input_port_right);
+	jack_port_disconnect(jack_client, output_port_left);
+	jack_port_disconnect(jack_client, output_port_right);
 	jack_deactivate(jack_client);
 	jack_port_unregister(jack_client, input_port_left);
 	jack_port_unregister(jack_client, input_port_right);
 	jack_port_unregister(jack_client, output_port_left);
 	jack_port_unregister(jack_client, output_port_right);
 	jack_client_close(jack_client);
+	jack_client = 0;
 }
