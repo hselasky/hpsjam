@@ -26,11 +26,39 @@
 #ifndef	_HPSJAM_AUDIOBUFFER_H_
 #define	_HPSJAM_AUDIOBUFFER_H_
 
+#include <math.h>
+
 #include "hpsjam.h"
 #include "protocol.h"
 
 #define	HPSJAM_MAX_SAMPLES \
 	(HPSJAM_SEQ_MAX * 2 * (HPSJAM_SAMPLE_RATE / 1000))	/* samples */
+
+static inline float
+level_encode(float value)
+{
+	float divisor = logf(1.0f + 255.0f);
+
+	if (value == 0.0f)
+		return (0);
+	else if (value < 0.0f)
+		return - (logf(1.0f - 255.0f * value) / divisor);
+	else
+		return (logf(1.0f + 255.0f * value) / divisor);
+}
+
+static inline float
+level_decode(float value)
+{
+	constexpr float multiplier = (1.0f / 255.0f);
+
+	if (value == 0.0f)
+		return (0);
+	else if (value < 0.0f)
+		return - multiplier * (powf(1.0f + 255.0f, -value) - 1.0f);
+	else
+		return multiplier * (powf(1.0f + 255.0f, value) - 1.0f);
+}
 
 class hpsjam_audio_buffer {
 public:
