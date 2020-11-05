@@ -35,6 +35,9 @@
 #define	HPSJAM_PEERS_MAX 256
 #define	HPSJAM_DEFAULT_PORT 22124
 #define	HPSJAM_DEFAULT_PORT_STR "22124"
+#define	HPSJAM_BIT_MUTE (1 << 0)
+#define	HPSJAM_BIT_SOLO (1 << 1)
+#define	HPSJAM_BIT_INVERT (1 << 2)
 
 class hpsjam_server_peer;
 class hpsjam_client_peer;

@@ -88,6 +88,17 @@ public:
 	QPushButton w_mute;
 	QPushButton w_solo;
 
+	uint8_t getBits() {
+		uint8_t ret = 0;
+		if (w_inv.isFlat())
+			ret |= HPSJAM_BIT_INVERT;
+		if (w_mute.isFlat())
+			ret |= HPSJAM_BIT_MUTE;
+		if (w_solo.isFlat())
+			ret |= HPSJAM_BIT_SOLO;
+		return (ret);
+	};
+
 public slots:
 	void handleSlider();
 	void handleSolo();
