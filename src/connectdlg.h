@@ -52,6 +52,7 @@ class HpsJamConnectName : public QGroupBox {
 public:
 	HpsJamConnectName() : gl(this) {
 		setTitle(tr("Select nickname"));
+		edit.setText(QString("anonymous"));
 		gl.addWidget(&edit, 0,0);
 	};
 	QGridLayout gl;

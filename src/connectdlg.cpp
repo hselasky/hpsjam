@@ -82,6 +82,7 @@ HpsJamConnect :: handle_refresh()
 void
 HpsJamConnect :: handle_connect()
 {
+	QString nick = name.edit.text().trimmed();
 	QString text = server.edit.text().trimmed();
 	QString passwd = password.edit.text().trimmed();
 	struct hpsjam_socket_address address;
@@ -104,6 +105,12 @@ HpsJamConnect :: handle_connect()
 	default:
 		QMessageBox::information(this, tr("CONNECT"),
 		    tr("Invalid server name: %1").arg(text));
+		return;
+	}
+
+	if (nick.isEmpty()) {
+		QMessageBox::information(this, tr("CONNECT"),
+		    tr("Invalid nick name: %1").arg(nick));
 		return;
 	}
 
