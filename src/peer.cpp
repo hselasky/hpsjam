@@ -31,6 +31,8 @@
 
 #include "compressor.h"
 
+#include "timer.h"
+
 Q_DECL_EXPORT void
 hpsjam_peer_receive(const struct hpsjam_socket_address &src,
     const union hpsjam_frame &frame)
@@ -163,6 +165,26 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 		hpsjam_stereo_compressor(HPSJAM_SAMPLE_RATE,
 		    out_peak, left[x], right[x]);
 	}
+}
+
+void
+hpsjam_server_peer :: handle_pending_watchdog()
+{
+	QMutexLocker locker(&hpsjam_locks[this - hpsjam_server_peers]);
+
+	if (address.valid() && output_pkt.empty()) {
+		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
+		pkt->packet.setPing(0, hpsjam_ticks, 0);
+		pkt->insert_tail(&output_pkt.head);
+	}
+}
+
+void
+hpsjam_server_peer :: handle_pending_timeout()
+{
+	QMutexLocker locker(&hpsjam_locks[this - hpsjam_server_peers]);
+
+	init();
 }
 
 void
@@ -414,6 +436,18 @@ hpsjam_server_tick()
 		if (hpsjam_server_peers[x].valid == false)
 			continue;
 		hpsjam_server_peers[x].audio_import();
+	}
+}
+
+void
+hpsjam_client_peer :: handle_pending_watchdog()
+{
+	QMutexLocker locker(&hpsjam_locks[0]);
+
+	if (address.valid() && output_pkt.empty()) {
+		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
+		pkt->packet.setPing(0, hpsjam_ticks, 0);
+		pkt->insert_tail(&output_pkt.head);
 	}
 }
 

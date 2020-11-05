@@ -36,7 +36,8 @@
 
 #include <stdbool.h>
 
-class hpsjam_server_peer {
+class hpsjam_server_peer : QObject {
+	Q_OBJECT;
 public:
 	struct hpsjam_socket_address address;
 	struct hpsjam_input_packetizer input_pkt;
@@ -77,10 +78,16 @@ public:
 
 	hpsjam_server_peer() {
 		init();
+		connect(&output_pkt, SIGNAL(pendingWatchdog()), this, SLOT(handle_pending_watchdog()));
+		connect(&output_pkt, SIGNAL(pendingTimeout()), this, SLOT(handle_pending_timeout()));
 	};
+public slots:
+	void handle_pending_watchdog();
+	void handle_pending_timeout();
 };
 
-class hpsjam_client_peer {
+class hpsjam_client_peer : QObject {
+	Q_OBJECT;
 public:
 	struct hpsjam_socket_address address;
 	struct hpsjam_input_packetizer input_pkt;
@@ -115,9 +122,13 @@ public:
 	};
 	hpsjam_client_peer() {
 		init();
+
+		connect(&output_pkt, SIGNAL(pendingWatchdog()), this, SLOT(handle_pending_watchdog()));
 	};
 	void sound_process(float *, float *, size_t);
 	void tick();
+public slots:
+	void handle_pending_watchdog();
 };
 
 extern void hpsjam_peer_receive(const struct hpsjam_socket_address &,

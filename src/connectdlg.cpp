@@ -23,11 +23,15 @@
  * SUCH DAMAGE.
  */
 
+#include <QMutexLocker>
+
 #include "hpsjam.h"
 
 #include "peer.h"
 
 #include "connectdlg.h"
+
+#include "timer.h"
 
 #include <QMessageBox>
 
@@ -54,6 +58,8 @@ HpsJamConnect :: HpsJamConnect() : gl(this)
 	connect(&buttons.b_connect, SIGNAL(released()), this, SLOT(handle_connect()));
 	connect(&buttons.b_disconnect, SIGNAL(released()), this, SLOT(handle_disconnect()));
 
+	connect(&hpsjam_client_peer->output_pkt, SIGNAL(pendingTimeout()), this, SLOT(handle_disconnect()));
+
 	buttons.b_disconnect.setEnabled(false);
 }
 
@@ -79,6 +85,9 @@ void
 HpsJamConnect :: handle_connect()
 {
 	QString text = server.edit.text().trimmed();
+	QString passwd = password.edit.text().trimmed();
+	struct hpsjam_socket_address address;
+	unsigned long long key = 0;
 	QByteArray host;
 	QByteArray port;
 
@@ -99,8 +108,17 @@ HpsJamConnect :: handle_connect()
 		return;
 	}
 
-	if (hpsjam_v4.resolve(host.constData(), port.constData(), hpsjam_client_peer->address) == false) {
-		if (hpsjam_v6.resolve(host.constData(), port.constData(), hpsjam_client_peer->address) == false) {
+	if (!passwd.isEmpty()) {
+		QByteArray temp = passwd.toLatin1();
+		if (::sscanf(temp.constData(), "%llx", &key) != 1) {
+			QMessageBox::information(this, tr("CONNECT"),
+			    tr("Invalid password name: %1").arg(passwd));
+			return;
+		}
+	}
+
+	if (hpsjam_v4.resolve(host.constData(), port.constData(), address) == false) {
+		if (hpsjam_v6.resolve(host.constData(), port.constData(), address) == false) {
 			QMessageBox::information(this, tr("CONNECT"),
 			    tr("Could not resolve server at: %1").arg(text));
 			return;
@@ -109,6 +127,16 @@ HpsJamConnect :: handle_connect()
 
 	buttons.b_connect.setEnabled(false);
 	buttons.b_disconnect.setEnabled(true);
+
+	QMutexLocker locker(&hpsjam_locks[0]);
+
+	/* set destination address */
+	hpsjam_client_peer->address = address;
+
+	/* send initial ping */
+	struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
+	pkt->packet.setPing(0, hpsjam_ticks, key);
+	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
 }
 
 void
@@ -117,5 +145,7 @@ HpsJamConnect :: handle_disconnect()
 	buttons.b_connect.setEnabled(true);
 	buttons.b_disconnect.setEnabled(false);
 
-	hpsjam_client_peer->address.clear();
+	QMutexLocker locker(&hpsjam_locks[0]);
+
+	hpsjam_client_peer->init();
 }
