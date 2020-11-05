@@ -96,9 +96,9 @@ class HpsJamConnectButtons : public QWidget {
 public:
 	HpsJamConnectButtons() :
             gl(this),
-	    b_refresh(tr("Refresh")),
-	    b_connect(tr("Connect")),
-	    b_disconnect(tr("Disconnect")) {
+	    b_refresh(tr("&Refresh")),
+	    b_connect(tr("&Connect")),
+	    b_disconnect(tr("&Disconnect")) {
 		gl.addWidget(&b_refresh, 0,0);
 		gl.setColumnStretch(1,1);
 		gl.addWidget(&b_connect, 0,2);
