@@ -179,7 +179,7 @@ struct hpsjam_packet {
 	};
 
 	void setPeerSeqNo(uint8_t seqno) {
-		sequence[0] = seqno;
+		sequence[1] = seqno;
 	};
 
 	bool getFaderGain(uint8_t &mix, uint8_t &index, float &gain) const {
