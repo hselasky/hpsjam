@@ -270,8 +270,6 @@ hpsjam_server_peer :: audio_export()
 				/* advance expected sequence number */
 				output_pkt.peer_seqno++;
 
-				bool need_reply = true;
-
 				switch (ptr->type) {
 				uint16_t packets;
 				uint16_t time_ms;
@@ -283,7 +281,8 @@ hpsjam_server_peer :: audio_export()
 					output_fmt = HPSJAM_TYPE_END;
 					break;
 				case HPSJAM_TYPE_PING_REQUEST:
-					if (ptr->getPing(packets, time_ms, passwd)) {
+					if (ptr->getPing(packets, time_ms, passwd) &&
+					    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
 						pres = new struct hpsjam_packet_entry;
 						pres->packet.setPing(0, time_ms, 0);
 						pres->packet.type = HPSJAM_TYPE_PING_REPLY;
@@ -291,7 +290,6 @@ hpsjam_server_peer :: audio_export()
 					}
 					break;
 				case HPSJAM_TYPE_PING_REPLY:
-					need_reply = false;
 					break;
 				case HPSJAM_TYPE_FADER_GAIN_REQUEST:
 				case HPSJAM_TYPE_FADER_GAIN_REPLY:
@@ -309,7 +307,7 @@ hpsjam_server_peer :: audio_export()
 					break;
 				}
 
-				if (need_reply && output_pkt.empty()) {
+				if (output_pkt.empty()) {
 					pres = new struct hpsjam_packet_entry;
 					pres->packet.setPing(0, hpsjam_ticks, 0);
 					pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
@@ -564,8 +562,6 @@ hpsjam_client_peer :: tick()
 				/* advance expected sequence number */
 				output_pkt.peer_seqno++;
 
-				bool need_reply = true;
-
 				switch (ptr->type) {
 				uint16_t packets;
 				uint16_t time_ms;
@@ -574,7 +570,8 @@ hpsjam_client_peer :: tick()
 				case HPSJAM_TYPE_CONFIGURE_REQUEST:
 					break;
 				case HPSJAM_TYPE_PING_REQUEST:
-					if (ptr->getPing(packets, time_ms, passwd)) {
+					if (ptr->getPing(packets, time_ms, passwd) &&
+					    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
 						pres = new struct hpsjam_packet_entry;
 						pres->packet.setPing(0, time_ms, 0);
 						pres->packet.type = HPSJAM_TYPE_PING_REPLY;
@@ -582,7 +579,6 @@ hpsjam_client_peer :: tick()
 					}
 					break;
 				case HPSJAM_TYPE_PING_REPLY:
-					need_reply = false;
 					break;
 				case HPSJAM_TYPE_FADER_GAIN_REQUEST:
 				case HPSJAM_TYPE_FADER_GAIN_REPLY:
@@ -600,7 +596,7 @@ hpsjam_client_peer :: tick()
 					break;
 				}
 
-				if (need_reply && output_pkt.empty()) {
+				if (output_pkt.empty()) {
 					pres = new struct hpsjam_packet_entry;
 					pres->packet.setPing(0, hpsjam_ticks, 0);
 					pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
