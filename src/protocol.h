@@ -415,6 +415,15 @@ public:
 		return (TAILQ_FIRST(&head) == 0);
 	};
 
+	struct hpsjam_packet_entry *find(uint8_t type) const {
+		struct hpsjam_packet_entry *pkt;
+		TAILQ_FOREACH(pkt, &head, entry) {
+			if (pkt->packet.type == type)
+				return (pkt);
+		}
+		return (0);
+	};
+
 	void init(uint8_t distance = 2) {
 		struct hpsjam_packet_entry *pkt;
 		d_cur = 0;
