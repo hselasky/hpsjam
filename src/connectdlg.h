@@ -74,9 +74,11 @@ class HpsJamConnectLocation : public QGroupBox {
 public:
 	HpsJamConnectLocation() : gl(this) {
 		setTitle(tr("Select location"));
-		gl.addWidget(&list, 0,0);
+		gl.addWidget(&edit, 0,0);
+		gl.addWidget(&list, 1,0);
 	};
 	QGridLayout gl;
+	QLineEdit edit;
 	HpsJamConnectList list;
 };
 
@@ -130,6 +132,7 @@ public:
 		buttons.b_disconnect.setEnabled(!state);
 		name.edit.setEnabled(state);
 		password.edit.setEnabled(state);
+		location.edit.setEnabled(state);
 		location.list.setEnabled(state);
 		server.edit.setEnabled(state);
 		server.list.setEnabled(state);
