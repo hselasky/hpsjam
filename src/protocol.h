@@ -473,6 +473,8 @@ public:
 					pend_count = 0;
 					pend_seqno++;
 					append(*pending);
+				} else {
+					pend_count++;
 				}
 			} else {
 				pend_count++;
@@ -480,11 +482,12 @@ public:
 					pending->packet.setPeerSeqNo(peer_seqno);
 					append(*pending);
 				}
-				if (pend_count == 1000)
-					emit pendingWatchdog();
-				else if (pend_count == 2000)
-					emit pendingTimeout();
 			}
+			if (pend_count == 1000)
+				emit pendingWatchdog();
+			else if (pend_count == 2000)
+				emit pendingTimeout();
+
 			current.hdr.setSequence(seqno, 0);
 			addr.sendto((const char *)&current, offset + sizeof(current.hdr));
 			mask.do_xor(current);
