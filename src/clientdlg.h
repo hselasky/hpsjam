@@ -30,6 +30,7 @@
 #include <QStackedWidget>
 #include <QGridLayout>
 #include <QPushButton>
+#include <QTimer>
 
 class HpsJamConnect;
 class HpsJamMixer;
@@ -50,6 +51,7 @@ public:
 	QPushButton b_chat;
 	QPushButton b_config;
 	QPushButton b_stats;
+	QTimer watchdog;
 
 	HpsJamConnect *w_connect;
 	HpsJamMixer *w_mixer;
@@ -65,6 +67,7 @@ public slots:
 	void handle_chat();
 	void handle_config();
 	void handle_stats();
+	void handle_watchdog();
 };
 
 #endif		/* _HPSJAM_CLIENTDLG_H_ */

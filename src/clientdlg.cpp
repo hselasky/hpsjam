@@ -32,6 +32,7 @@
 #include "chatdlg.h"
 #include "connectdlg.h"
 #include "statsdlg.h"
+#include "peer.h"
 
 HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
     b_mixer(tr("&MIXER")), b_lyrics(tr("&LYRICS")), b_chat(tr("CH&AT")),
@@ -70,6 +71,9 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 	w_stack.addWidget(w_chat);
 	w_stack.addWidget(w_config);
 	w_stack.addWidget(w_stats);
+
+	connect(&watchdog, SIGNAL(timeout()), this, SLOT(handle_watchdog()));
+	watchdog.start(250);
 }
 
 void
@@ -106,4 +110,21 @@ void
 HpsJamClient :: handle_stats()
 {
 	w_stack.setCurrentWidget(w_stats);
+}
+
+void
+HpsJamClient :: handle_watchdog()
+{
+	float temp[2];
+
+	if (1) {
+		QMutexLocker locker(&hpsjam_client_peer->lock);
+		temp[0] = hpsjam_client_peer->in_audio[0].getMaxLevel();
+		temp[1] = hpsjam_client_peer->in_audio[1].getMaxLevel();
+
+		hpsjam_client_peer->bits = w_mixer->self_strip.getBits();
+		hpsjam_client_peer->mon_gain = level_decode(w_mixer->self_strip.w_slider.value);
+	}
+
+	w_mixer->self_strip.w_slider.setLevel(level_encode(temp[0]), level_encode(temp[1]));
 }
