@@ -51,20 +51,22 @@ public:
 	/* remove samples from buffer, must be called periodically */
 	void remSamples(float *dst, size_t num) {
 		size_t fwd = HPSJAM_MAX_SAMPLES - consumer;
-		uint8_t index = total / (HPSJAM_SAMPLE_RATE / 1000);
-
-		stats[index] += 1.0f;
-
-		if (stats[index] >= HPSJAM_SEQ_MAX * 2) {
-			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++)
-				stats[x] /= 2.0f;
-		}
 
 		/* fill missing samples with last value */
 		if (total < num) {
 			for (size_t x = total; x != num; x++)
 				dst[x] = last_sample;
 			num = total;
+		}
+
+		/* keep track of low water mark */
+		const uint8_t index = (total - num) / (HPSJAM_SAMPLE_RATE / 1000);
+
+		stats[index] += 1.0f;
+
+		if (stats[index] >= HPSJAM_SEQ_MAX * 2) {
+			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++)
+				stats[x] /= 2.0f;
 		}
 
 		/* copy samples from ring-buffer */
