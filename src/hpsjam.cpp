@@ -29,6 +29,7 @@
 #include "timer.h"
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QMessageBox>
 
 #include <stdio.h>
@@ -74,11 +75,6 @@ main(int argc, char **argv)
 	bool jackconnect = true;
 	const char *jackname = "hpsjam";
 
-	QApplication app(argc, argv);
-
-	/* set consistent double click interval */
-	app.setDoubleClickInterval(250);
-
 	while ((c = getopt_long_only(argc, argv, "p:sP:hBJ:n:K:", hpsjam_opts, NULL)) != -1) {
 		switch (c) {
 		case 's':
@@ -123,6 +119,11 @@ main(int argc, char **argv)
 		errx(1, "Cannot daemonize");
 
 	if (hpsjam_num_server_peers == 0) {
+		QApplication app(argc, argv);
+
+		/* set consistent double click interval */
+		app.setDoubleClickInterval(250);
+
 		hpsjam_client_peer = new class hpsjam_client_peer;
 		hpsjam_client = new HpsJamClient();
 
@@ -135,15 +136,25 @@ main(int argc, char **argv)
 		}
 #endif
 		hpsjam_client->show();
+
+		/* create sockets, if any */
+		hpsjam_socket_init(port);
+
+		/* create timer, if any */
+		hpsjam_timer_init();
+
+		return (app.exec());
 	} else {
+		QCoreApplication app(argc, argv);
+
 		hpsjam_server_peers = new class hpsjam_server_peer [hpsjam_num_server_peers];
+
+		/* create sockets, if any */
+		hpsjam_socket_init(port);
+
+		/* create timer, if any */
+		hpsjam_timer_init();
+
+		return (app.exec());
 	}
-
-	/* create sockets, if any */
-	hpsjam_socket_init(port);
-
-	/* create timer, if any */
-	hpsjam_timer_init();
-
-	return (app.exec());
 }
