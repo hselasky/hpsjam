@@ -39,13 +39,20 @@ static jack_client_t *jack_client;
 static int
 hpsjam_sound_process_cb(jack_nframes_t nframes, void *arg)
 {
-	float *in_left = (jack_default_audio_sample_t *)
+	const float *in_left = (jack_default_audio_sample_t *)
 	    jack_port_get_buffer(input_port_left, nframes);
-
-	float *in_right = (jack_default_audio_sample_t *)
+	const float *in_right = (jack_default_audio_sample_t *)
 	    jack_port_get_buffer(input_port_right, nframes);
 
-	hpsjam_client_peer->sound_process(in_left, in_right, nframes);
+	float *out_left = (jack_default_audio_sample_t *)
+	    jack_port_get_buffer(output_port_left, nframes);
+	float *out_right = (jack_default_audio_sample_t *)
+	    jack_port_get_buffer(output_port_right, nframes);
+
+	memcpy(out_left, in_left, sizeof(out_left[0]) * nframes);
+	memcpy(out_right, in_right, sizeof(out_right[0]) * nframes);
+
+	hpsjam_client_peer->sound_process(out_left, out_right, nframes);
 
 	return (0);
 }
