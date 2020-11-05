@@ -175,6 +175,7 @@ hpsjam_server_peer :: handle_pending_watchdog()
 	if (address.valid() && output_pkt.empty()) {
 		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
 		pkt->packet.setPing(0, hpsjam_ticks, 0);
+		pkt->packet.type = HPSJAM_TYPE_PING_REQUEST;
 		pkt->insert_tail(&output_pkt.head);
 	}
 }
@@ -447,6 +448,7 @@ hpsjam_client_peer :: handle_pending_watchdog()
 	if (address.valid() && output_pkt.empty()) {
 		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
 		pkt->packet.setPing(0, hpsjam_ticks, 0);
+		pkt->packet.type = HPSJAM_TYPE_PING_REQUEST;
 		pkt->insert_tail(&output_pkt.head);
 	}
 }
