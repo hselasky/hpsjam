@@ -43,6 +43,8 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 		if (hpsjam_client_peer->address == src)
 			hpsjam_client_peer->input_pkt.receive(frame);
 	} else {
+		const struct hpsjam_packet *ptr;
+
 		for (unsigned x = hpsjam_num_server_peers; x--; ) {
 			QMutexLocker locker(&hpsjam_server_peers[x].lock);
 
@@ -54,8 +56,13 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 		}
 
 		/* all new connections must start on a ping request */
-		if (frame.start[0].valid(frame.end) == false ||
-		    frame.start[0].type != HPSJAM_TYPE_PING_REQUEST)
+		for (ptr = frame.start; ptr->valid(frame.end); ptr = ptr->next()) {
+			if (ptr->type == HPSJAM_TYPE_PING_REQUEST)
+				break;
+		}
+
+		/* check if we have a valid chunk */
+		if (ptr->valid(frame.end) == false)
 			return;
 
 		uint16_t packets;
@@ -63,7 +70,7 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 		uint64_t passwd;
 
 		/* check if ping message is valid */
-		if (frame.start[0].getPing(packets, time_ms, passwd) == false)
+		if (ptr->getPing(packets, time_ms, passwd) == false)
 			return;
 
 		/* don't respond if password is invalid */
@@ -74,7 +81,7 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 		for (unsigned x = hpsjam_num_server_peers; x--; ) {
 			QMutexLocker locker(&hpsjam_server_peers[x].lock);
 
-			if (hpsjam_server_peers[x].valid == false)
+			if (hpsjam_server_peers[x].valid == true)
 				continue;
 			hpsjam_server_peers[x].valid = true;
 			hpsjam_server_peers[x].address = src;
@@ -193,6 +200,7 @@ hpsjam_server_peer :: audio_export()
 {
 	const union hpsjam_frame *pkt;
 	const struct hpsjam_packet *ptr;
+	struct hpsjam_packet_entry *pres;
 	float temp[HPSJAM_MAX_PKT];
 	size_t num;
 
@@ -262,14 +270,29 @@ hpsjam_server_peer :: audio_export()
 				/* advance expected sequence number */
 				output_pkt.peer_seqno++;
 
+				bool need_reply = true;
+
 				switch (ptr->type) {
+				uint16_t packets;
+				uint16_t time_ms;
+				uint64_t passwd;
+
 				case HPSJAM_TYPE_CONFIGURE_REQUEST:
 					if (ptr->getConfigure(output_fmt))
 						break;
 					output_fmt = HPSJAM_TYPE_END;
 					break;
 				case HPSJAM_TYPE_PING_REQUEST:
+					if (ptr->getPing(packets, time_ms, passwd)) {
+						pres = new struct hpsjam_packet_entry;
+						pres->packet.setPing(0, time_ms, 0);
+						pres->packet.type = HPSJAM_TYPE_PING_REPLY;
+						pres->insert_tail(&output_pkt.head);
+					}
+					break;
 				case HPSJAM_TYPE_PING_REPLY:
+					need_reply = false;
+					break;
 				case HPSJAM_TYPE_FADER_GAIN_REQUEST:
 				case HPSJAM_TYPE_FADER_GAIN_REPLY:
 				case HPSJAM_TYPE_FADER_PAN_REQUEST:
@@ -284,6 +307,13 @@ hpsjam_server_peer :: audio_export()
 				case HPSJAM_TYPE_CHAT_REPLY:
 				default:
 					break;
+				}
+
+				if (need_reply && output_pkt.empty()) {
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.setPing(0, hpsjam_ticks, 0);
+					pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
+					pres->insert_tail(&output_pkt.head);
 				}
 			}
 		}
@@ -461,6 +491,7 @@ hpsjam_client_peer :: tick()
 	struct hpsjam_packet_entry entry = {};
 	const union hpsjam_frame *pkt;
 	const struct hpsjam_packet *ptr;
+	struct hpsjam_packet_entry *pres;
 	union {
 		float temp[HPSJAM_MAX_PKT];
 		float audio[2][HPSJAM_SAMPLE_RATE / 1000];
@@ -533,10 +564,26 @@ hpsjam_client_peer :: tick()
 				/* advance expected sequence number */
 				output_pkt.peer_seqno++;
 
+				bool need_reply = true;
+
 				switch (ptr->type) {
+				uint16_t packets;
+				uint16_t time_ms;
+				uint64_t passwd;
+
 				case HPSJAM_TYPE_CONFIGURE_REQUEST:
+					break;
 				case HPSJAM_TYPE_PING_REQUEST:
+					if (ptr->getPing(packets, time_ms, passwd)) {
+						pres = new struct hpsjam_packet_entry;
+						pres->packet.setPing(0, time_ms, 0);
+						pres->packet.type = HPSJAM_TYPE_PING_REPLY;
+						pres->insert_tail(&output_pkt.head);
+					}
+					break;
 				case HPSJAM_TYPE_PING_REPLY:
+					need_reply = false;
+					break;
 				case HPSJAM_TYPE_FADER_GAIN_REQUEST:
 				case HPSJAM_TYPE_FADER_GAIN_REPLY:
 				case HPSJAM_TYPE_FADER_PAN_REQUEST:
@@ -551,6 +598,13 @@ hpsjam_client_peer :: tick()
 				case HPSJAM_TYPE_CHAT_REPLY:
 				default:
 					break;
+				}
+
+				if (need_reply && output_pkt.empty()) {
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.setPing(0, hpsjam_ticks, 0);
+					pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
+					pres->insert_tail(&output_pkt.head);
 				}
 			}
 		}
