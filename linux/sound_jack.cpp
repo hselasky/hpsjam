@@ -37,6 +37,7 @@ static jack_port_t *input_port_right;
 static jack_port_t *output_port_left;
 static jack_port_t *output_port_right;
 static jack_client_t *jack_client;
+static int jack_is_shutdown;
 
 static int
 hpsjam_sound_process_cb(jack_nframes_t nframes, void *arg)
@@ -51,11 +52,15 @@ hpsjam_sound_process_cb(jack_nframes_t nframes, void *arg)
 	float *out_right = (jack_default_audio_sample_t *)
 	    jack_port_get_buffer(output_port_right, nframes);
 
-	memcpy(out_left, in_left, sizeof(out_left[0]) * nframes);
-	memcpy(out_right, in_right, sizeof(out_right[0]) * nframes);
+	if (jack_is_shutdown != 0) {
+		memset(out_left, 0, sizeof(out_left[0]) * nframes);
+		memset(out_right, 0, sizeof(out_right[0]) * nframes);
+	} else {
+		memcpy(out_left, in_left, sizeof(out_left[0]) * nframes);
+		memcpy(out_right, in_right, sizeof(out_right[0]) * nframes);
 
-	hpsjam_client_peer->sound_process(out_left, out_right, nframes);
-
+		hpsjam_client_peer->sound_process(out_left, out_right, nframes);
+	}
 	return (0);
 }
 
@@ -154,10 +159,15 @@ hpsjam_sound_uninit()
 	if (jack_client == 0)
 		return;
 
+	jack_is_shutdown = 1;
+
+	usleep(100000);
+
 	jack_port_disconnect(jack_client, input_port_left);
 	jack_port_disconnect(jack_client, input_port_right);
 	jack_port_disconnect(jack_client, output_port_left);
 	jack_port_disconnect(jack_client, output_port_right);
+
 	jack_deactivate(jack_client);
 	jack_port_unregister(jack_client, input_port_left);
 	jack_port_unregister(jack_client, input_port_right);
