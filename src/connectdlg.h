@@ -125,6 +125,15 @@ public:
 	HpsJamConnectServer server;
 	HpsJamConnectButtons buttons;
 
+	void activate(bool state) {
+		buttons.b_connect.setEnabled(state);
+		buttons.b_disconnect.setEnabled(!state);
+		name.edit.setEnabled(state);
+		password.edit.setEnabled(state);
+		location.list.setEnabled(state);
+		server.edit.setEnabled(state);
+		server.list.setEnabled(state);
+	};
 public slots:
 	void handle_location_change();
 	void handle_server_change();

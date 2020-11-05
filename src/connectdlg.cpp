@@ -131,13 +131,7 @@ HpsJamConnect :: handle_connect()
 		}
 	}
 
-	buttons.b_connect.setEnabled(false);
-	buttons.b_disconnect.setEnabled(true);
-	name.edit.setEnabled(false);
-	password.edit.setEnabled(false);
-	location.list.setEnabled(false);
-	server.edit.setEnabled(false);
-	server.list.setEnabled(false);
+	activate(false);
 
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 
@@ -163,13 +157,11 @@ HpsJamConnect :: handle_connect()
 void
 HpsJamConnect :: handle_disconnect()
 {
-	buttons.b_connect.setEnabled(true);
-	buttons.b_disconnect.setEnabled(false);
-	name.edit.setEnabled(true);
-	password.edit.setEnabled(true);
-	location.list.setEnabled(true);
-	server.edit.setEnabled(true);
-	server.list.setEnabled(true);
+	/* ignore double events */
+	if (buttons.b_connect.isEnabled())
+		return;
+
+	activate(true);
 
 	if (1) {
 		QMutexLocker locker(&hpsjam_client_peer->lock);
