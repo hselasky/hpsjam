@@ -23,10 +23,11 @@
  * SUCH DAMAGE.
  */
 
+#include "peer.h"
 #include "protocol.h"
-
 #include "statsdlg.h"
 
+#include <QMutexLocker>
 #include <QPainter>
 #include <QPen>
 #include <QBrush>
@@ -35,13 +36,22 @@
 void
 HpsJamStats :: paintEvent(QPaintEvent *event)
 {
+	constexpr unsigned N = 2 * HPSJAM_SEQ_MAX;
 	QRect frame(16, 16, width() - 32, height() - 32);
-	float stats[HPSJAM_SEQ_MAX] = {};
+	float stats[N];
 	float fMax;
 	int height = frame.height();
 	int width = frame.width();
 	int fsize = (height + 31) / 32;
 	int xmax;
+
+	/* get copy of live statistics */
+	if (1) {
+		QMutexLocker locker(&hpsjam_client_peer->lock);
+
+		assert(sizeof(stats) == sizeof(hpsjam_client_peer->out_audio[0].stats));
+		memcpy(stats, hpsjam_client_peer->out_audio[0].stats, sizeof(stats));
+	}
 
 	/* make room for text */
 	height -= 2 * fsize;
@@ -66,7 +76,7 @@ HpsJamStats :: paintEvent(QPaintEvent *event)
 	paint.setPen(QPen(QBrush(fg), 1));
 	paint.drawText(QPoint(frame.x(), frame.y() + fsize), QString("Statistics"));
 
-	for (unsigned i = xmax = 0; i != HPSJAM_SEQ_MAX; i++) {
+	for (unsigned i = xmax = 0; i != N; i++) {
 		if (stats[xmax] < stats[i]) {
 			xmax = i;
 		}
@@ -74,18 +84,18 @@ HpsJamStats :: paintEvent(QPaintEvent *event)
 	fMax = stats[xmax];
 
 	if (fMax > 1.0f) {
-		for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++) {
+		for (unsigned i = 0; i != N; i++) {
 			stats[i] /= fMax;
 		}
 	} else {
 		memset(stats, 0, sizeof(stats));
 	}
 
-	float dX = (float)width / (float)HPSJAM_SEQ_MAX;
+	float dX = (float)width / (float)N;
 
 	QPoint lastPoint;
 
-	for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++) {
+	for (unsigned i = 0; i != N; i++) {
 		const QPoint nextPoint(
 		    frame.x() + static_cast < int >(dX * i + dX / 2.0f),
 		    frame.y() + 2 * fsize + height - 1 - (int)(stats[i] * (height - 1)));
