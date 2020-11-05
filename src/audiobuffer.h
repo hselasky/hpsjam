@@ -142,9 +142,11 @@ public:
 		const size_t p[2] =
 		  { (consumer + total + HPSJAM_MAX_SAMPLES - 1) % HPSJAM_MAX_SAMPLES,
 		    (consumer + total + HPSJAM_MAX_SAMPLES - 2) % HPSJAM_MAX_SAMPLES };
-		const float append = samples[p[0]];
-		samples[p[0]] = (samples[p[0]] + samples[p[1]]) / 2.0f;
-		addSamples(&append, 1);
+		if (total > 1) {
+			const float append = samples[p[0]];
+			samples[p[0]] = (samples[p[0]] + samples[p[1]]) / 2.0f;
+			addSamples(&append, 1);
+		}
 	};
 
 	/* shrink ring-buffer */
