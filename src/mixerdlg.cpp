@@ -44,7 +44,8 @@ HpsJamSlider :: HpsJamSlider()
 	target = QRect(0,0,0,0);
 	start = QPoint(0,0);
 	value = 0;
-	level = 0;
+	level[0] = 0;
+	level[1] = 0;
 	active = false;
 	setMinimumHeight(128);
 }
@@ -60,10 +61,11 @@ HpsJamSlider :: setValue(float _value)
 }
 
 void
-HpsJamSlider :: setLevel(float _level)
+HpsJamSlider :: setLevel(float _left, float _right)
 {
-	if (_level != level) {
-		level = _level;
+	if (_left != level[0] || _right != level[1]) {
+		level[0] = _left;
+		level[1] = _right;
 		update();
 	}
 }
@@ -82,9 +84,9 @@ HpsJamSlider :: paintEvent(QPaintEvent *event)
 	const QColor bg(255, 255, 255);
 
 	const QColor lc[3] = {
-		QColor(255, 0, 0),
-		QColor(255, 255, 0),
 		QColor(0, 255, 0),
+		QColor(255, 255, 0),
+		QColor(255, 0, 0),
 	};
 
 	paint.fillRect(frame, bg);
@@ -94,24 +96,33 @@ HpsJamSlider :: paintEvent(QPaintEvent *event)
 		return;
 
 	const unsigned dist[3] = {
-		0,
-		(dots + 7) / 8,
-		(dots + 7) / 8 + (dots + 4) / 5,
+		dots - (dots + 7) / 8 - (dots + 4) / 5,
+		dots - (dots + 7) / 8,
+		dots,
 	};
 
-	const unsigned ldots = dots * level;
+	unsigned ldots = dots * level[0];
+	unsigned y;
 
-	unsigned y = 2;
-	for (unsigned x = ldots; x--; ) {
-		while (y != 0 && dist[y] >= x)
-			y--;
+	for (unsigned x = y = 0; x != ldots; x++) {
+		while (dist[y] == x)
+			y++;
 		paint.setPen(QPen(QBrush(lc[y]), dsize,
 		    Qt::SolidLine, Qt::RoundCap));
-		paint.drawPoint(QPoint(width() / 2, x * dsize + dsize / 2));
+		paint.drawPoint(QPoint(width() / 2 - dsize / 2, height() - x * dsize - dsize / 2));
 	}
 
-	target = QRect(2, (1.0f - value) * (height() - dsize),
-		       width() - 4, dsize);
+	ldots = dots * level[1];
+
+	for (unsigned x = y = 0; x != ldots; x++) {
+		while (dist[y] == x)
+			y++;
+		paint.setPen(QPen(QBrush(lc[y]), dsize,
+		    Qt::SolidLine, Qt::RoundCap));
+		paint.drawPoint(QPoint(width() / 2 + dsize / 2, height() - x * dsize - dsize / 2));
+	}
+
+	target = QRect(2, (1.0f - value) * (height() - dsize), width() - 4, dsize);
 
 	paint.setPen(QPen(QBrush(fg), 2));
 	paint.drawRect(target);

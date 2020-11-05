@@ -59,10 +59,10 @@ public:
 	QRect target;
 	QPoint start;
 	float value;
-	float level;
+	float level[2];
 
 	void setValue(float);
-	void setLevel(float);
+	void setLevel(float, float);
 
 	void paintEvent(QPaintEvent *);
         void mousePressEvent(QMouseEvent *);
