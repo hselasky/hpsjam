@@ -44,9 +44,11 @@ HpsJamSlider :: HpsJamSlider()
 	target = QRect(0,0,0,0);
 	start = QPoint(0,0);
 	value = 0;
+	pan = 0;
 	level[0] = 0;
 	level[1] = 0;
 	active = false;
+	setMinimumWidth(dsize);
 	setMinimumHeight(128);
 }
 
@@ -57,6 +59,15 @@ HpsJamSlider :: setValue(float _value)
 		value = _value;
 		update();
 		emit valueChanged();
+	}
+}
+
+void
+HpsJamSlider :: setPan(float _pan)
+{
+	if (_pan != pan) {
+		pan = _pan;
+		update();
 	}
 }
 
@@ -127,10 +138,12 @@ HpsJamSlider :: paintEvent(QPaintEvent *event)
 	paint.setPen(QPen(QBrush(fg), 2));
 	paint.drawRect(target);
 
-	QRect circle((target.width() - dsize) / 2,
+	int p_off = pan * ((target.width() - dsize) / 2);
+
+	QRect circle((target.width() - dsize) / 2 + p_off,
 		     (1.0f - value) * (height() - dsize),
 		     dsize, dsize);
-	paint.setBrush(QBrush(fg));
+	paint.setBrush(QBrush(p_off ? bg : fg));
 	paint.drawEllipse(circle);
 }
 
@@ -176,6 +189,24 @@ HpsJamSlider :: mouseReleaseEvent(QMouseEvent *event)
 	}
 }
 
+void
+HpsJamPan :: handle_pan_left()
+{
+	value -= 1.0f / 16.0f;
+	if (value < -1.0f)
+		value = -1.0f;
+	emit valueChanged();
+}
+
+void
+HpsJamPan :: handle_pan_right()
+{
+	value += 1.0f / 16.0f;
+	if (value > 1.0f)
+		value = 1.0f;
+	emit valueChanged();
+}
+
 HpsJamStrip :: HpsJamStrip() : gl(this),
     w_eq(tr("EQ")),
     w_inv(tr("INV")),
@@ -184,6 +215,7 @@ HpsJamStrip :: HpsJamStrip() : gl(this),
 {
 	id = -1;
 
+	connect(&w_pan, SIGNAL(valueChanged()), this, SLOT(handlePan()));
 	connect(&w_slider, SIGNAL(valueChanged()), this, SLOT(handleSlider()));
 	connect(&w_eq, SIGNAL(released()), this, SLOT(handleEQ()));
 	connect(&w_inv, SIGNAL(released()), this, SLOT(handleInv()));
@@ -194,10 +226,11 @@ HpsJamStrip :: HpsJamStrip() : gl(this),
 	gl.addWidget(&w_name, 1,0);
 	gl.addWidget(&w_eq, 2,0);
 	gl.addWidget(&w_inv, 3,0);
-	gl.addWidget(&w_slider, 4,0);
-	gl.setRowStretch(4,1);
-	gl.addWidget(&w_solo, 5,0);
-	gl.addWidget(&w_mute, 6,0);
+	gl.addWidget(&w_pan, 4,0);
+	gl.addWidget(&w_slider, 5,0);
+	gl.setRowStretch(5,1);
+	gl.addWidget(&w_solo, 6,0);
+	gl.addWidget(&w_mute, 7,0);
 }
 
 void
@@ -210,6 +243,15 @@ void
 HpsJamStrip :: handleSlider()
 {
 	emit valueChanged(id);
+}
+
+void
+HpsJamStrip :: handlePan()
+{
+	/* mirror value */
+	w_slider.setPan(w_pan.value);
+
+	emit panChanged(id);
 }
 
 void

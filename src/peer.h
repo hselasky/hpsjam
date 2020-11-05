@@ -97,6 +97,7 @@ public:
 	class hpsjam_audio_buffer out_audio[2];
 	class hpsjam_equalizer eq;
 	float mon_gain;
+	float mon_pan;
 	float in_gain;
 	float in_pan;
 	float in_peak;
@@ -116,6 +117,7 @@ public:
 		out_audio[1].clear();
 		in_gain = 1.0f;
 		mon_gain = 0.0f;
+		mon_pan = 0.0f;
 		in_pan = 0.0f;
 		in_peak = 0.0;
 		out_peak = 0.0;

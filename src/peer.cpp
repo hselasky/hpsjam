@@ -161,9 +161,32 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 
 	/* Add monitor */
 	if (mon_gain != 0.0f) {
-		for (size_t x = 0; x != samples; x++) {
-			left[x] += temp_l[x] * mon_gain;
-			right[x] += temp_r[x] * mon_gain;
+		float gain = (bits & HPSJAM_BIT_INVERT) ? - mon_gain : mon_gain;
+
+		/* Process panning */
+		if (mon_pan < 0.0f) {
+			const float g[3] = { 1.0f + mon_pan, 2.0f + mon_pan, - mon_pan };
+			for (size_t x = 0; x != samples; x++) {
+				float l = (temp_l[x] * g[1] + temp_r[x] * g[2]) / 2.0f;
+				float r = temp_r[x] * g[0];
+
+				left[x] += l * gain;
+				right[x] += r * gain;
+			}
+		} else if (mon_pan > 0.0f) {
+			const float g[3] = { 1.0f - mon_pan, 2.0f - mon_pan, mon_pan };
+			for (size_t x = 0; x != samples; x++) {
+				float l = temp_l[x] * g[0];
+				float r = (temp_r[x] * g[1] + temp_l[x] * g[2]) / 2.0f;
+
+				left[x] += l * gain;
+				right[x] += r * gain;
+			}
+		} else {
+			for (size_t x = 0; x != samples; x++) {
+				left[x] += temp_l[x] * gain;
+				right[x] += temp_r[x] * gain;
+			}
 		}
 	}
 

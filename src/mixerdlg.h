@@ -36,6 +36,7 @@
 #include <QLabel>
 #include <QScrollArea>
 #include <QGroupBox>
+#include <QSizePolicy>
 
 #include "hpsjam.h"
 
@@ -59,15 +60,51 @@ public:
 	QRect target;
 	QPoint start;
 	float value;
+	float pan;
 	float level[2];
 
 	void setValue(float);
+	void setPan(float);
 	void setLevel(float, float);
 
 	void paintEvent(QPaintEvent *);
         void mousePressEvent(QMouseEvent *);
         void mouseMoveEvent(QMouseEvent *);
         void mouseReleaseEvent(QMouseEvent *);
+signals:
+	void valueChanged();
+};
+
+class HpsJamPan : public QWidget {
+	Q_OBJECT;
+public:
+	QGridLayout gl;
+	QPushButton b[2];
+	float value;
+
+	void setValue(float _value) {
+		if (value != _value) {
+			value = _value;
+			emit valueChanged();
+		}
+	};
+
+	HpsJamPan() : gl(this) {
+		int w = b[0].fontMetrics().boundingRect(QString("L_R")).width();
+		b[0].setText(QString("L"));
+		b[1].setText(QString("R"));
+		b[0].setFixedWidth(w);
+		b[1].setFixedWidth(w);
+		connect(b + 0, SIGNAL(released()), this, SLOT(handle_pan_left()));
+		connect(b + 1, SIGNAL(released()), this, SLOT(handle_pan_right()));
+		gl.addWidget(b + 0,0,0);
+		gl.addWidget(b + 1,0,1);
+		value = 0.0f;	/* no panning */
+	};
+
+public slots:
+	void handle_pan_left();
+	void handle_pan_right();
 signals:
 	void valueChanged();
 };
@@ -82,6 +119,7 @@ public:
 	QGridLayout gl;
 	QLabel w_name;
 	HpsJamIcon w_icon;
+	HpsJamPan w_pan;
 	HpsJamSlider w_slider;
 	QPushButton w_eq;
 	QPushButton w_inv;
@@ -105,9 +143,11 @@ public slots:
 	void handleMute();
 	void handleEQ();
 	void handleInv();
+	void handlePan();
 
 signals:
 	void valueChanged(int);
+	void panChanged(int);
 	void bitsChanged(int);
 };
 
