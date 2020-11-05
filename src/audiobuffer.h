@@ -76,6 +76,33 @@ public:
 		clear();
 	};
 
+	float getMaxLevel() const {
+		size_t fwd = HPSJAM_MAX_SAMPLES - consumer;
+		float level = 0.0f;
+
+		if (fwd >= total) {
+			for (size_t x = 0; x != total; x++) {
+				const float v = fabsf(samples[consumer + x]);
+				if (v > level)
+					level = v;
+			}
+		} else {
+			for (size_t x = 0; x != fwd; x++) {
+				const float v = fabsf(samples[consumer + x]);
+				if (v > level)
+					level = v;
+			}
+
+			/* buffer wrap around */
+			for (size_t x = 0; x != (total - fwd); x++) {
+				const float v = fabsf(samples[x]);
+				if (v > level)
+					level = v;
+			}
+		}
+		return (level);
+	};
+
 	uint8_t getLowWater() const {
 		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++) {
 			if (stats[x] >= 0.5f)
