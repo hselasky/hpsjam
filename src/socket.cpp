@@ -52,11 +52,14 @@ hpsjam_socket_receive(void *arg)
 		ps->incrementPort();
 	}
 
+	/* protect against receiving packets from ourself */
+	const struct hpsjam_socket_address self = *ps;
+
 	if (tries < 0) {
 		warn("Cannot bind to IP port");
 	} else while (1) {
 		ret = ps->recvfrom((char *)&frame, sizeof(frame));
-		if (ret >= (int)sizeof(frame.hdr)) {
+		if (*ps != self && ret >= (int)sizeof(frame.hdr)) {
 			/* zero end of frame to avoid garbage */
 			memset(frame.raw + ret, 0, sizeof(frame) - ret);
 			/* process frame */
