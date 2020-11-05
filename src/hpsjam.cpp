@@ -33,7 +33,6 @@
 
 #include <QApplication>
 #include <QMessageBox>
-#include <QMutex>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,7 +45,6 @@ class hpsjam_server_peer *hpsjam_server_peers;
 class hpsjam_client_peer *hpsjam_client_peer;
 struct hpsjam_socket_address hpsjam_v4;
 struct hpsjam_socket_address hpsjam_v6;
-class QMutex *hpsjam_locks;
 
 static const struct option hpsjam_opts[] = {
 	{ "NSDocumentRevisionsDebugMode", required_argument, NULL, ' ' },
@@ -128,7 +126,6 @@ main(int argc, char **argv)
 
 	if (hpsjam_num_server_peers == 0) {
 		hpsjam_client_peer = new class hpsjam_client_peer;
-		hpsjam_locks = new class QMutex [1];
 		auto client = new HpsJamClient();
 
 #ifdef HAVE_JACK_AUDIO
@@ -142,7 +139,6 @@ main(int argc, char **argv)
 		client->show();
 	} else {
 		hpsjam_server_peers = new class hpsjam_server_peer [hpsjam_num_server_peers];
-		hpsjam_locks = new class QMutex [hpsjam_num_server_peers];
 	}
 
 	/* create sockets, if any */

@@ -127,7 +127,7 @@ HpsJamConnect :: handle_connect()
 	buttons.b_connect.setEnabled(false);
 	buttons.b_disconnect.setEnabled(true);
 
-	QMutexLocker locker(&hpsjam_locks[0]);
+	QMutexLocker locker(&hpsjam_client_peer->lock);
 
 	/* set destination address */
 	hpsjam_client_peer->address = address;
@@ -145,7 +145,7 @@ HpsJamConnect :: handle_disconnect()
 	buttons.b_disconnect.setEnabled(false);
 
 	if (1) {
-		QMutexLocker locker(&hpsjam_locks[0]);
+		QMutexLocker locker(&hpsjam_client_peer->lock);
 		hpsjam_client_peer->init();
 	}
 

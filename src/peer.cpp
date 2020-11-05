@@ -38,13 +38,13 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
     const union hpsjam_frame &frame)
 {
 	if (hpsjam_num_server_peers == 0) {
-		QMutexLocker locker(&hpsjam_locks[0]);
+		QMutexLocker locker(&hpsjam_client_peer->lock);
 
 		if (hpsjam_client_peer->address == src)
 			hpsjam_client_peer->input_pkt.receive(frame);
 	} else {
 		for (unsigned x = hpsjam_num_server_peers; x--; ) {
-			QMutexLocker locker(&hpsjam_locks[x]);
+			QMutexLocker locker(&hpsjam_server_peers[x].lock);
 
 			if (hpsjam_server_peers[x].valid &&
 			    hpsjam_server_peers[x].address == src) {
@@ -72,7 +72,7 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 
 		/* create new connection, if any */
 		for (unsigned x = hpsjam_num_server_peers; x--; ) {
-			QMutexLocker locker(&hpsjam_locks[x]);
+			QMutexLocker locker(&hpsjam_server_peers[x].lock);
 
 			if (hpsjam_server_peers[x].valid == false)
 				continue;
@@ -87,7 +87,7 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 void
 hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 {
-	QMutexLocker locker(&hpsjam_locks[0]);
+	QMutexLocker locker(&lock);
 
 	float temp_l[samples];
 	float temp_r[samples];
@@ -170,7 +170,7 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 void
 hpsjam_server_peer :: handle_pending_watchdog()
 {
-	QMutexLocker locker(&hpsjam_locks[this - hpsjam_server_peers]);
+	QMutexLocker locker(&lock);
 
 	if (address.valid() && output_pkt.empty()) {
 		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
@@ -182,7 +182,7 @@ hpsjam_server_peer :: handle_pending_watchdog()
 void
 hpsjam_server_peer :: handle_pending_timeout()
 {
-	QMutexLocker locker(&hpsjam_locks[this - hpsjam_server_peers]);
+	QMutexLocker locker(&lock);
 
 	init();
 }
@@ -373,7 +373,7 @@ hpsjam_server_tick()
 {
 	/* get audio */
 	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
-		QMutexLocker locker(&hpsjam_locks[x]);
+		QMutexLocker locker(&hpsjam_server_peers[x].lock);
 
 		if (hpsjam_server_peers[x].valid == false) {
 			memset(hpsjam_server_peers[x].tmp_audio, 0,
@@ -385,7 +385,7 @@ hpsjam_server_tick()
 
 	/* mix everything */
 	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
-		QMutexLocker locker(&hpsjam_locks[x]);
+		QMutexLocker locker(&hpsjam_server_peers[x].lock);
 
 		if (hpsjam_server_peers[x].valid == false)
 			continue;
@@ -431,7 +431,7 @@ hpsjam_server_tick()
 
 	/* send audio */
 	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
-		QMutexLocker locker(&hpsjam_locks[x]);
+		QMutexLocker locker(&hpsjam_server_peers[x].lock);
 
 		if (hpsjam_server_peers[x].valid == false)
 			continue;
@@ -442,7 +442,7 @@ hpsjam_server_tick()
 void
 hpsjam_client_peer :: handle_pending_watchdog()
 {
-	QMutexLocker locker(&hpsjam_locks[0]);
+	QMutexLocker locker(&lock);
 
 	if (address.valid() && output_pkt.empty()) {
 		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
@@ -454,7 +454,8 @@ hpsjam_client_peer :: handle_pending_watchdog()
 void
 hpsjam_client_peer :: tick()
 {
-	QMutexLocker locker(&hpsjam_locks[0]);
+	QMutexLocker locker(&lock);
+
 	struct hpsjam_packet_entry entry = {};
 	const union hpsjam_frame *pkt;
 	const struct hpsjam_packet *ptr;

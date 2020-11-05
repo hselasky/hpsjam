@@ -28,6 +28,7 @@
 
 #include <QString>
 #include <QByteArray>
+#include <QMutex>
 
 #include "audiobuffer.h"
 #include "equalizer.h"
@@ -39,6 +40,7 @@
 class hpsjam_server_peer : QObject {
 	Q_OBJECT;
 public:
+	QMutex lock;
 	struct hpsjam_socket_address address;
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;
@@ -89,6 +91,7 @@ public slots:
 class hpsjam_client_peer : QObject {
 	Q_OBJECT;
 public:
+	QMutex lock;
 	struct hpsjam_socket_address address;
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;

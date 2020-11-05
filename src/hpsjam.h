@@ -47,7 +47,6 @@ extern class hpsjam_server_peer *hpsjam_server_peers;
 extern class hpsjam_client_peer *hpsjam_client_peer;
 extern struct hpsjam_socket_address hpsjam_v4;
 extern struct hpsjam_socket_address hpsjam_v6;
-extern QMutex *hpsjam_locks;
 
 extern void hpsjam_socket_init(unsigned short port);
 
