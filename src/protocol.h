@@ -553,6 +553,7 @@ struct hpsjam_input_packetizer {
 		 * packets, or if jitter amount is exceeded:
 		 */
 		if (((start & 7) == 7) || (start != 0 && pkts >= jitter)) {
+			assert(valid[min_x] != 0);
 			valid[min_x] = 0;
 			return (current + min_x);
 		}
