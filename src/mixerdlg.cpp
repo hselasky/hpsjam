@@ -23,10 +23,14 @@
  * SUCH DAMAGE.
  */
 
-#include "mixerdlg.h"
-
+#include <QMutexLocker>
 #include <QMouseEvent>
 #include <QPainter>
+
+#include "hpsjam.h"
+#include "peer.h"
+#include "mixerdlg.h"
+#include "protocol.h"
 
 HpsJamIcon :: HpsJamIcon()
 {
@@ -165,9 +169,6 @@ HpsJamSlider :: mousePressEvent(QMouseEvent *event)
 void
 HpsJamSlider :: mouseMoveEvent(QMouseEvent *event)
 {
-	if (event->button() != Qt::LeftButton)
-		return;
-
 	if (height() < (int)dsize)
 		return;
 	if (active == true) {
@@ -220,41 +221,49 @@ HpsJamPan :: handle_pan_right()
 }
 
 HpsJamStrip :: HpsJamStrip() : gl(this),
-    w_eq(tr("EQ")),
-    w_inv(tr("INV")),
-    w_mute(tr("MUTE")),
-    w_solo(tr("SOLO"))
+    b_eq(tr("EQ")),
+    b_inv(tr("INV")),
+    b_mute(tr("MUTE")),
+    b_solo(tr("SOLO"))
 {
 	id = -1;
 
 	connect(&w_pan, SIGNAL(valueChanged()), this, SLOT(handlePan()));
 	connect(&w_slider, SIGNAL(valueChanged()), this, SLOT(handleSlider()));
-	connect(&w_eq, SIGNAL(released()), this, SLOT(handleEQ()));
-	connect(&w_inv, SIGNAL(released()), this, SLOT(handleInv()));
-	connect(&w_solo, SIGNAL(released()), this, SLOT(handleSolo()));
-	connect(&w_mute, SIGNAL(released()), this, SLOT(handleMute()));
+	connect(&b_eq, SIGNAL(released()), this, SLOT(handleEQShow()));
+	connect(&w_eq.b_apply, SIGNAL(released()), this, SLOT(handleEQApply()));
+	connect(&b_inv, SIGNAL(released()), this, SLOT(handleInv()));
+	connect(&b_solo, SIGNAL(released()), this, SLOT(handleSolo()));
+	connect(&b_mute, SIGNAL(released()), this, SLOT(handleMute()));
 
 	gl.addWidget(&w_icon, 0,0);
 	gl.addWidget(&w_name, 1,0);
-	gl.addWidget(&w_eq, 2,0);
-	gl.addWidget(&w_inv, 3,0);
+	gl.addWidget(&b_eq, 2,0);
+	gl.addWidget(&b_inv, 3,0);
 	gl.addWidget(&w_pan, 4,0);
 	gl.addWidget(&w_slider, 5,0);
 	gl.setRowStretch(5,1);
-	gl.addWidget(&w_solo, 6,0);
-	gl.addWidget(&w_mute, 7,0);
+	gl.addWidget(&b_solo, 6,0);
+	gl.addWidget(&b_mute, 7,0);
 }
 
 void
-HpsJamStrip :: handleEQ()
+HpsJamStrip :: handleEQShow()
 {
+	w_eq.setWindowTitle(QString("HPS JAM equalizer for ") + title());
+	w_eq.show();
+}
 
+void
+HpsJamStrip :: handleEQApply()
+{
+	emit eqChanged(id);
 }
 
 void
 HpsJamStrip :: handleSlider()
 {
-	emit valueChanged(id);
+	emit gainChanged(id);
 }
 
 void
@@ -269,10 +278,10 @@ HpsJamStrip :: handlePan()
 void
 HpsJamStrip :: handleInv()
 {
-	if (w_inv.isFlat())
-		w_inv.setFlat(false);
+	if (b_inv.isFlat())
+		b_inv.setFlat(false);
 	else
-		w_inv.setFlat(true);
+		b_inv.setFlat(true);
 
 	emit bitsChanged(id);
 }
@@ -280,10 +289,10 @@ HpsJamStrip :: handleInv()
 void
 HpsJamStrip :: handleSolo()
 {
-	if (w_solo.isFlat())
-		w_solo.setFlat(false);
+	if (b_solo.isFlat())
+		b_solo.setFlat(false);
 	else
-		w_solo.setFlat(true);
+		b_solo.setFlat(true);
 
 	emit bitsChanged(id);
 }
@@ -291,10 +300,182 @@ HpsJamStrip :: handleSolo()
 void
 HpsJamStrip :: handleMute()
 {
-	if (w_mute.isFlat())
-		w_mute.setFlat(false);
+	if (b_mute.isFlat())
+		b_mute.setFlat(false);
 	else
-		w_mute.setFlat(true);
+		b_mute.setFlat(true);
 
 	emit bitsChanged(id);
+}
+
+void
+HpsJamMixer :: handle_fader_level(uint8_t mix, uint8_t index, float left, float right)
+{
+	switch (mix) {
+	case 0:
+		HPSJAM_NO_SIGNAL(peer_strip[index].w_slider,setLevel(left, right));
+		break;
+	case 255:
+		HPSJAM_NO_SIGNAL(self_strip.w_slider,setLevel(left, right));
+		break;
+	default:
+		break;
+	}
+}
+
+void
+HpsJamMixer :: handle_fader_name(uint8_t mix, uint8_t index, QString *str)
+{
+	switch (mix) {
+	case 0:
+		HPSJAM_NO_SIGNAL(peer_strip[index].w_name,setText(*str));
+		enable(index);
+		break;
+	case 255:
+		HPSJAM_NO_SIGNAL(self_strip.w_name,setText(*str));
+		break;
+	default:
+		break;
+	}
+	delete str;
+}
+
+void
+HpsJamMixer :: handle_fader_icon(uint8_t mix, uint8_t index, QByteArray *ba)
+{
+	switch (mix) {
+	case 0:
+		peer_strip[index].w_icon.svg.load(*ba);
+		peer_strip[index].w_icon.update();
+		break;
+	case 255:
+		self_strip.w_icon.svg.load(*ba);
+		self_strip.w_icon.update();
+		break;
+	default:
+		break;
+	}
+	delete ba;
+}
+void
+HpsJamMixer :: handle_fader_gain(uint8_t mix, uint8_t index, float gain)
+{
+	switch (mix) {
+	case 0:
+		HPSJAM_NO_SIGNAL(peer_strip[index].w_slider,setValue(gain));
+		break;
+	case 255:
+		HPSJAM_NO_SIGNAL(self_strip.w_slider,setValue(gain));
+		break;
+	default:
+		break;
+	}
+}
+
+void
+HpsJamMixer :: handle_fader_pan(uint8_t mix, uint8_t index, float pan)
+{
+	switch (mix) {
+	case 0:
+		HPSJAM_NO_SIGNAL(peer_strip[index].w_slider,setPan(pan));
+		break;
+	case 255:
+		HPSJAM_NO_SIGNAL(self_strip.w_slider,setPan(pan));
+		break;
+	default:
+		break;
+	}
+}
+
+void
+HpsJamMixer :: handle_fader_eq(uint8_t mix, uint8_t index, QString *str)
+{
+	switch (mix) {
+	case 0:
+		HPSJAM_NO_SIGNAL(peer_strip[index].w_eq.edit,setText(*str));
+		break;
+	case 255:
+		HPSJAM_NO_SIGNAL(self_strip.w_eq.edit,setText(*str));
+		break;
+	default:
+		break;
+	}
+	delete str;
+}
+
+void
+HpsJamMixer :: handle_fader_disconnect(uint8_t mix, uint8_t index)
+{
+	switch (mix) {
+	case 0:
+		peer_strip[index].init();
+		disable(index);
+		break;
+	case 255:
+		self_strip.init();
+		break;
+	default:
+		break;
+	}
+}
+
+void
+HpsJamMixer :: handle_bits_changed(int id)
+{
+	struct hpsjam_packet_entry *ptr;
+	char bits;
+
+	bits = peer_strip[id].getBits();
+
+	ptr = new struct hpsjam_packet_entry;
+	ptr->packet.type = HPSJAM_TYPE_FADER_BITS_REQUEST;
+	ptr->packet.setFaderData(0, id, &bits, 1);
+
+	hpsjam_client_peer->send_single_pkt(ptr);
+}
+
+void
+HpsJamMixer :: handle_gain_changed(int id)
+{
+	struct hpsjam_packet_entry *ptr;
+	float gain;
+
+	gain = peer_strip[id].w_slider.value;
+
+	ptr = new struct hpsjam_packet_entry;
+	ptr->packet.type = HPSJAM_TYPE_FADER_GAIN_REQUEST;
+	ptr->packet.setFaderValue(0, id, &gain, 1);
+
+	hpsjam_client_peer->send_single_pkt(ptr);
+}
+
+void
+HpsJamMixer :: handle_pan_changed(int id)
+{
+	struct hpsjam_packet_entry *ptr;
+	float pan;
+
+	pan = peer_strip[id].w_slider.value;
+
+	ptr = new struct hpsjam_packet_entry;
+	ptr->packet.type = HPSJAM_TYPE_FADER_PAN_REQUEST;
+	ptr->packet.setFaderValue(0, id, &pan, 1);
+
+	hpsjam_client_peer->send_single_pkt(ptr);
+}
+
+void
+HpsJamMixer :: handle_eq_changed(int id)
+{
+	struct hpsjam_packet_entry *ptr;
+	QByteArray eq = peer_strip[id].w_eq.edit.toPlainText().toLatin1();
+
+	if (eq.length() > 255)
+		return;
+
+	ptr = new struct hpsjam_packet_entry;
+	ptr->packet.type = HPSJAM_TYPE_FADER_EQ_REQUEST;
+	ptr->packet.setFaderData(0, id, eq.constData(), eq.length());
+
+	hpsjam_client_peer->send_single_pkt(ptr);
 }

@@ -31,6 +31,7 @@
 #include "connectdlg.h"
 #include "clientdlg.h"
 #include "configdlg.h"
+#include "mixerdlg.h"
 #include "timer.h"
 
 void
@@ -188,6 +189,8 @@ HpsJamConnect :: handle_disconnect()
 		QMutexLocker locker(&hpsjam_client_peer->lock);
 		hpsjam_client_peer->init();
 	}
+
+	hpsjam_client->w_mixer->init();
 
 	if (!isVisible()) {
 		QMessageBox::information(this, tr("DISCONNECTED"),

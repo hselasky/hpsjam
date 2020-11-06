@@ -29,6 +29,7 @@
 #include <QString>
 #include <QByteArray>
 #include <QMutex>
+#include <QMutexLocker>
 
 #include "audiobuffer.h"
 #include "equalizer.h"
@@ -37,7 +38,7 @@
 
 #include <stdbool.h>
 
-class hpsjam_server_peer : QObject {
+class hpsjam_server_peer : public QObject {
 	Q_OBJECT;
 public:
 	QMutex lock;
@@ -76,6 +77,8 @@ public:
 		valid = false;
 	};
 
+	size_t serverID();
+
 	void audio_export();
 	void audio_import();
 
@@ -89,7 +92,7 @@ public slots:
 	void handle_pending_timeout();
 };
 
-class hpsjam_client_peer : QObject {
+class hpsjam_client_peer : public QObject {
 	Q_OBJECT;
 public:
 	QMutex lock;
@@ -134,11 +137,43 @@ public:
 		init();
 
 		connect(&output_pkt, SIGNAL(pendingWatchdog()), this, SLOT(handle_pending_watchdog()));
+		connect(this, SIGNAL(receivedChat(QString *)), this, SLOT(handleChat(QString *)));
+		connect(this, SIGNAL(receivedLyrics(QString *)), this, SLOT(handleLyrics(QString *)));
 	};
 	void sound_process(float *, float *, size_t);
 	void tick();
+	void send_single_pkt(struct hpsjam_packet_entry *pkt) {
+		QMutexLocker locker(&lock);
+		if (address.valid()) {
+			struct hpsjam_packet_entry *ptr =
+			    output_pkt.find(pkt->packet.type);
+
+			/* check if packets can be coalesched */
+			if (ptr != 0) {
+				memcpy(ptr->raw, pkt->raw, sizeof(ptr->raw));
+				delete pkt;
+			} else {
+				pkt->insert_tail(&output_pkt.head);
+			}
+		} else {
+			delete pkt;
+		}
+	};
 public slots:
 	void handle_pending_watchdog();
+	void handleChat(QString *);
+	void handleLyrics(QString *);
+
+signals:
+	void receivedChat(QString *);
+	void receivedLyrics(QString *);
+	void receivedFaderLevel(uint8_t, uint8_t, float, float);
+	void receivedFaderName(uint8_t, uint8_t, QString *);
+	void receivedFaderIcon(uint8_t, uint8_t, QByteArray *);
+	void receivedFaderGain(uint8_t, uint8_t, float);
+	void receivedFaderPan(uint8_t, uint8_t, float);
+	void receivedFaderEQ(uint8_t, uint8_t, QString *);
+	void receivedFaderDisconnect(uint8_t, uint8_t);
 };
 
 extern void hpsjam_peer_receive(const struct hpsjam_socket_address &,

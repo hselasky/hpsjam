@@ -26,10 +26,11 @@
 #include <QMutexLocker>
 
 #include "hpsjam.h"
-
 #include "peer.h"
-
 #include "compressor.h"
+#include "clientdlg.h"
+#include "chatdlg.h"
+#include "lyricsdlg.h"
 
 #include "timer.h"
 
@@ -88,6 +89,28 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 			hpsjam_server_peers[x].input_pkt.receive(frame);
 			return;
 		}
+	}
+}
+
+static void
+hpsjam_server_broadcast(const struct hpsjam_packet_entry &entry,
+    class hpsjam_server_peer *except)
+{
+	struct hpsjam_packet_entry *ptr;
+
+	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+		if (hpsjam_server_peers + x == except)
+			continue;
+
+		QMutexLocker locker(&hpsjam_server_peers[x].lock);
+
+		if (hpsjam_server_peers[x].valid == false)
+			continue;
+
+		/* duplicate packet */
+		ptr = new struct hpsjam_packet_entry;
+		*ptr = entry;
+		ptr->insert_tail(&hpsjam_server_peers[x].output_pkt.head);
 	}
 }
 
@@ -200,6 +223,12 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 	}
 }
 
+size_t
+hpsjam_server_peer :: serverID()
+{
+	return (this - hpsjam_server_peers);
+}
+
 void
 hpsjam_server_peer :: handle_pending_watchdog()
 {
@@ -216,9 +245,19 @@ hpsjam_server_peer :: handle_pending_watchdog()
 void
 hpsjam_server_peer :: handle_pending_timeout()
 {
-	QMutexLocker locker(&lock);
+	struct hpsjam_packet_entry *pkt;
 
-	init();
+	if (1) {
+		QMutexLocker locker(&lock);
+		init();
+	}
+
+	/* tell other clients about disconnect */
+	pkt = new struct hpsjam_packet_entry;
+	pkt->packet.setFaderData(0, serverID(), 0, 0);
+	pkt->packet.type = HPSJAM_TYPE_FADER_DISCONNECT_REPLY;
+	hpsjam_server_broadcast(*pkt, this);
+	delete pkt;
 }
 
 void
@@ -240,107 +279,279 @@ hpsjam_server_peer :: audio_export()
 				assert(num <= HPSJAM_MAX_PKT);
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp, num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
 				num = ptr->get16Bit1ChSample(temp);
 				assert(num <= HPSJAM_MAX_PKT);
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp, num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
 				num = ptr->get24Bit1ChSample(temp);
 				assert(num <= HPSJAM_MAX_PKT);
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp, num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
 				num = ptr->get32Bit1ChSample(temp);
 				assert(num <= HPSJAM_MAX_PKT);
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp, num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
 				num = ptr->get8Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_16_BIT_2CH:
 				num = ptr->get16Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_24_BIT_2CH:
 				num = ptr->get24Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_2CH:
 				num = ptr->get32Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_2CH + 1 ... HPSJAM_TYPE_AUDIO_MAX:
 				/* for the future */
-				break;
+				continue;
 			default:
-				/* check if other side received packet */
-				if (ptr->getPeerSeqNo() == output_pkt.pend_seqno)
-					output_pkt.advance();
-				/* check if sequence number matches */
-				if (ptr->getLocalSeqNo() != output_pkt.peer_seqno)
-					continue;
-				/* advance expected sequence number */
-				output_pkt.peer_seqno++;
+				break;
+			}
 
-				switch (ptr->type) {
-				uint16_t packets;
-				uint16_t time_ms;
-				uint64_t passwd;
+			/* check if other side received packet */
+			if (ptr->getPeerSeqNo() == output_pkt.pend_seqno)
+				output_pkt.advance();
+			/* check if sequence number matches */
+			if (ptr->getLocalSeqNo() != output_pkt.peer_seqno)
+				continue;
+			/* advance expected sequence number */
+			output_pkt.peer_seqno++;
 
-				case HPSJAM_TYPE_CONFIGURE_REQUEST:
-					if (ptr->getConfigure(output_fmt))
-						break;
-					output_fmt = HPSJAM_TYPE_END;
-					break;
-				case HPSJAM_TYPE_PING_REQUEST:
-					if (ptr->getPing(packets, time_ms, passwd) &&
-					    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
-						pres = new struct hpsjam_packet_entry;
-						pres->packet.setPing(0, time_ms, 0);
-						pres->packet.type = HPSJAM_TYPE_PING_REPLY;
-						pres->insert_tail(&output_pkt.head);
-					}
-					break;
-				case HPSJAM_TYPE_PING_REPLY:
-					break;
-				case HPSJAM_TYPE_FADER_GAIN_REQUEST:
-				case HPSJAM_TYPE_FADER_GAIN_REPLY:
-				case HPSJAM_TYPE_FADER_PAN_REQUEST:
-				case HPSJAM_TYPE_FADER_PAN_REPLY:
-				case HPSJAM_TYPE_FADER_ICON_REQUEST:
-				case HPSJAM_TYPE_FADER_ICON_REPLY:
-				case HPSJAM_TYPE_FADER_NAME_REQUEST:
-				case HPSJAM_TYPE_FADER_NAME_REPLY:
-				case HPSJAM_TYPE_LYRICS_REQUEST:
-				case HPSJAM_TYPE_LYRICS_REPLY:
-				case HPSJAM_TYPE_CHAT_REQUEST:
-				case HPSJAM_TYPE_CHAT_REPLY:
-				default:
-					break;
-				}
+			switch (ptr->type) {
+			uint16_t packets;
+			uint16_t time_ms;
+			uint64_t passwd;
+			uint8_t mix;
+			uint8_t index;
+			const char *data;
+			size_t len;
 
-				if (output_pkt.empty()) {
+			case HPSJAM_TYPE_CONFIGURE_REQUEST:
+				if (ptr->getConfigure(output_fmt))
+					break;
+				output_fmt = HPSJAM_TYPE_END;
+				break;
+			case HPSJAM_TYPE_PING_REQUEST:
+				if (ptr->getPing(packets, time_ms, passwd) &&
+				    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
 					pres = new struct hpsjam_packet_entry;
-					pres->packet.setPing(0, hpsjam_ticks, 0);
-					pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
+					pres->packet.setPing(0, time_ms, 0);
+					pres->packet.type = HPSJAM_TYPE_PING_REPLY;
 					pres->insert_tail(&output_pkt.head);
 				}
+				break;
+			case HPSJAM_TYPE_ICON_REQUEST:
+				if (ptr->getRawData(&data, len)) {
+					/* prepend username */
+					icon = QByteArray(data, len);
+
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.setFaderData(0, serverID(), icon.constData(), icon.length());
+					pres->packet.type = HPSJAM_TYPE_FADER_ICON_REPLY;
+					pres->insert_tail(&output_pkt.head);
+					hpsjam_server_broadcast(*pres, this);
+
+					/* tell this client about other icons */
+					for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+						if (hpsjam_server_peers + x == this)
+							continue;
+						QMutexLocker locker(&hpsjam_server_peers[x].lock);
+						if (hpsjam_server_peers[x].valid == false)
+							continue;
+						QByteArray &t = hpsjam_server_peers[x].icon;
+						pres = new struct hpsjam_packet_entry;
+						pres->packet.setFaderData(0, x, t.constData(), t.length());
+						pres->packet.type = HPSJAM_TYPE_FADER_ICON_REPLY;
+						pres->insert_tail(&output_pkt.head);
+					}
+				}
+				break;
+			case HPSJAM_TYPE_NAME_REQUEST:
+				if (ptr->getRawData(&data, len)) {
+					/* prepend username */
+					QByteArray t(data, len);
+					name = QString::fromUtf8(t);
+
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.setFaderData(0, serverID(), t.constData(), t.length());
+					pres->packet.type = HPSJAM_TYPE_FADER_NAME_REPLY;
+					pres->insert_tail(&output_pkt.head);
+					hpsjam_server_broadcast(*pres, this);
+
+					/* tell this client about other names */
+					for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+						if (hpsjam_server_peers + x == this)
+							continue;
+						QMutexLocker locker(&hpsjam_server_peers[x].lock);
+						if (hpsjam_server_peers[x].valid == false)
+							continue;
+						t = hpsjam_server_peers[x].name.toUtf8();
+						pres = new struct hpsjam_packet_entry;
+						pres->packet.setFaderData(0, x, t.constData(), t.length());
+						pres->packet.type = HPSJAM_TYPE_FADER_NAME_REPLY;
+						pres->insert_tail(&output_pkt.head);
+					}
+				}
+				break;
+			case HPSJAM_TYPE_LYRICS_REQUEST:
+				pres = new struct hpsjam_packet_entry;
+				if (ptr->getRawData(&data, len)) {
+					QByteArray t(data, len);
+
+					/* echo back lyrics */
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.setRawData(t.constData(), t.length());
+					pres->packet.type = HPSJAM_TYPE_LYRICS_REPLY;
+					pres->insert_tail(&output_pkt.head);
+					hpsjam_server_broadcast(*pres, this);
+				}
+				break;
+			case HPSJAM_TYPE_CHAT_REQUEST:
+				if (ptr->getRawData(&data, len)) {
+					/* prepend username */
+					QByteArray t(data, len);
+					QString str = QString::fromUtf8(t);
+					str.prepend(QString("[") + name + QString("]: "));
+					str.truncate(128 + 32 + 4);
+					t = str.toUtf8();
+
+					/* echo back text */
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.setRawData(t.constData(), t.length());
+					pres->packet.type = HPSJAM_TYPE_CHAT_REPLY;
+					pres->insert_tail(&output_pkt.head);
+					hpsjam_server_broadcast(*pres, this);
+				}
+				break;
+			case HPSJAM_TYPE_FADER_GAIN_REQUEST:
+				if (ptr->getFaderValue(mix, index, temp, num)) {
+					assert(num <= HPSJAM_MAX_PKT);
+					if (mix != 0 || num <= 0)
+						break;
+					if (index + num >= hpsjam_num_server_peers)
+						break;
+
+					/* echo gain */
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.setFaderValue(mix, index, temp, num);
+					pres->packet.type = HPSJAM_TYPE_FADER_GAIN_REPLY;
+					hpsjam_server_broadcast(*pres, this);
+					delete pres;
+
+					/* local gain */
+					for (size_t x = 0; x != num; x++) {
+						pres = new struct hpsjam_packet_entry;
+						pres->packet.setFaderValue(0, 0, temp + x, 1);
+						pres->packet.type = HPSJAM_TYPE_LOCAL_GAIN_REPLY;
+
+						if (index + x == serverID()) {
+							pres->insert_tail(&output_pkt.head);
+						} else {
+							QMutexLocker other(&hpsjam_server_peers[index + x].lock);
+							pres->insert_tail(&hpsjam_server_peers[index + x].output_pkt.head);
+						}
+					}
+				}
+				break;
+			case HPSJAM_TYPE_FADER_PAN_REQUEST:
+				if (ptr->getFaderValue(mix, index, temp, num)) {
+					assert(num <= HPSJAM_MAX_PKT);
+					if (mix != 0 || num <= 0)
+						break;
+					if (index + num > hpsjam_num_server_peers)
+						break;
+
+					/* echo pan */
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.setFaderValue(mix, index, temp, num);
+					pres->packet.type = HPSJAM_TYPE_FADER_PAN_REPLY;
+					hpsjam_server_broadcast(*pres, this);
+					delete pres;
+
+					/* local pan */
+					for (size_t x = 0; x != num; x++) {
+						pres = new struct hpsjam_packet_entry;
+						pres->packet.setFaderValue(0, 0, temp + x, 1);
+						pres->packet.type = HPSJAM_TYPE_LOCAL_PAN_REPLY;
+
+						if (index + x == serverID()) {
+							pres->insert_tail(&output_pkt.head);
+						} else {
+							QMutexLocker other(&hpsjam_server_peers[index + x].lock);
+							pres->insert_tail(&hpsjam_server_peers[index + x].output_pkt.head);
+						}
+					}
+				}
+				break;
+			case HPSJAM_TYPE_FADER_EQ_REQUEST:
+				if (ptr->getFaderData(mix, index, &data, num)) {
+					if (mix != 0 || num <= 0)
+						break;
+					if (index >= hpsjam_num_server_peers)
+						break;
+
+					/* echo EQ */
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.setFaderData(mix, index, data, num);
+					pres->packet.type = HPSJAM_TYPE_FADER_EQ_REPLY;
+					hpsjam_server_broadcast(*pres, this);
+
+					pres->packet.setFaderData(0, 0, data, num);
+					pres->packet.type = HPSJAM_TYPE_LOCAL_EQ_REPLY;
+
+					/* local EQ */
+					if (index == serverID()) {
+						pres->insert_tail(&output_pkt.head);
+					} else {
+						QMutexLocker other(&hpsjam_server_peers[index].lock);
+						pres->insert_tail(&hpsjam_server_peers[index].output_pkt.head);
+					}
+				}
+				break;
+
+			case HPSJAM_TYPE_FADER_BITS_REQUEST:
+				if (ptr->getFaderData(mix, index, &data, num)) {
+					if (mix != 0 || num <= 0)
+						break;
+					if (index + num > hpsjam_num_server_peers)
+						break;
+					/* copy bits in place */
+					memcpy(bits + index, data, num);
+				}
+				break;
+			default:
+				break;
 			}
 		}
+	}
+
+	/* send a ping, if idle */
+	if (output_pkt.empty()) {
+		pres = new struct hpsjam_packet_entry;
+		pres->packet.setPing(0, hpsjam_ticks, 0);
+		pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
+		pres->insert_tail(&output_pkt.head);
 	}
 
 	/* extract samples for this tick */
@@ -536,104 +747,184 @@ hpsjam_client_peer :: tick()
 				assert(num <= HPSJAM_MAX_PKT);
 				out_audio[0].addSamples(temp, num);
 				out_audio[1].addSamples(temp, num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
 				num = ptr->get16Bit1ChSample(temp);
 				assert(num <= HPSJAM_MAX_PKT);
 				out_audio[0].addSamples(temp, num);
 				out_audio[1].addSamples(temp, num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
 				num = ptr->get24Bit1ChSample(temp);
 				assert(num <= HPSJAM_MAX_PKT);
 				out_audio[0].addSamples(temp, num);
 				out_audio[1].addSamples(temp, num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
 				num = ptr->get32Bit1ChSample(temp);
 				assert(num <= HPSJAM_MAX_PKT);
 				out_audio[0].addSamples(temp, num);
 				out_audio[1].addSamples(temp, num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
 				num = ptr->get8Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				out_audio[0].addSamples(temp, num);
 				out_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_16_BIT_2CH:
 				num = ptr->get16Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				out_audio[0].addSamples(temp, num);
 				out_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_24_BIT_2CH:
 				num = ptr->get24Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				out_audio[0].addSamples(temp, num);
 				out_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_2CH:
 				num = ptr->get32Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				out_audio[0].addSamples(temp, num);
 				out_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
-				break;
+				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_2CH + 1 ... HPSJAM_TYPE_AUDIO_MAX:
 				/* for the future */
-				break;
+				continue;
 			default:
-				/* check if other side received packet */
-				if (ptr->getPeerSeqNo() == output_pkt.pend_seqno)
-					output_pkt.advance();
-				/* check if sequence number matches */
-				if (ptr->getLocalSeqNo() != output_pkt.peer_seqno)
-					continue;
-				/* advance expected sequence number */
-				output_pkt.peer_seqno++;
+				break;
+			}
 
-				switch (ptr->type) {
-				uint16_t packets;
-				uint16_t time_ms;
-				uint64_t passwd;
+			/* check if other side received packet */
+			if (ptr->getPeerSeqNo() == output_pkt.pend_seqno)
+				output_pkt.advance();
+			/* check if sequence number matches */
+			if (ptr->getLocalSeqNo() != output_pkt.peer_seqno)
+				continue;
+			/* advance expected sequence number */
+			output_pkt.peer_seqno++;
 
-				case HPSJAM_TYPE_CONFIGURE_REQUEST:
-					break;
-				case HPSJAM_TYPE_PING_REQUEST:
-					if (ptr->getPing(packets, time_ms, passwd) &&
-					    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
-						pres = new struct hpsjam_packet_entry;
-						pres->packet.setPing(0, time_ms, 0);
-						pres->packet.type = HPSJAM_TYPE_PING_REPLY;
-						pres->insert_tail(&output_pkt.head);
-					}
-					break;
-				case HPSJAM_TYPE_PING_REPLY:
-					break;
-				case HPSJAM_TYPE_FADER_GAIN_REQUEST:
-				case HPSJAM_TYPE_FADER_GAIN_REPLY:
-				case HPSJAM_TYPE_FADER_PAN_REQUEST:
-				case HPSJAM_TYPE_FADER_PAN_REPLY:
-				case HPSJAM_TYPE_FADER_ICON_REQUEST:
-				case HPSJAM_TYPE_FADER_ICON_REPLY:
-				case HPSJAM_TYPE_FADER_NAME_REQUEST:
-				case HPSJAM_TYPE_FADER_NAME_REPLY:
-				case HPSJAM_TYPE_LYRICS_REQUEST:
-				case HPSJAM_TYPE_LYRICS_REPLY:
-				case HPSJAM_TYPE_CHAT_REQUEST:
-				case HPSJAM_TYPE_CHAT_REPLY:
-				default:
-					break;
-				}
+			switch (ptr->type) {
+			uint16_t packets;
+			uint16_t time_ms;
+			uint64_t passwd;
+			const char *data;
+			uint8_t mix;
+			uint8_t index;
 
-				if (output_pkt.empty()) {
+			case HPSJAM_TYPE_PING_REQUEST:
+				if (ptr->getPing(packets, time_ms, passwd) &&
+				    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
 					pres = new struct hpsjam_packet_entry;
-					pres->packet.setPing(0, hpsjam_ticks, 0);
-					pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
+					pres->packet.setPing(0, time_ms, 0);
+					pres->packet.type = HPSJAM_TYPE_PING_REPLY;
 					pres->insert_tail(&output_pkt.head);
 				}
+				break;
+			case HPSJAM_TYPE_LYRICS_REPLY:
+				if (ptr->getRawData(&data, num)) {
+					QByteArray t(data, num);
+					emit receivedLyrics(new QString(QString::fromUtf8(t)));
+				}
+				break;
+			case HPSJAM_TYPE_CHAT_REPLY:
+				if (ptr->getRawData(&data, num)) {
+					QByteArray t(data, num);
+					emit receivedChat(new QString(QString::fromUtf8(t)));
+				}
+				break;
+			case HPSJAM_TYPE_FADER_ICON_REPLY:
+				if (ptr->getFaderData(mix, index, &data, num)) {
+					emit receivedFaderIcon(mix, index, new QByteArray(data, num));
+				}
+				break;
+			case HPSJAM_TYPE_FADER_NAME_REPLY:
+				if (ptr->getFaderData(mix, index, &data, num)) {
+					QByteArray t(data, num);
+					emit receivedFaderName(mix, index, new QString(QString::fromUtf8(t)));
+				}
+				break;
+			case HPSJAM_TYPE_FADER_GAIN_REPLY:
+				if (ptr->getFaderValue(mix, index, temp, num)) {
+					assert(num <= HPSJAM_MAX_PKT);
+					if (mix != 0 || num <= 0)
+						break;
+					if (index + num > HPSJAM_PEERS_MAX)
+						break;
+					for (size_t x = 0; x != num; x++)
+						emit receivedFaderGain(mix, index + x, temp[x]);
+				}
+				break;
+			case HPSJAM_TYPE_FADER_PAN_REPLY:
+				if (ptr->getFaderValue(mix, index, temp, num)) {
+					assert(num <= HPSJAM_MAX_PKT);
+					if (mix != 0 || num <= 0)
+						break;
+					if (index + num > HPSJAM_PEERS_MAX)
+						break;
+					for (size_t x = 0; x != num; x++)
+						emit receivedFaderPan(mix, index + x, temp[x]);
+				}
+				break;
+			case HPSJAM_TYPE_FADER_LEVEL_REPLY:
+				if (ptr->getFaderValue(mix, index, temp, num)) {
+					assert(num <= HPSJAM_MAX_PKT);
+					if (mix != 0 || (num % 2) != 0 || num <= 0)
+						break;
+					if (index + (num / 2) > HPSJAM_PEERS_MAX)
+						break;
+					for (size_t x = 0; x != (num / 2); x++)
+						emit receivedFaderLevel(mix, index + x, temp[2 * x], temp[2 * x + 1]);
+				}
+				break;
+			case HPSJAM_TYPE_LOCAL_GAIN_REPLY:
+				if (ptr->getFaderValue(mix, index, temp, num)) {
+					assert(num <= HPSJAM_MAX_PKT);
+					if (mix != 0 || index != 0 || num != 1)
+						break;
+					in_gain = temp[0];
+				}
+				break;
+			case HPSJAM_TYPE_LOCAL_PAN_REPLY:
+				if (ptr->getFaderValue(mix, index, temp, num)) {
+					assert(num <= HPSJAM_MAX_PKT);
+					if (mix != 0 || index != 0 || num != 1)
+						break;
+					in_pan = temp[0];
+				}
+				break;
+			case HPSJAM_TYPE_LOCAL_EQ_REPLY:
+				if (ptr->getFaderData(mix, index, &data, num)) {
+					if (mix != 0 || index != 0)
+						break;
+					char *ptr = new char [num + 1];
+					memcpy(ptr, data, num);
+					ptr[num] = 0;
+					eq.init(ptr);
+					delete [] ptr;
+				}
+				break;
+			case HPSJAM_TYPE_FADER_DISCONNECT_REPLY:
+				if (ptr->getFaderData(mix, index, &data, num)) {
+					if (mix != 0)
+						break;
+					emit receivedFaderDisconnect(mix, index);
+				}
+				break;
+			default:
+				break;
 			}
 		}
+	}
+
+	/* send a ping, if idle */
+	if (output_pkt.empty()) {
+		pres = new struct hpsjam_packet_entry;
+		pres->packet.setPing(0, hpsjam_ticks, 0);
+		pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
+		pres->insert_tail(&output_pkt.head);
 	}
 
 	/* extract samples for this tick */
@@ -691,4 +982,18 @@ hpsjam_client_peer :: tick()
 
 	/* send a packet */
 	output_pkt.send(address);
+}
+
+void
+hpsjam_client_peer :: handleChat(QString *str)
+{
+	hpsjam_client->w_chat->append(*str);
+	delete str;
+}
+
+void
+hpsjam_client_peer :: handleLyrics(QString *str)
+{
+	hpsjam_client->w_lyrics->append(*str);
+	delete str;
 }

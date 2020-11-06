@@ -74,7 +74,24 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 	w_stack.addWidget(w_config);
 	w_stack.addWidget(w_stats);
 
-	connect(&w_config->lyrics_fmt.b_font_select, SIGNAL(released()), w_lyrics, SLOT(handle_font_dialog()));
+	connect(&w_config->lyrics_fmt.b_font_select, SIGNAL(released()),
+		w_lyrics, SLOT(handle_font_dialog()));
+
+	/* connect client signals */
+	connect(hpsjam_client_peer, SIGNAL(receivedFaderLevel(uint8_t,uint8_t,float,float)),
+		w_mixer, SLOT(handle_fader_level(uint8_t,uint8_t,float,float)));
+	connect(hpsjam_client_peer, SIGNAL(receivedFaderGain(uint8_t,uint8_t,float)),
+		w_mixer, SLOT(handle_fader_gain(uint8_t,uint8_t,float)));
+	connect(hpsjam_client_peer, SIGNAL(receivedFaderPan(uint8_t,uint8_t,float)),
+		w_mixer, SLOT(handle_fader_pan(uint8_t,uint8_t,float)));
+	connect(hpsjam_client_peer, SIGNAL(receivedFaderName(uint8_t,uint8_t,QString *)),
+		w_mixer, SLOT(handle_fader_name(uint8_t,uint8_t,QString *)));
+	connect(hpsjam_client_peer, SIGNAL(receivedFaderIcon(uint8_t,uint8_t,QByteArray *)),
+		w_mixer, SLOT(handle_fader_icon(uint8_t,uint8_t,QByteArray *)));
+	connect(hpsjam_client_peer, SIGNAL(receivedFaderEQ(uint8_t,uint8_t,QString *)),
+		w_mixer, SLOT(handle_fader_eq(uint8_t,uint8_t,QString *)));
+	connect(hpsjam_client_peer, SIGNAL(receivedFaderDisconnect(uint8_t,uint8_t)),
+		w_mixer, SLOT(handle_fader_disconnect(uint8_t,uint8_t)));
 
 	connect(&watchdog, SIGNAL(timeout()), this, SLOT(handle_watchdog()));
 	watchdog.start(250);
