@@ -90,6 +90,7 @@ HpsJamConnect :: handle_connect()
 	unsigned long long key = 0;
 	QByteArray host;
 	QByteArray port;
+	QByteArray temp;
 
 	auto parts = text.split(QString(":"));
 
@@ -123,6 +124,13 @@ HpsJamConnect :: handle_connect()
 		}
 	}
 
+	if (icon.curr.length() > 256) {
+		QMessageBox::information(this, tr("CONNECT"),
+		    tr("Icon size is bigger than 256 bytes.\n"
+		       "Try selecting another icon."));
+		return;
+	}
+
 	if (hpsjam_v4.resolve(host.constData(), port.constData(), address) == false) {
 		if (hpsjam_v6.resolve(host.constData(), port.constData(), address) == false) {
 			QMessageBox::information(this, tr("CONNECT"),
@@ -148,6 +156,19 @@ HpsJamConnect :: handle_connect()
 	pkt = new struct hpsjam_packet_entry;
 	pkt->packet.setConfigure(hpsjam_client->w_config->down_fmt.format);
 	pkt->packet.type = HPSJAM_TYPE_CONFIGURE_REQUEST;
+	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
+
+	/* send name */
+	temp = nick.toUtf8();
+	pkt = new struct hpsjam_packet_entry;
+	pkt->packet.setRawData(temp.constData(), temp.length());
+	pkt->packet.type = HPSJAM_TYPE_NAME_REQUEST;
+	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
+
+	/* send icon */
+	pkt = new struct hpsjam_packet_entry;
+	pkt->packet.setRawData(temp.constData(), temp.length());
+	pkt->packet.type = HPSJAM_TYPE_ICON_REQUEST;
 	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
 
 	/* set local format */

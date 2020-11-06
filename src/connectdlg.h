@@ -34,6 +34,7 @@
 #include <QListWidget>
 #include <QGridLayout>
 #include <QPushButton>
+#include <QByteArray>
 
 class HpsJamConnectList : public QListView {
 	Q_OBJECT;
@@ -45,6 +46,7 @@ signals:
 
 class HpsJamConnectIcon : public QGroupBox {
 public:
+	QByteArray curr;
 	HpsJamConnectIcon() {
 		setTitle(tr("Select icon"));
 	};
