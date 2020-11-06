@@ -270,6 +270,12 @@ hpsjam_packet::getFaderValue(uint8_t &mix, uint8_t &index, float *gain, size_t &
 		mix = getS8(0);
 		index = getS8(1);
 		num = 2 * (length - 2);
+
+		if (getS8(2) & 1) {
+			if (num == 0)
+				return (false);
+			num--;
+		}
 		for (size_t x = 0; x != num; x++)
 			gain[x] = audio_decode(getS16(4 + 2 * x), 0x7fff);
 		return (true);
@@ -288,7 +294,7 @@ hpsjam_packet::setFaderValue(uint8_t mix, uint8_t index, const float *gain, size
 	sequence[1] = 0;
 	putS8(0, mix);
 	putS8(1, index);
-	putS8(2, 0);
+	putS8(2, ngain & 1);
 	putS8(3, 0);
 
 	for (size_t x = 0; x != ngain; x++)
@@ -310,7 +316,7 @@ hpsjam_packet::setFaderData(uint8_t mix, uint8_t index, const char *ptr, size_t 
 	sequence[1] = 0;
 	putS8(0, mix);
 	putS8(1, index);
-	putS8(2, 0);
+	putS8(2, (-len) & 3);
 	putS8(3, 0);
 	memcpy(sequence + 6, ptr, len);
 
@@ -327,6 +333,17 @@ hpsjam_packet::getFaderData(uint8_t &mix, uint8_t &index, const char **pp, size_
 		index = getS8(1);
 		*pp = (const char *)(sequence + 6);
 		len = (length - 2) * 4;
+
+		if (getS8(2) & 1) {
+			if (len == 0)
+				return (false);
+			len--;
+		}
+		if (getS8(2) & 2) {
+			if (len < 2)
+				return (false);
+			len -= 2;
+		}
 		return (true);
 	}
 	return (false);
