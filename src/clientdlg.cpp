@@ -72,6 +72,8 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 	w_stack.addWidget(w_config);
 	w_stack.addWidget(w_stats);
 
+	connect(&w_config->lyrics_fmt.b_font_select, SIGNAL(released()), w_lyrics, SLOT(handle_font_dialog()));
+
 	connect(&watchdog, SIGNAL(timeout()), this, SLOT(handle_watchdog()));
 	watchdog.start(250);
 }
