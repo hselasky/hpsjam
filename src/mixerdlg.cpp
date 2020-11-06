@@ -154,6 +154,8 @@ HpsJamSlider :: paintEvent(QPaintEvent *event)
 void
 HpsJamSlider :: mousePressEvent(QMouseEvent *event)
 {
+	if (event->button() != Qt::LeftButton)
+		return;
 	if (target.contains(event->pos())) {
 		active = true;
 		start = event->pos();
@@ -163,6 +165,9 @@ HpsJamSlider :: mousePressEvent(QMouseEvent *event)
 void
 HpsJamSlider :: mouseMoveEvent(QMouseEvent *event)
 {
+	if (event->button() != Qt::LeftButton)
+		return;
+
 	if (height() < (int)dsize)
 		return;
 	if (active == true) {
@@ -187,6 +192,9 @@ HpsJamSlider :: mouseMoveEvent(QMouseEvent *event)
 void
 HpsJamSlider :: mouseReleaseEvent(QMouseEvent *event)
 {
+	if (event->button() != Qt::LeftButton)
+		return;
+
 	if (active) {
 		mouseMoveEvent(event);
 		active = false;
