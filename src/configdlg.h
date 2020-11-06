@@ -76,6 +76,16 @@ signals:
 	void valueChanged();
 };
 
+class HpsJamLyricsFormat : public QGroupBox {
+public:
+	HpsJamLyricsFormat() : gl(this), b_font_select(tr("Select font")) {
+		gl.addWidget(&b_font_select, 0,0);
+		setTitle(tr("Lyrics format"));
+	};
+	QGridLayout gl;
+	QPushButton b_font_select;
+};
+
 class HpsJamConfig : public QWidget {
 	Q_OBJECT;
 public:
@@ -85,7 +95,8 @@ public:
 
 		gl.addWidget(&up_fmt, 0,0);
 		gl.addWidget(&down_fmt, 1,0);
-		gl.setRowStretch(2,1);
+		gl.addWidget(&lyrics_fmt, 2,0);
+		gl.setRowStretch(3,1);
 
 		connect(&up_fmt, SIGNAL(valueChanged()), this, SLOT(handle_up_config()));
 		connect(&down_fmt, SIGNAL(valueChanged()), this, SLOT(handle_down_config()));
@@ -93,6 +104,7 @@ public:
 	QGridLayout gl;
 	HpsJamConfigFormat up_fmt;
 	HpsJamConfigFormat down_fmt;
+	HpsJamLyricsFormat lyrics_fmt;
 public slots:
 	void handle_up_config();
 	void handle_down_config();
