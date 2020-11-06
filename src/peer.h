@@ -132,6 +132,7 @@ public:
 		out_peak = 0.0;
 		out_format = HPSJAM_TYPE_END;
 		bits = 0;
+		eq.cleanup();
 	};
 	hpsjam_client_peer() {
 		init();

@@ -132,10 +132,10 @@ public:
 	void init() {
 		w_name.setText(QString());
 		w_icon.svg.load(QByteArray());
-		HPSJAM_NO_SIGNAL(w_slider,setValue(0));
+		HPSJAM_NO_SIGNAL(w_slider,setValue(1));
 		HPSJAM_NO_SIGNAL(w_slider,setPan(0));
 		HPSJAM_NO_SIGNAL(w_slider,setLevel(0,0));
-		HPSJAM_NO_SIGNAL(w_eq.edit,setText(QString()));
+		w_eq.handle_disable();
 		HPSJAM_NO_SIGNAL(b_inv,setFlat(false));
 		HPSJAM_NO_SIGNAL(b_mute,setFlat(false));
 		HPSJAM_NO_SIGNAL(b_solo,setFlat(false));
@@ -180,6 +180,7 @@ public:
 			peer_strip[x].setTitle(QString("Mix%1").arg(1 + x));
 			peer_strip[x].id = x;
 			peer_strip[x].hide();
+			peer_strip[x].w_slider.setValue(1);
 
 			gl.addWidget(peer_strip + x, (1 + x) / 8, (1 + x) % 8);
 			connect(peer_strip + x, SIGNAL(bitsChanged(int)), this, SLOT(handle_bits_changed(int)));
