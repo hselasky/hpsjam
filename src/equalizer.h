@@ -26,6 +26,7 @@
 #ifndef _HPSJAM_EQUALIZER_
 #define	_HPSJAM_EQUALIZER_
 
+#include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -40,7 +41,7 @@ public:
 	float *filter_in[2];
 	float *filter_out[2];
 
-	void init(size_t, const char *);
+	bool init(const char *);
 	void cleanup();
 	void doit(float *left, float *right, size_t samples);
 	void doit(float *left, size_t samples);

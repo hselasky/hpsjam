@@ -159,27 +159,51 @@ struct equalizer {
 	};
 };
 
-void
-hpsjam_equalizer :: init(size_t size, const char *pfilter)
+bool
+hpsjam_equalizer :: init(const char *pfilter)
 {
+	/* check if filter starts with filtersize */
+	if (strncasecmp(pfilter, "filtersize ", 11) != 0)
+		return (true);
+	/* get filter size */
+	double ms = 1.0;
+	if (sscanf(pfilter, "%lfms", &ms) != 1)
+		return (true);
+	ssize_t size = (HPSJAM_SAMPLE_RATE * ms) / 1000.0;
+	if (size < 0)
+		size = 0;
+	else if (size > 512)
+		size = 512;
+	/* skip rest of line */
+	while (*pfilter != 0) {
+		if (*pfilter == '\n') {
+			pfilter++;
+			break;
+		}
+		pfilter++;
+	}
+
 	/* make filter size power of two */
 	while (size && (size & ~(size - 1)))
 		size += size & ~(size - 1);
 
-	memset(this, 0, sizeof(*this));
+	/* check if EQ should be disabled */
+	if (size == 0) {
+		cleanup();
+		return (false);
+	}
 
-	filter_size = size;
+	struct equalizer eq;
 
-	if (size != 0 && pfilter[0] != 0) {
-		struct equalizer eq;
+	eq.init(HPSJAM_SAMPLE_RATE, size);
 
-		eq.init(HPSJAM_SAMPLE_RATE, size);
+	if (eq.load(pfilter)) {
+		eq.cleanup();
+		return (true);
+	}
 
-		if (eq.load(pfilter)) {
-			eq.cleanup();
-			return;
-		}
-
+	if (filter_size != (size_t)size) {
+		cleanup();
 		filter_data = new float [size];
 		filter_in[0] = new float [size];
 		filter_in[1] = new float [size];
@@ -188,12 +212,13 @@ hpsjam_equalizer :: init(size_t size, const char *pfilter)
 
 		memset(filter_out[0], 0, sizeof(float) * 2 * size);
 		memset(filter_out[1], 0, sizeof(float) * 2 * size);
-
-		for (size_t x = 0; x != size; x++)
-			filter_data[x] = eq.fftw_time[x];
-
-		eq.cleanup();
 	}
+
+	for (ssize_t x = 0; x != size; x++)
+		filter_data[x] = eq.fftw_time[x];
+
+	eq.cleanup();
+	return (false);
 }
 
 void
