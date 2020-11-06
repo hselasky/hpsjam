@@ -150,6 +150,9 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 	in_audio[0].addSamples(left, samples);
 	in_audio[1].addSamples(right, samples);
 
+	in_level[0].addSamples(left, samples);
+	in_level[1].addSamples(right, samples);
+
 	out_audio[0].remSamples(left, samples);
 	out_audio[1].remSamples(right, samples);
 
@@ -352,6 +355,10 @@ void
 hpsjam_server_peer :: audio_import()
 {
 	struct hpsjam_packet_entry entry = {};
+
+	/* compute levels */
+	out_level[0].addSamples(out_audio[0], HPSJAM_SAMPLE_RATE / 1000);
+	out_level[1].addSamples(out_audio[1], HPSJAM_SAMPLE_RATE / 1000);
 
 	/* run compressor before sending audio */
 	switch (output_fmt) {

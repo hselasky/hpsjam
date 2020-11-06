@@ -60,6 +60,32 @@ level_decode(float value)
 		return multiplier * (powf(1.0f + 255.0f, value) - 1.0f);
 }
 
+class hpsjam_audio_level {
+public:
+	float level;
+
+	hpsjam_audio_level() {
+		clear();
+	};
+	void clear() {
+		level = 0;
+	};
+	void addSamples(const float *ptr, size_t num) {
+		for (size_t x = 0; x != num; x++) {
+			const float v = fabsf(ptr[x]);
+			if (v > level)
+				level = v;
+		}
+		if (level > 1.0f)
+			level = 1.0f;
+	};
+	float getLevel() {
+		float retval = level;
+		level = retval / 2.0f;
+		return (retval);
+	};
+};
+
 class hpsjam_audio_buffer {
 public:
 	float samples[HPSJAM_MAX_SAMPLES];
@@ -74,33 +100,6 @@ public:
 
 	hpsjam_audio_buffer() {
 		clear();
-	};
-
-	float getMaxLevel() const {
-		size_t fwd = HPSJAM_MAX_SAMPLES - consumer;
-		float level = 0.0f;
-
-		if (fwd >= total) {
-			for (size_t x = 0; x != total; x++) {
-				const float v = fabsf(samples[consumer + x]);
-				if (v > level)
-					level = v;
-			}
-		} else {
-			for (size_t x = 0; x != fwd; x++) {
-				const float v = fabsf(samples[consumer + x]);
-				if (v > level)
-					level = v;
-			}
-
-			/* buffer wrap around */
-			for (size_t x = 0; x != (total - fwd); x++) {
-				const float v = fabsf(samples[x]);
-				if (v > level)
-					level = v;
-			}
-		}
-		return (level);
 	};
 
 	uint8_t getLowWater() const {
