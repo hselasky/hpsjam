@@ -38,6 +38,11 @@
 #define	HPSJAM_BIT_MUTE (1 << 0)
 #define	HPSJAM_BIT_SOLO (1 << 1)
 #define	HPSJAM_BIT_INVERT (1 << 2)
+#define	HPSJAM_NO_SIGNAL(a,b) do {	\
+  a.blockSignals(true);			\
+  a.b;					\
+  a.blockSignals(false);		\
+} while (0)
 
 class hpsjam_server_peer;
 class hpsjam_client_peer;
