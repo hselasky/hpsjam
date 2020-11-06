@@ -55,6 +55,7 @@ public:
 	HpsJamConnectName() : gl(this) {
 		setTitle(tr("Select nickname"));
 		edit.setText(QString("anonymous"));
+		edit.setMaxLength(32);
 		gl.addWidget(&edit, 0,0);
 	};
 	QGridLayout gl;
@@ -66,6 +67,7 @@ public:
 	HpsJamConnectPassword() : gl(this) {
 		setTitle(tr("Enter your password, if any"));
 		edit.setEchoMode(QLineEdit::Password);
+		edit.setMaxLength(16);
 		gl.addWidget(&edit, 0,0);
 	};
 	QGridLayout gl;
