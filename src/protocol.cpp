@@ -262,3 +262,99 @@ hpsjam_packet::put32Bit1ChSample(float *left, size_t samples)
 		putS32(4 * x, audio_encode(left[x], 0x7fffffff));
 	}
 }
+
+bool
+hpsjam_packet::getFaderValue(uint8_t &mix, uint8_t &index, float *gain, size_t &num) const
+{
+	if (length >= 2) {
+		mix = getS8(0);
+		index = getS8(1);
+		num = 2 * (length - 2);
+		for (size_t x = 0; x != num; x++)
+			gain[x] = audio_decode(getS16(4 + 2 * x), 0x7fff);
+		return (true);
+	}
+	return (false);
+};
+
+void
+hpsjam_packet::setFaderValue(uint8_t mix, uint8_t index, const float *gain, size_t ngain)
+{
+	const size_t tot = 2 + ((ngain + 1) / 2);
+	assert(tot <= 255);
+
+	length = tot;
+	sequence[0] = 0;
+	sequence[1] = 0;
+	putS8(0, mix);
+	putS8(1, index);
+	putS8(2, 0);
+	putS8(3, 0);
+
+	for (size_t x = 0; x != ngain; x++)
+		putS16(4 + 2 * x, audio_encode(gain[x], 0x7fff));
+
+	/* zero-pad remainder */
+	while (ngain % 2)
+		putS16(4 + 2 * ngain++, 0);
+};
+
+void
+hpsjam_packet::setFaderData(uint8_t mix, uint8_t index, const char *ptr, size_t len)
+{
+	const size_t tot = 2 + (len + 3) / 4;
+	assert(tot <= 255);
+
+	length = tot;
+	sequence[0] = 0;
+	sequence[1] = 0;
+	putS8(0, mix);
+	putS8(1, index);
+	putS8(2, 0);
+	putS8(3, 0);
+	memcpy(sequence + 6, ptr, len);
+
+	/* zero-pad remainder */
+	while (len % 4)
+		sequence[6 + len++] = 0;
+};
+
+bool
+hpsjam_packet::getFaderData(uint8_t &mix, uint8_t &index, const char **pp, size_t &len) const
+{
+	if (length >= 2) {
+		mix = getS8(0);
+		index = getS8(1);
+		*pp = (const char *)(sequence + 6);
+		len = (length - 2) * 4;
+		return (true);
+	}
+	return (false);
+};
+
+void
+hpsjam_packet::setRawData(const char *ptr, size_t len)
+{
+	const size_t tot = 1 + (len + 3) / 4;
+	assert(tot <= 255);
+
+	length = tot;
+	sequence[0] = 0;
+	sequence[1] = 0;
+	memcpy(sequence + 2, ptr, len);
+
+	/* zero-pad remainder */
+	while (len % 4)
+		sequence[2 + len++] = 0;
+};
+
+bool
+hpsjam_packet::getRawData(const char **pp, size_t &len) const
+{
+	if (length >= 1) {
+		*pp = (const char *)(sequence + 2);
+		len = (length - 1) * 4;
+		return (true);
+	}
+	return (false);
+};

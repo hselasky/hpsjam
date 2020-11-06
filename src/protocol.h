@@ -52,21 +52,23 @@ enum {
 	HPSJAM_TYPE_AUDIO_32_BIT_1CH,
 	HPSJAM_TYPE_AUDIO_32_BIT_2CH,
 	HPSJAM_TYPE_AUDIO_MAX = 63,
-	HPSJAM_TYPE_CONFIGURE_REQUEST,	
+	HPSJAM_TYPE_CONFIGURE_REQUEST,
 	HPSJAM_TYPE_PING_REQUEST,
 	HPSJAM_TYPE_PING_REPLY,
-	HPSJAM_TYPE_FADER_GAIN_REQUEST,
-	HPSJAM_TYPE_FADER_GAIN_REPLY,
-	HPSJAM_TYPE_FADER_PAN_REQUEST,
-	HPSJAM_TYPE_FADER_PAN_REPLY,
-	HPSJAM_TYPE_FADER_ICON_REQUEST,
-	HPSJAM_TYPE_FADER_ICON_REPLY,
-	HPSJAM_TYPE_FADER_NAME_REQUEST,
-	HPSJAM_TYPE_FADER_NAME_REPLY,
+	HPSJAM_TYPE_ICON_REQUEST,
+	HPSJAM_TYPE_NAME_REQUEST,
 	HPSJAM_TYPE_LYRICS_REQUEST,
 	HPSJAM_TYPE_LYRICS_REPLY,
 	HPSJAM_TYPE_CHAT_REQUEST,
 	HPSJAM_TYPE_CHAT_REPLY,
+	HPSJAM_TYPE_FADER_GAIN_REQUEST,
+	HPSJAM_TYPE_FADER_GAIN_REPLY,
+	HPSJAM_TYPE_FADER_PAN_REQUEST,
+	HPSJAM_TYPE_FADER_PAN_REPLY,
+	HPSJAM_TYPE_FADER_BITS_REQUEST,
+	HPSJAM_TYPE_FADER_BITS_REPLY,	/* unused */
+	HPSJAM_TYPE_FADER_ICON_REPLY,
+	HPSJAM_TYPE_FADER_NAME_REPLY,
 };
 
 struct hpsjam_header {
@@ -182,132 +184,15 @@ struct hpsjam_packet {
 		sequence[1] = seqno;
 	};
 
-	bool getFaderGain(uint8_t &mix, uint8_t &index, float &gain) const {
-		if (length >= 2) {
-			mix = getS8(0);
-			index = getS8(1);
-			gain = (float)getS16(2) / (float)0x7fff;
-			return (true);
-		}
-		return (false);
-	};
+	bool getFaderValue(uint8_t &, uint8_t &, float *, size_t &) const;
+	void setFaderValue(uint8_t, uint8_t, const float *, size_t);
 
-	void setFaderGain(uint8_t mix, uint8_t index, float gain) {
-		length = 2;
-		sequence[0] = 0;
-		sequence[1] = 0;
-		putS8(0, mix);
-		putS8(1, index);
-		putS16(2, gain * 0x7fff);
-	};
+	void setFaderData(uint8_t, uint8_t, const char *, size_t);
+	bool getFaderData(uint8_t &, uint8_t &, const char **, size_t &) const;
 
-	bool getFaderPan(uint8_t &mix, uint8_t &index, float &gain) const {
-		if (length >= 2) {
-			mix = getS8(0);
-			index = getS8(1);
-			gain = (float)getS16(2) / (float)0x7fff;
-			return (true);
-		}
-		return (false);
-	};
+	void setRawData(const char *, size_t);
+	bool getRawData(const char **, size_t &) const;
 
-	void setFaderPan(uint8_t mix, uint8_t index, float gain) {
-		length = 2;
-		sequence[0] = 0;
-		sequence[1] = 0;
-		putS8(0, mix);
-		putS8(1, index);
-		putS16(2, gain * 0x7fff);
-	};
-
-	bool getFaderIcon(uint8_t &mix, uint8_t &index, const char **pp) const {
-		if (length >= 2) {
-			mix = getS8(0);
-			index = getS8(1);
-			*pp = (char *)(sequence + 4);
-			/* check for zero-termination */
-			return (sequence[2 + (length - 1) * 4 - 1] == 0);
-		}
-		return (false);
-	};
-
-	void setFaderIcon(uint8_t &mix, uint8_t &index, const char *p) {
-		size_t len = strlen(p) + 1;
-		size_t tot = 2 + (len + 3 - 2) / 4;
-
-		assert(tot <= 255);
-		length = tot;
-		sequence[0] = 0;
-		sequence[1] = 0;
-		putS8(0, mix);
-		putS8(1, index);
-		memcpy(sequence + 4, p, len);
-	};
-
-  	bool getFaderName(uint8_t &mix, uint8_t &index, const char **pp) const {
-		if (length >= 2) {
-			mix = getS8(0);
-			index = getS8(1);
-			*pp = (char *)(sequence + 4);
-			/* check for zero-termination */
-			return (sequence[2 + (length - 1) * 4 - 1] == 0);
-		}
-		return (false);
-	};
-
-	void setFaderName(uint8_t &mix, uint8_t &index, const char *p) {
-		size_t len = strlen(p) + 1;
-		size_t tot = 2 + (len + 3 - 2) / 4;
-
-		assert(tot <= 255);
-		length = tot;
-		sequence[0] = 0;
-		sequence[1] = 0;
-		putS8(0, mix);
-		putS8(1, index);
-		memcpy(sequence + 4, p, len);
-	};
-
-  	bool getLyrics(const char **pp) const {
-		if (length >= 2) {
-			*pp = (char *)(sequence + 2);
-			/* check for zero-termination */
-			return (sequence[2 + (length - 1) * 4 - 1] == 0);
-		}
-		return (false);
-	};
-
-	void setLyrics(const char *p) {
-		size_t len = strlen(p) + 1;
-		size_t tot = 1 + (len + 3) / 4;
-
-		assert(tot <= 255);
-		length = tot;
-		sequence[0] = 0;
-		sequence[1] = 0;
-		memcpy(sequence + 2, p, len);
-	};
-
-  	bool getChat(const char **pp) const {
-		if (length >= 2) {
-			*pp = (char *)(sequence + 2);
-			/* check for zero-termination */
-			return (sequence[2 + (length - 1) * 4 - 1] == 0);
-		}
-		return (false);
-	};
-
-	void setChat(const char *p) {
-		size_t len = strlen(p) + 1;
-		size_t tot = 1 + (len + 3) / 4;
-
-		assert(tot <= 255);
-		length = tot;
-		sequence[0] = 0;
-		sequence[1] = 0;
-		memcpy(sequence + 2, p, len);
-	};
-  
 	bool getConfigure(uint8_t &out_format) const {
 		if (length >= 2) {
 			out_format = getS8(0);
