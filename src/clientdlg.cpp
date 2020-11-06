@@ -65,6 +65,8 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 	w_config = new HpsJamConfig();
 	w_stats = new HpsJamStats();
 
+	eq_copy = 0;
+
 	w_stack.addWidget(w_connect);
 	w_stack.addWidget(w_mixer);
 	w_stack.addWidget(w_lyrics);

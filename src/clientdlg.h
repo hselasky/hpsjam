@@ -26,6 +26,8 @@
 #ifndef _HPSJAM_CLIENTDLG_H_
 #define	_HPSJAM_CLIENTDLG_H_
 
+#include <QCoreApplication>
+
 #include <QWidget>
 #include <QStackedWidget>
 #include <QGridLayout>
@@ -38,6 +40,7 @@ class HpsJamLyrics;
 class HpsJamChat;
 class HpsJamConfig;
 class HpsJamStats;
+class HpsJamEqualizer;
 
 class HpsJamClientButton : public QPushButton {
 	Q_OBJECT;
@@ -78,6 +81,11 @@ public:
 	HpsJamChat *w_chat;
 	HpsJamConfig *w_config;
 	HpsJamStats *w_stats;
+	HpsJamEqualizer *eq_copy;
+
+	void closeEvent(QCloseEvent *event) {
+		QCoreApplication::exit(0);
+	};
 
 public slots:
 	void handle_connect();
