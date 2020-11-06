@@ -72,9 +72,10 @@ HpsJamStats :: paintEvent(QPaintEvent *event)
 
 	font.setPixelSize(fsize);
 	paint.setFont(font);
-
+#if 0
 	paint.setPen(QPen(QBrush(fg), 1));
 	paint.drawText(QPoint(frame.x(), frame.y() + fsize), QString("Statistics"));
+#endif
 
 	for (unsigned i = xmax = 0; i != N; i++) {
 		if (stats[xmax] < stats[i]) {
