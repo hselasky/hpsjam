@@ -111,11 +111,9 @@ public:
 	float out_peak;
 	uint8_t bits;
 	uint8_t out_format;
-	bool valid[256];
 
 	void init() {
 		address.clear();
-		memset(valid, 0, sizeof(valid));
 		input_pkt.init();
 		output_pkt.init();
 		in_audio[0].clear();
