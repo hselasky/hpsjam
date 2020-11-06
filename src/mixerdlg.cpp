@@ -37,6 +37,8 @@ void
 HpsJamIcon :: paintEvent(QPaintEvent *event)
 {
 	QPainter paint(this);
+
+	paint.setRenderHints(QPainter::Antialiasing, 1);
 }
 
 HpsJamSlider :: HpsJamSlider()
@@ -87,6 +89,8 @@ HpsJamSlider :: paintEvent(QPaintEvent *event)
 	QRect frame(0, 0, width(), height());
 
 	QPainter paint(this);
+
+	paint.setRenderHints(QPainter::Antialiasing, 1);
 
 	/* select foreground color */
 	const QColor fg(0, 0, 0);
