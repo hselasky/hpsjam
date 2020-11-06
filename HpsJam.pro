@@ -21,6 +21,7 @@ HEADERS		+= src/protocol.h
 HEADERS		+= src/socket.h
 HEADERS		+= src/statsdlg.h
 HEADERS		+= src/timer.h
+HEADERS		+= src/volumedlg.h
 
 SOURCES		+= src/audiobuffer.cpp
 SOURCES		+= src/chatdlg.cpp
@@ -38,6 +39,7 @@ SOURCES		+= src/protocol.cpp
 SOURCES		+= src/socket.cpp
 SOURCES		+= src/statsdlg.cpp
 SOURCES		+= src/timer.cpp
+SOURCES		+= src/volumedlg.cpp
 
 isEmpty(WITHOUT_AUDIO) {
 # JACK audio backend
