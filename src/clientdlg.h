@@ -39,18 +39,37 @@ class HpsJamChat;
 class HpsJamConfig;
 class HpsJamStats;
 
+class HpsJamClientButton : public QPushButton {
+	Q_OBJECT;
+public:
+	HpsJamClientButton(const QString &str) : QPushButton(str) {
+		flashing = false;
+		connect(&watchdog, SIGNAL(timeout()), this, SLOT(handle_timeout()));
+		connect(this, SIGNAL(released()), this, SLOT(handle_released()));
+	};
+	bool flashing;
+	QTimer watchdog;
+	void setFlashing() {
+		watchdog.start(1000);
+		flashing = true;
+	};
+public slots:
+	void handle_timeout();
+	void handle_released();
+};
+
 class HpsJamClient : public QWidget {
 	Q_OBJECT;
 public:
 	HpsJamClient();
 	QGridLayout gl;
 	QStackedWidget w_stack;
-	QPushButton b_connect;
-	QPushButton b_mixer;
-	QPushButton b_lyrics;
-	QPushButton b_chat;
-	QPushButton b_config;
-	QPushButton b_stats;
+	HpsJamClientButton b_connect;
+	HpsJamClientButton b_mixer;
+	HpsJamClientButton b_lyrics;
+	HpsJamClientButton b_chat;
+	HpsJamClientButton b_config;
+	HpsJamClientButton b_stats;
 	QTimer watchdog;
 
 	HpsJamConnect *w_connect;

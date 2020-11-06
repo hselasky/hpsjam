@@ -129,3 +129,19 @@ HpsJamClient :: handle_watchdog()
 
 	w_mixer->self_strip.w_slider.setLevel(level_encode(temp[0]), level_encode(temp[1]));
 }
+
+void
+HpsJamClientButton :: handle_timeout()
+{
+	if (flashing == false || isFlat() == true)
+		setFlat(false);
+	else
+		setFlat(true);
+}
+
+void
+HpsJamClientButton :: handle_released()
+{
+	flashing = false;
+	watchdog.stop();
+}
