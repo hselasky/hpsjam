@@ -118,6 +118,8 @@ main(int argc, char **argv)
 	if (do_fork && daemon(0, 0) != 0)
 		errx(1, "Cannot daemonize");
 
+	qRegisterMetaType<uint8_t>("uint8_t");
+
 	if (hpsjam_num_server_peers == 0) {
 		QApplication app(argc, argv);
 
