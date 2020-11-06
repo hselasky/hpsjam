@@ -61,6 +61,7 @@ class HpsJamChatBox : public QGroupBox {
 public:
 	HpsJamChatBox() : gl(this), b_send(tr("SEND")) {
 		setTitle(tr("Chat box"));
+		line.setMaxLength(128);
 
 		gl.addWidget(&edit, 0,0,1,2);
 		gl.addWidget(&line, 1,0,1,1);
@@ -69,6 +70,7 @@ public:
 		gl.setColumnStretch(0,1);
 
 		connect(&b_send, SIGNAL(released()), this, SLOT(handle_send_chat()));
+		connect(&line, SIGNAL(returnPressed()), this, SLOT(handle_send_chat()));
 	};
 	QGridLayout gl;
 	QPushButton b_send;
@@ -87,6 +89,7 @@ public:
 		gl.setRowStretch(0,1);
 		gl.setRowStretch(1,1);
 	};
+	void append(const QString &);
 	QGridLayout gl;
 	HpsJamChatLyrics lyrics;
 	HpsJamChatBox chat;

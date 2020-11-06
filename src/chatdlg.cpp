@@ -23,16 +23,62 @@
  * SUCH DAMAGE.
  */
 
+#include <QMutexLocker>
+#include <QTextCursor>
+
+#include "hpsjam.h"
+#include "clientdlg.h"
 #include "chatdlg.h"
+#include "peer.h"
 
 void
 HpsJamChatLyrics :: handle_send_lyrics()
 {
+	QTextCursor cursor(edit.textCursor());
 
+	cursor.beginEditBlock();
+	cursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor, 1);
+	cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor, 1);
+	cursor.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor, 1);
+	cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 1);
+	QString str = cursor.selectedText();
+	str.truncate(128);
+	QByteArray temp = str.toUtf8();
+	cursor.removeSelectedText();
+	cursor.endEditBlock();
+
+	QMutexLocker locker(&hpsjam_client_peer->lock);
+	struct hpsjam_packet_entry *pkt;
+
+	/* send text */
+	pkt = new struct hpsjam_packet_entry;
+	pkt->packet.setRawData(temp.constData(), temp.length());
+	pkt->packet.type = HPSJAM_TYPE_LYRICS_REQUEST;
+	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
 }
 
 void
 HpsJamChatBox :: handle_send_chat()
 {
+	QByteArray temp = line.text().toUtf8();
+	struct hpsjam_packet_entry *pkt;
 
+	line.setText(QString());
+
+	QMutexLocker locker(&hpsjam_client_peer->lock);
+
+	/* send text */
+	pkt = new struct hpsjam_packet_entry;
+	pkt->packet.setRawData(temp.constData(), temp.length());
+	pkt->packet.type = HPSJAM_TYPE_CHAT_REQUEST;
+	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
+}
+
+void
+HpsJamChat :: append(const QString &str)
+{
+	chat.edit.append(str);
+
+	if (!isVisible())
+		hpsjam_client->b_chat.setFlashing();
 }
