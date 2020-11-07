@@ -78,6 +78,20 @@ HpsJamSlider :: setPan(float _pan)
 }
 
 void
+HpsJamSlider :: adjustPan(float _pan)
+{
+	pan += _pan;
+
+	if (pan > 1.0f)
+		pan = 1.0f;
+	else if (pan < -1.0f)
+		pan = -1.0f;
+
+	if (_pan != 0.0f)
+		update();
+}
+
+void
 HpsJamSlider :: setLevel(float _left, float _right)
 {
 	if (_left != level[0] || _right != level[1]) {
@@ -205,19 +219,13 @@ HpsJamSlider :: mouseReleaseEvent(QMouseEvent *event)
 void
 HpsJamPan :: handle_pan_left()
 {
-	value -= 1.0f / 16.0f;
-	if (value < -1.0f)
-		value = -1.0f;
-	emit valueChanged();
+	emit valueChanged(-1);
 }
 
 void
 HpsJamPan :: handle_pan_right()
 {
-	value += 1.0f / 16.0f;
-	if (value > 1.0f)
-		value = 1.0f;
-	emit valueChanged();
+	emit valueChanged(+1);
 }
 
 HpsJamStrip :: HpsJamStrip() : gl(this),
@@ -228,7 +236,7 @@ HpsJamStrip :: HpsJamStrip() : gl(this),
 {
 	id = -1;
 
-	connect(&w_pan, SIGNAL(valueChanged()), this, SLOT(handlePan()));
+	connect(&w_pan, SIGNAL(valueChanged(int)), this, SLOT(handlePan(int)));
 	connect(&w_slider, SIGNAL(valueChanged()), this, SLOT(handleSlider()));
 	connect(&b_eq, SIGNAL(released()), this, SLOT(handleEQShow()));
 	connect(&w_eq.b_apply, SIGNAL(released()), this, SLOT(handleEQApply()));
@@ -267,10 +275,9 @@ HpsJamStrip :: handleSlider()
 }
 
 void
-HpsJamStrip :: handlePan()
+HpsJamStrip :: handlePan(int delta)
 {
-	/* mirror value */
-	w_slider.setPan(w_pan.value);
+	w_slider.adjustPan(delta / 16.0f);
 
 	emit panChanged(id);
 }
@@ -455,7 +462,7 @@ HpsJamMixer :: handle_pan_changed(int id)
 	struct hpsjam_packet_entry *ptr;
 	float pan;
 
-	pan = peer_strip[id].w_slider.value;
+	pan = peer_strip[id].w_slider.pan;
 
 	ptr = new struct hpsjam_packet_entry;
 	ptr->packet.type = HPSJAM_TYPE_FADER_PAN_REQUEST;

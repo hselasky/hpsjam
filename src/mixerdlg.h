@@ -67,6 +67,7 @@ public:
 
 	void setValue(float);
 	void setPan(float);
+	void adjustPan(float);
 	void setLevel(float, float);
 
 	void paintEvent(QPaintEvent *);
@@ -82,14 +83,6 @@ class HpsJamPan : public QWidget {
 public:
 	QGridLayout gl;
 	QPushButton b[2];
-	float value;
-
-	void setValue(float _value) {
-		if (value != _value) {
-			value = _value;
-			emit valueChanged();
-		}
-	};
 
 	HpsJamPan() : gl(this) {
 		int w = b[0].fontMetrics().boundingRect(QString("L_R")).width();
@@ -101,14 +94,13 @@ public:
 		connect(b + 1, SIGNAL(released()), this, SLOT(handle_pan_right()));
 		gl.addWidget(b + 0,0,0);
 		gl.addWidget(b + 1,0,1);
-		value = 0.0f;	/* no panning */
 	};
 
 public slots:
 	void handle_pan_left();
 	void handle_pan_right();
 signals:
-	void valueChanged();
+	void valueChanged(int);
 };
 
 class HpsJamStrip : public QGroupBox {
@@ -159,7 +151,7 @@ public slots:
 	void handleEQShow();
 	void handleEQApply();
 	void handleInv();
-	void handlePan();
+	void handlePan(int);
 
 signals:
 	void gainChanged(int);

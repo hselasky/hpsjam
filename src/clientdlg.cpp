@@ -145,7 +145,7 @@ HpsJamClient :: handle_watchdog()
 
 		hpsjam_client_peer->bits = w_mixer->self_strip.getBits();
 		hpsjam_client_peer->mon_gain = level_decode(w_mixer->self_strip.w_slider.value);
-		hpsjam_client_peer->mon_pan = w_mixer->self_strip.w_pan.value;
+		hpsjam_client_peer->mon_pan = w_mixer->self_strip.w_slider.pan;
 	}
 
 	w_mixer->self_strip.w_slider.setLevel(level_encode(temp[0]), level_encode(temp[1]));
