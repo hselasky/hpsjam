@@ -103,9 +103,9 @@ struct equalizer {
 					if (sscanf(config, "%lf %lf %n", &next_f, &next_amp, &len) == 2) {
 						config += len;
 						if (next_f < prev_f)
-							return (false);
+							return (true);
 					} else {
-						return (false);
+						return (true);
 					}
 				}
 				if (prev_f == 0.0)
@@ -113,7 +113,7 @@ struct equalizer {
 			}
 			fftw_freq[i] = ((f - prev_f) / (next_f - prev_f)) * (next_amp - prev_amp) + prev_amp;
 		}
-		return (true);
+		return (false);
 	};
 	bool load(const char *config) {
 		bool retval;
@@ -167,7 +167,7 @@ hpsjam_equalizer :: init(const char *pfilter)
 		return (true);
 	/* get filter size */
 	double ms = 1.0;
-	if (sscanf(pfilter, "%lfms", &ms) != 1)
+	if (sscanf(pfilter + 11, "%lfms", &ms) != 1)
 		return (true);
 	ssize_t size = (HPSJAM_SAMPLE_RATE * ms) / 1000.0;
 	if (size < 0)
@@ -184,8 +184,8 @@ hpsjam_equalizer :: init(const char *pfilter)
 	}
 
 	/* make filter size power of two */
-	while (size && (size & ~(size - 1)))
-		size += size & ~(size - 1);
+	while ((size & -size) != size)
+		size += size & -size;
 
 	/* check if EQ should be disabled */
 	if (size == 0) {
@@ -212,6 +212,8 @@ hpsjam_equalizer :: init(const char *pfilter)
 
 		memset(filter_out[0], 0, sizeof(float) * 2 * size);
 		memset(filter_out[1], 0, sizeof(float) * 2 * size);
+
+		filter_size = size;
 	}
 
 	for (ssize_t x = 0; x != size; x++)

@@ -166,6 +166,7 @@ public:
 	HpsJamMixer() : gl(&w_main) {
 		setWidgetResizable(true);
 		self_strip.setTitle(QString("Local"));
+		self_strip.b_eq.setEnabled(false);
 		self_strip.id = 0;
 		gl.addWidget(&self_strip, 0, 0);
 		for (unsigned x = 0; x != HPSJAM_PEERS_MAX; x++) {
