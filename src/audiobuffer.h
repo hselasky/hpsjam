@@ -139,9 +139,7 @@ public:
 			 * Grow or shrink the buffer depending on the
 			 * amount of supplied data:
 			 */
-			if (total < HPSJAM_MAX_SAMPLES && low < 1)
-				grow();
-			else if (total > num && low > 2)
+			if (total > num && low > 3)
 				shrink();
 		}
 
