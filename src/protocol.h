@@ -465,18 +465,18 @@ struct hpsjam_input_packetizer {
 			const uint8_t rx_red = mask[x].hdr.getRedNo();
 			uint8_t rx_missing = 0;
 			for (uint8_t y = 0; y != rx_red; y++) {
-				const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1);
+				const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
 				rx_missing += (~valid[z] & 1);
 			}
 			if (rx_missing == 1) {
 				/* one frame missing and we have the XOR frame */
 				for (uint8_t y = 0; y != rx_red; y++) {
-					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1);
+					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
 					if (valid[z] & 1)
 						mask[x].do_xor(current[z]);
 				}
 				for (uint8_t y = 0; y != rx_red; y++) {
-					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1);
+					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
 					if (~valid[z] & 1)
 						current[z] = mask[x];
 				}
