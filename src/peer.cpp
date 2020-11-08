@@ -564,6 +564,7 @@ hpsjam_server_peer :: audio_export()
 		hpsjam_timer_adjust++;	/* go slower */
 		break;
 	case 1:
+	case 2:
 		break;
 	default:
 		hpsjam_timer_adjust--;	/* go faster */
@@ -952,6 +953,7 @@ hpsjam_client_peer :: tick()
 		hpsjam_timer_adjust = 1;	/* go slower */
 		break;
 	case 1:
+	case 2:
 		hpsjam_timer_adjust = 0;
 		break;
 	default:
