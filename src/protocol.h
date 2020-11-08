@@ -51,7 +51,8 @@ enum {
 	HPSJAM_TYPE_AUDIO_24_BIT_2CH,
 	HPSJAM_TYPE_AUDIO_32_BIT_1CH,
 	HPSJAM_TYPE_AUDIO_32_BIT_2CH,
-	HPSJAM_TYPE_AUDIO_MAX = 63,
+	HPSJAM_TYPE_AUDIO_MAX = 62,
+	HPSJAM_TYPE_ACK = 63,
 	HPSJAM_TYPE_CONFIGURE_REQUEST,
 	HPSJAM_TYPE_PING_REQUEST,
 	HPSJAM_TYPE_PING_REPLY,
@@ -288,12 +289,14 @@ public:
 	union hpsjam_frame mask;
 	hpsjam_packet_head_t head;
 	struct hpsjam_packet_entry *pending;
+	uint16_t ping_time; /* response time in ticks */
 	uint16_t pend_count; /* pending tick count */
 	uint8_t pend_seqno; /* pending sequence number */
 	uint8_t peer_seqno; /* peer sequence number */
 	uint8_t d_cur;	/* current distance between XOR frames */
 	uint8_t d_max;	/* maximum distance between XOR frames */
 	uint8_t seqno;	/* current sequence number */
+	bool send_ack;
 	size_t offset;	/* current data offset */
 	size_t d_len;	/* maximum XOR frame length */
 
@@ -320,10 +323,12 @@ public:
 		struct hpsjam_packet_entry *pkt;
 		d_cur = 0;
 		d_max = distance % HPSJAM_SEQ_MAX;
+		ping_time = 0;
 		pend_count = 0;
 		pend_seqno = 0;
 		peer_seqno = 0;
 		seqno = 0;
+		send_ack = false;
 		offset = 0;
 		current.clear();
 		mask.clear();
@@ -343,7 +348,24 @@ public:
 		size_t len = entry.packet.getBytes();
 
 		if (len <= remainder) {
-			memcpy(current.raw + sizeof(current.hdr) + offset, entry. raw, len);
+			memcpy(current.raw + sizeof(current.hdr) + offset, entry.raw, len);
+			offset += len;
+			return (true);
+		}
+		return (false);
+	};
+
+	bool append_ack()
+	{
+		size_t remainder = sizeof(current) - sizeof(current.hdr) - offset;
+		size_t len = 4;
+
+		if (len <= remainder) {
+			uint8_t *ptr = current.raw + sizeof(current.hdr) + offset;
+			ptr[0] = 1;
+			ptr[1] = HPSJAM_TYPE_ACK;
+			ptr[2] = 0;
+			ptr[3] = peer_seqno;
 			offset += len;
 			return (true);
 		}
@@ -353,6 +375,7 @@ public:
 	void advance() {
 		delete pending;
 		pending = 0;
+		ping_time = pend_count + (pend_count / (d_max - 1));
 	};
 
 	void send(const struct hpsjam_socket_address &addr) {
@@ -371,6 +394,7 @@ public:
 					pending->remove(&head);
 					pending->packet.setLocalSeqNo(pend_seqno);
 					pending->packet.setPeerSeqNo(peer_seqno);
+					send_ack = false;
 					pend_count = 0;
 					pend_seqno++;
 					append(*pending);
@@ -381,6 +405,7 @@ public:
 				pend_count++;
 				if ((pend_count % 64) == 0) {
 					pending->packet.setPeerSeqNo(peer_seqno);
+					send_ack = false;
 					append(*pending);
 				}
 			}
@@ -389,6 +414,9 @@ public:
 			else if (pend_count == 2000)
 				emit pendingTimeout();
 
+			/* check if we need to send an ACK */
+			if (send_ack && append_ack())
+				send_ack = false;
 			current.hdr.setSequence(seqno, 0);
 			addr.sendto((const char *)&current, offset + sizeof(current.hdr));
 			mask.do_xor(current);
@@ -410,6 +438,7 @@ struct hpsjam_input_packetizer {
 	union hpsjam_frame current[HPSJAM_SEQ_MAX];
 	union hpsjam_frame mask[HPSJAM_SEQ_MAX];
 	uint8_t valid[HPSJAM_SEQ_MAX];
+	uint64_t packet_loss;
 
 	void init() {
 		for (size_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
@@ -417,6 +446,7 @@ struct hpsjam_input_packetizer {
 			mask[x].clear();
 		}
 		memset(valid, 0, sizeof(valid));
+		packet_loss = 0;
 	};
 
 	const union hpsjam_frame *first_pkt() {
@@ -452,6 +482,7 @@ struct hpsjam_input_packetizer {
 				}
 				valid[min_x] = 0;
 				min_x = (min_x + 1) % HPSJAM_SEQ_MAX;
+				packet_loss++;
 			}
 		}
 		return (0);

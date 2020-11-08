@@ -325,6 +325,11 @@ hpsjam_server_peer :: audio_export()
 			case HPSJAM_TYPE_AUDIO_32_BIT_2CH + 1 ... HPSJAM_TYPE_AUDIO_MAX:
 				/* for the future */
 				continue;
+			case HPSJAM_TYPE_ACK:
+				/* check if other side received packet */
+				if (ptr->getPeerSeqNo() == output_pkt.pend_seqno)
+					output_pkt.advance();
+				continue;
 			default:
 				break;
 			}
@@ -337,6 +342,7 @@ hpsjam_server_peer :: audio_export()
 				continue;
 			/* advance expected sequence number */
 			output_pkt.peer_seqno++;
+			output_pkt.send_ack = true;
 
 			switch (ptr->type) {
 			uint16_t packets;
@@ -810,6 +816,11 @@ hpsjam_client_peer :: tick()
 			case HPSJAM_TYPE_AUDIO_32_BIT_2CH + 1 ... HPSJAM_TYPE_AUDIO_MAX:
 				/* for the future */
 				continue;
+			case HPSJAM_TYPE_ACK:
+				/* check if other side received packet */
+				if (ptr->getPeerSeqNo() == output_pkt.pend_seqno)
+					output_pkt.advance();
+				continue;
 			default:
 				break;
 			}
@@ -822,6 +833,7 @@ hpsjam_client_peer :: tick()
 				continue;
 			/* advance expected sequence number */
 			output_pkt.peer_seqno++;
+			output_pkt.send_ack = true;
 
 			switch (ptr->type) {
 			uint16_t packets;
