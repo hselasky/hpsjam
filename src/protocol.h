@@ -423,16 +423,10 @@ struct hpsjam_input_packetizer {
 		unsigned mask = 0;
 		unsigned start;
 		unsigned min_x;
-		unsigned pkts;
 
-		for (uint8_t x = pkts = 0; x != HPSJAM_SEQ_MAX; x++) {
-			if (valid[x] & 1) {
+		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
+			if (valid[x] != 0)
 				mask |= (1 << x);
-				pkts++;
-			}
-			if (valid[x] & 2) {
-				pkts++;
-			}
 		}
 
 		start = mask;
@@ -447,13 +441,19 @@ struct hpsjam_input_packetizer {
 		}
 
 		/*
-		 * Consume while there are tree consequtive valid
-		 * packets:
+		 * Check that we've received a valid packet after
+		 * the first packet-loss, if any.
 		 */
-		if (start & (start / 2) & (start / 4)) {
-			assert(valid[min_x] != 0);
-			valid[min_x] = 0;
-			return (current + min_x);
+		if ((start & ~2) >= 5) {
+			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
+				assert(valid[min_x] != 0);
+				if (valid[min_x] & 1) {
+					valid[min_x] = 0;
+					return (current + min_x);
+				}
+				valid[min_x] = 0;
+				min_x = (min_x + 1) % HPSJAM_SEQ_MAX;
+			}
 		}
 		return (0);
 	};
