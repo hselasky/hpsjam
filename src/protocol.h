@@ -446,7 +446,6 @@ struct hpsjam_input_packetizer {
 		 */
 		if ((start & ~2) >= 5) {
 			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
-				assert(valid[min_x] != 0);
 				if (valid[min_x] & 1) {
 					valid[min_x] = 0;
 					return (current + min_x);
