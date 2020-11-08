@@ -37,6 +37,8 @@ void
 HpsJamStats :: paintEvent(QPaintEvent *event)
 {
 	constexpr unsigned N = 2 * HPSJAM_SEQ_MAX;
+	uint64_t packet_loss;
+	uint16_t ping_time;
 	QRect frame(16, 16, width() - 32, height() - 32);
 	float stats[N];
 	float fMax;
@@ -51,6 +53,8 @@ HpsJamStats :: paintEvent(QPaintEvent *event)
 
 		assert(sizeof(stats) == sizeof(hpsjam_client_peer->out_audio[0].stats));
 		memcpy(stats, hpsjam_client_peer->out_audio[0].stats, sizeof(stats));
+		packet_loss = hpsjam_client_peer->input_pkt.packet_loss;
+		ping_time = hpsjam_client_peer->output_pkt.ping_time;
 	}
 
 	/* make room for text */
@@ -72,10 +76,10 @@ HpsJamStats :: paintEvent(QPaintEvent *event)
 
 	font.setPixelSize(fsize);
 	paint.setFont(font);
-#if 0
+
 	paint.setPen(QPen(QBrush(fg), 1));
-	paint.drawText(QPoint(frame.x(), frame.y() + fsize), QString("Statistics"));
-#endif
+	paint.drawText(QPoint(frame.x() + fsize, frame.y() + fsize),
+	    QString("%1 packets lost; Round trip time %2ms").arg(packet_loss).arg(ping_time));
 
 	for (unsigned i = xmax = 0; i != N; i++) {
 		if (stats[xmax] < stats[i]) {
