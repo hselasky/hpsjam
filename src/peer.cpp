@@ -558,6 +558,18 @@ hpsjam_server_peer :: audio_export()
 	in_audio[0].remSamples(tmp_audio[0], HPSJAM_SAMPLE_RATE / 1000);
 	in_audio[1].remSamples(tmp_audio[1], HPSJAM_SAMPLE_RATE / 1000);
 
+	/* check if we should adjust the timer */
+	switch (in_audio[0].getLowWater()) {
+	case 0:
+		hpsjam_timer_adjust++;	/* go slower */
+		break;
+	case 1:
+		break;
+	default:
+		hpsjam_timer_adjust--;	/* go faster */
+		break;
+	}
+
 	/* clear output audio */
 	memset(out_audio, 0, sizeof(out_audio));
 }
@@ -641,6 +653,9 @@ hpsjam_server_peer :: audio_import()
 Q_DECL_EXPORT void
 hpsjam_server_tick()
 {
+	/* reset timer adjustment */
+	hpsjam_timer_adjust = 0;
+
 	/* get audio */
 	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
 		QMutexLocker locker(&hpsjam_server_peers[x].lock);
@@ -930,6 +945,19 @@ hpsjam_client_peer :: tick()
 	/* extract samples for this tick */
 	in_audio[0].remSamples(audio[0], HPSJAM_SAMPLE_RATE / 1000);
 	in_audio[1].remSamples(audio[1], HPSJAM_SAMPLE_RATE / 1000);
+
+	/* check if we should adjust the timer */
+	switch (in_audio[0].getLowWater()) {
+	case 0:
+		hpsjam_timer_adjust = 1;	/* go slower */
+		break;
+	case 1:
+		hpsjam_timer_adjust = 0;
+		break;
+	default:
+		hpsjam_timer_adjust = -1;	/* go faster */
+		break;
+	}
 
 	switch (out_format) {
 	case HPSJAM_TYPE_AUDIO_8_BIT_1CH:

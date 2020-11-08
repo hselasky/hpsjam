@@ -39,6 +39,7 @@
 #include "peer.h"
 
 uint16_t hpsjam_ticks;
+int hpsjam_timer_adjust;
 
 static void *
 hpsjam_timer_loop(void *arg)
@@ -49,12 +50,19 @@ hpsjam_timer_loop(void *arg)
 
 	mach_timebase_info(&time_base_info);
 
-	const uint64_t delay = (1000000ULL * (uint64_t)time_base_info.denom) /
-	    (uint64_t)time_base_info.numer;
+	const uint64_t delay[3] = {
+	    ( 999000ULL * (uint64_t)time_base_info.denom) / (uint64_t)time_base_info.numer,
+	    (1000000ULL * (uint64_t)time_base_info.denom) / (uint64_t)time_base_info.numer,
+	    (1001000ULL * (uint64_t)time_base_info.denom) / (uint64_t)time_base_info.numer,
+	};
 
 	next = mach_absolute_time();
 #else
-	const long delay = 1000000L;
+	static const long delay[3] = {
+	     999000L,
+	    1000000L,
+	    1001000L,
+	};
 	struct timespec next;
 
 	clock_gettime(CLOCK_MONOTONIC, &next);
@@ -62,11 +70,22 @@ hpsjam_timer_loop(void *arg)
 
 	while (1) {
 #if defined(__APPLE__) || defined (__MACOSX)
-		next += delay;
+		if (hpsjam_timer_adjust < 0)
+			next += delay[0];
+		else if (hpsjam_timer_adjust > 0)
+			next += delay[2];
+		else
+			next += delay[1];
 
 		mach_wait_until(next);
 #else
-		next.tv_nsec += delay;
+		if (hpsjam_timer_adjust < 0)
+			next.tv_nsec += delay[0];
+		else if (hpsjam_timer_adjust > 0)
+			next.tv_nsec += delay[2];
+		else
+			next.tv_nsec += delay[1];
+
 		if (next.tv_nsec >= 1000000000L) {
 			next.tv_sec++;
 			next.tv_nsec -= 1000000000L;

@@ -29,6 +29,7 @@
 #include <stdint.h>
 
 extern uint16_t hpsjam_ticks;
+extern int hpsjam_timer_adjust;
 
 extern void hpsjam_timer_init();
 
