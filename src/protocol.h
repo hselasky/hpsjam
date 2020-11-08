@@ -104,7 +104,7 @@ struct hpsjam_packet {
 	bool valid(const struct hpsjam_packet *end) const {
 		const struct hpsjam_packet *ptr = this + length;
 		if (type == HPSJAM_TYPE_END || length == 0 ||
-		    (uintptr_t)ptr >= (uintptr_t)end)
+		    (uintptr_t)ptr > (uintptr_t)end)
 			return (false);
 		else
 			return (true);
