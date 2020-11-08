@@ -139,7 +139,7 @@ public:
 			 * Grow or shrink the buffer depending on the
 			 * amount of supplied data:
 			 */
-			if (total > num && low > 3)
+			if (total > num && low > 6)
 				shrink();
 		}
 
