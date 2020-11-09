@@ -93,9 +93,15 @@ public:
 	float last_sample;
 	size_t consumer;
 	size_t total;
+	uint8_t limit;
 
-	void clear() {
-		memset(this, 0, sizeof(*this));
+	void clear(uint8_t _limit = 3) {
+		memset(samples, 0, sizeof(samples));
+		memset(stats, 0, sizeof(stats));
+		last_sample = 0;
+		consumer = 0;
+		total = 0;
+		limit = _limit;
 	};
 
 	hpsjam_audio_buffer() {
@@ -139,7 +145,7 @@ public:
 			 * Grow or shrink the buffer depending on the
 			 * amount of supplied data:
 			 */
-			if (total > num && low > 3)
+			if (total > num && low > limit)
 				shrink();
 		}
 

@@ -63,8 +63,8 @@ public:
 		address.clear();
 		input_pkt.init();
 		output_pkt.init();
-		in_audio[0].clear();
-		in_audio[1].clear();
+		in_audio[0].clear(6);
+		in_audio[1].clear(6);
 		out_level[0].clear();
 		out_level[1].clear();
 		memset(out_audio, 0, sizeof(out_audio));
@@ -120,8 +120,8 @@ public:
 		output_pkt.init();
 		in_audio[0].clear();
 		in_audio[1].clear();
-		out_audio[0].clear();
-		out_audio[1].clear();
+		out_audio[0].clear(6);
+		out_audio[1].clear(6);
 		in_level[0].clear();
 		in_level[1].clear();
 		in_gain = 1.0f;
