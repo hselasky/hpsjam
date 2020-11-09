@@ -362,7 +362,7 @@ hpsjam_server_peer :: audio_export()
 			case HPSJAM_TYPE_CONFIGURE_REQUEST:
 				if (ptr->getConfigure(output_fmt))
 					break;
-				output_fmt = HPSJAM_TYPE_END;
+				output_fmt = HPSJAM_TYPE_AUDIO_SILENCE;
 				break;
 			case HPSJAM_TYPE_PING_REQUEST:
 				if (ptr->getPing(packets, time_ms, passwd) &&
@@ -825,8 +825,8 @@ hpsjam_client_peer :: tick()
 			case HPSJAM_TYPE_AUDIO_SILENCE:
 				num = ptr->getSilence(temp);
 				assert(num <= HPSJAM_MAX_PKT);
-				in_audio[0].addSamples(temp, num);
-				in_audio[1].addSamples(temp, num);
+				out_audio[0].addSamples(temp, num);
+				out_audio[1].addSamples(temp, num);
 				continue;
 			case HPSJAM_TYPE_ACK:
 				/* check if other side received packet */
