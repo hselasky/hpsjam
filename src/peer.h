@@ -71,7 +71,7 @@ public:
 		name = QString();
 		icon = QByteArray();
 		memset(bits, 0, sizeof(bits));
-		output_fmt = 0;
+		output_fmt = HPSJAM_TYPE_AUDIO_SILENCE;
 		gain = 1.0f;
 		pan = 0.0f;
 		out_peak = 0.0f;
@@ -129,7 +129,7 @@ public:
 		in_pan = 0.0f;
 		in_peak = 0.0;
 		out_peak = 0.0;
-		out_format = HPSJAM_TYPE_END;
+		out_format = HPSJAM_TYPE_AUDIO_SILENCE;
 		bits = 0;
 		eq.cleanup();
 	};

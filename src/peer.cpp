@@ -268,7 +268,6 @@ hpsjam_server_peer :: audio_export()
 	struct hpsjam_packet_entry *pres;
 	float temp[HPSJAM_MAX_PKT];
 	size_t num;
-	bool do_adjust;
 
 	input_pkt.recovery();
 
@@ -325,6 +324,12 @@ hpsjam_server_peer :: audio_export()
 				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_2CH + 1 ... HPSJAM_TYPE_AUDIO_MAX:
 				/* for the future */
+				continue;
+			case HPSJAM_TYPE_AUDIO_SILENCE:
+				num = ptr->getSilence(temp);
+				assert(num <= HPSJAM_MAX_PKT);
+				in_audio[0].addSamples(temp, num);
+				in_audio[1].addSamples(temp, num);
 				continue;
 			case HPSJAM_TYPE_ACK:
 				/* check if other side received packet */
@@ -561,25 +566,20 @@ hpsjam_server_peer :: audio_export()
 		pres->insert_tail(&output_pkt.head);
 	}
 
-	/* check if we should adjust the timer XXX */
-	do_adjust = true;
-
 	/* extract samples for this tick */
 	in_audio[0].remSamples(tmp_audio[0], HPSJAM_SAMPLE_RATE / 1000);
 	in_audio[1].remSamples(tmp_audio[1], HPSJAM_SAMPLE_RATE / 1000);
 
 	/* check if we should adjust the timer */
-	if (do_adjust) {
-		switch (in_audio[0].getLowWater()) {
-		case 0:
-			hpsjam_timer_adjust++;	/* go slower */
-			break;
-		case 1:
-			break;
-		default:
-			hpsjam_timer_adjust--;	/* go faster */
-			break;
-		}
+	switch (in_audio[0].getLowWater()) {
+	case 0:
+		hpsjam_timer_adjust++;	/* go slower */
+		break;
+	case 1:
+		break;
+	default:
+		hpsjam_timer_adjust--;	/* go faster */
+		break;
 	}
 
 	/* clear output audio */
@@ -655,6 +655,8 @@ hpsjam_server_peer :: audio_import()
 		output_pkt.append(entry);
 		break;
 	default:
+		entry.packet.putSilence(HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
 		break;
 	}
 
@@ -763,7 +765,6 @@ hpsjam_client_peer :: tick()
 		float audio[2][HPSJAM_SAMPLE_RATE / 1000];
 	};
 	size_t num;
-	bool do_adjust;
 
 	input_pkt.recovery();
 
@@ -820,6 +821,12 @@ hpsjam_client_peer :: tick()
 				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_2CH + 1 ... HPSJAM_TYPE_AUDIO_MAX:
 				/* for the future */
+				continue;
+			case HPSJAM_TYPE_AUDIO_SILENCE:
+				num = ptr->getSilence(temp);
+				assert(num <= HPSJAM_MAX_PKT);
+				in_audio[0].addSamples(temp, num);
+				in_audio[1].addSamples(temp, num);
 				continue;
 			case HPSJAM_TYPE_ACK:
 				/* check if other side received packet */
@@ -961,28 +968,21 @@ hpsjam_client_peer :: tick()
 		pres->insert_tail(&output_pkt.head);
 	}
 
-	/* check if we should adjust the timer XXX */
-	do_adjust = true;
-
 	/* extract samples for this tick */
 	in_audio[0].remSamples(audio[0], HPSJAM_SAMPLE_RATE / 1000);
 	in_audio[1].remSamples(audio[1], HPSJAM_SAMPLE_RATE / 1000);
 
 	/* check if we should adjust the timer */
-	if (do_adjust) {
-		switch (in_audio[0].getLowWater()) {
-		case 0:
-			hpsjam_timer_adjust = 1;	/* go slower */
-			break;
-		case 1:
-			hpsjam_timer_adjust = 0;
-			break;
-		default:
-			hpsjam_timer_adjust = -1;	/* go faster */
-			break;
-		}
-	} else {
+	switch (in_audio[0].getLowWater()) {
+	case 0:
+		hpsjam_timer_adjust = 1;	/* go slower */
+		break;
+	case 1:
 		hpsjam_timer_adjust = 0;
+		break;
+	default:
+		hpsjam_timer_adjust = -1;	/* go faster */
+		break;
 	}
 
 	switch (out_format) {
@@ -1031,6 +1031,8 @@ hpsjam_client_peer :: tick()
 		output_pkt.append(entry);
 		break;
 	default:
+		entry.packet.putSilence(HPSJAM_SAMPLE_RATE / 1000);
+		output_pkt.append(entry);
 		break;
 	}
 

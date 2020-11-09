@@ -263,6 +263,22 @@ hpsjam_packet::put32Bit1ChSample(float *left, size_t samples)
 	}
 }
 
+void
+hpsjam_packet::putSilence(size_t samples)
+{
+	length = 1;
+	type = HPSJAM_TYPE_AUDIO_SILENCE;
+	sequence[0] = samples & 0xFF;
+	sequence[1] = 0;
+}
+
+size_t
+hpsjam_packet::getSilence(float *left) const
+{
+	memset(left, 0, sizeof(left[0]) * sequence[0]);
+	return (sequence[0]);
+}
+
 bool
 hpsjam_packet::getFaderValue(uint8_t &mix, uint8_t &index, float *gain, size_t &num) const
 {

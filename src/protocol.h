@@ -51,7 +51,8 @@ enum {
 	HPSJAM_TYPE_AUDIO_24_BIT_2CH,
 	HPSJAM_TYPE_AUDIO_32_BIT_1CH,
 	HPSJAM_TYPE_AUDIO_32_BIT_2CH,
-	HPSJAM_TYPE_AUDIO_MAX = 62,
+	HPSJAM_TYPE_AUDIO_MAX = 61,
+	HPSJAM_TYPE_AUDIO_SILENCE = 62,
 	HPSJAM_TYPE_ACK = 63,
 	HPSJAM_TYPE_CONFIGURE_REQUEST,
 	HPSJAM_TYPE_PING_REQUEST,
@@ -166,6 +167,8 @@ struct hpsjam_packet {
 	size_t get24Bit1ChSample(float *left) const;
 	size_t get32Bit1ChSample(float *left) const;
 
+	size_t getSilence(float *left) const;
+
 	void put8Bit2ChSample(float *left, float *right, size_t samples);
 	void put16Bit2ChSample(float *left, float *right, size_t samples);
 	void put24Bit2ChSample(float *left, float *right, size_t samples);
@@ -175,6 +178,8 @@ struct hpsjam_packet {
 	void put16Bit1ChSample(float *left, size_t samples);
 	void put24Bit1ChSample(float *left, size_t samples);
 	void put32Bit1ChSample(float *left, size_t samples);
+
+	void putSilence(size_t samples);
 
 	uint8_t getLocalSeqNo() const {
 		return (sequence[0]);

@@ -31,7 +31,7 @@
 #include "configdlg.h"
 
 const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = {
-	{ HPSJAM_TYPE_END, "DISABLE" },
+	{ HPSJAM_TYPE_AUDIO_SILENCE, "DISABLE" },
 	{ HPSJAM_TYPE_AUDIO_8_BIT_1CH, "1CH@8Bit" },
 	{ HPSJAM_TYPE_AUDIO_16_BIT_1CH, "1CH@16Bit" },
 	{ HPSJAM_TYPE_AUDIO_24_BIT_1CH, "1CH@24Bit" },
