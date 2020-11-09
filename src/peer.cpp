@@ -945,6 +945,14 @@ hpsjam_client_peer :: tick()
 					in_pan = temp[0];
 				}
 				break;
+			case HPSJAM_TYPE_FADER_EQ_REPLY:
+				if (ptr->getFaderData(mix, index, &data, num)) {
+					if (mix != 0)
+						break;
+					QByteArray t(data, num);
+					emit receivedFaderEQ(mix, index, new QString(QString::fromLatin1(t)));
+				}
+				break;
 			case HPSJAM_TYPE_LOCAL_EQ_REPLY:
 				if (ptr->getFaderData(mix, index, &data, num)) {
 					if (mix != 0 || index != 0)
