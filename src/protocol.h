@@ -467,7 +467,7 @@ struct hpsjam_input_packetizer {
 
 		start = mask;
 		min_x = 0;
-		for (uint8_t x = min_x = 0; x != HPSJAM_SEQ_MAX; x++) {
+		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
 			if (start > mask) {
 				start = mask;
 				min_x = x;
