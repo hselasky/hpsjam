@@ -464,7 +464,7 @@ hpsjam_server_peer :: audio_export()
 					assert(num <= HPSJAM_MAX_PKT);
 					if (mix != 0 || num <= 0)
 						break;
-					if (index + num >= hpsjam_num_server_peers)
+					if (index + num > hpsjam_num_server_peers)
 						break;
 
 					/* echo gain */
