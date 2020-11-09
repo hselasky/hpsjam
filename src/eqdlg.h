@@ -54,6 +54,7 @@ public:
 	QPushButton b_lowpass;
 	QPushButton b_highpass;
 	QPushButton b_bandpass;
+	QPushButton b_longdelay;
 
 public slots:
 	void handle_defaults();
@@ -63,6 +64,7 @@ public slots:
 	void handle_lowpass();
 	void handle_highpass();
 	void handle_bandpass();
+	void handle_longdelay();
 };
 
 #endif		/* _HPSJAM_EQDLG_H_ */

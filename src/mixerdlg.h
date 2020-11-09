@@ -166,7 +166,7 @@ public:
 	HpsJamMixer() : gl(&w_main) {
 		setWidgetResizable(true);
 		self_strip.setTitle(QString("Local"));
-		self_strip.b_eq.setEnabled(false);
+		connect(&self_strip, SIGNAL(eqChanged(int)), this, SLOT(handle_local_eq_changed()));
 		self_strip.id = 0;
 		gl.addWidget(&self_strip, 0, 0);
 		for (unsigned x = 0; x != HPSJAM_PEERS_MAX; x++) {
@@ -214,6 +214,8 @@ public slots:
 	void handle_gain_changed(int);
 	void handle_pan_changed(int);
 	void handle_eq_changed(int);
+
+	void handle_local_eq_changed();
 };
 
 #endif		/* _HPSJAM_MIXERDLG_H_ */

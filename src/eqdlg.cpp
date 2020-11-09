@@ -41,6 +41,7 @@ HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
 	b_lowpass.setText(tr("&LowPass"));
 	b_highpass.setText(tr("&HighPass"));
 	b_bandpass.setText(tr("&BandPass"));
+	b_longdelay.setText(tr("LongDela&y"));
 
 	b_disable.setText(tr("&Disable"));
 	b_apply.setText(tr("&Apply"));
@@ -53,7 +54,8 @@ HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
 	gl_control.addWidget(&b_highpass, 1,0);
 	gl_control.addWidget(&b_bandpass, 1,1);
 
-	gl_control.addWidget(&b_disable, 0,2);
+	gl_control.addWidget(&b_longdelay, 0,2);
+	gl_control.addWidget(&b_disable, 0,3);
 	gl_control.addWidget(&b_apply, 1,2);
 	gl_control.addWidget(&b_close, 1,3);
 
@@ -68,6 +70,7 @@ HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
 	connect(&b_lowpass, SIGNAL(released()), this, SLOT(handle_lowpass()));
 	connect(&b_highpass, SIGNAL(released()), this, SLOT(handle_highpass()));
 	connect(&b_bandpass, SIGNAL(released()), this, SLOT(handle_bandpass()));
+	connect(&b_longdelay, SIGNAL(released()), this, SLOT(handle_longdelay()));
 
 	handle_disable();
 }
@@ -150,6 +153,15 @@ HpsJamEqualizer :: handle_bandpass()
 	    "500 1\n"
 	    "1000 1\n"
 	    "2000 0\n"
+	));
+};
+
+void
+HpsJamEqualizer :: handle_longdelay()
+{
+	edit.setText(QString(
+	    "filtersize 40.0ms\n"
+	    "norm\n"
 	));
 };
 

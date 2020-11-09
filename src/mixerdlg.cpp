@@ -31,6 +31,7 @@
 #include "peer.h"
 #include "mixerdlg.h"
 #include "protocol.h"
+#include "clientdlg.h"
 
 HpsJamIcon :: HpsJamIcon()
 {
@@ -485,4 +486,13 @@ HpsJamMixer :: handle_eq_changed(int id)
 	ptr->packet.setFaderData(0, id, eq.constData(), eq.length());
 
 	hpsjam_client_peer->send_single_pkt(ptr);
+}
+
+void
+HpsJamMixer :: handle_local_eq_changed()
+{
+	QByteArray eq = self_strip.w_eq.edit.toPlainText().toLatin1();
+
+	QMutexLocker locker(&hpsjam_client_peer->lock);
+	hpsjam_client_peer->local_eq.init(eq.constData());
 }

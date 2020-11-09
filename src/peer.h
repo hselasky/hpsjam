@@ -103,6 +103,7 @@ public:
 	class hpsjam_audio_buffer in_audio[2];
 	class hpsjam_audio_buffer out_audio[2];
 	class hpsjam_audio_level in_level[2];
+	class hpsjam_equalizer local_eq;
 	class hpsjam_equalizer eq;
 	float mon_gain;
 	float mon_pan;
@@ -132,6 +133,7 @@ public:
 		out_format = HPSJAM_TYPE_AUDIO_SILENCE;
 		bits = 0;
 		eq.cleanup();
+		local_eq.cleanup();
 	};
 	hpsjam_client_peer() {
 		init();

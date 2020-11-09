@@ -185,6 +185,9 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 		memset(right, 0, sizeof(right[0]) * samples);
 	}
 
+	/* Process local equalizer */
+	local_eq.doit(temp_l, temp_r, samples);
+
 	/* Add monitor */
 	if (mon_gain != 0.0f) {
 		float gain = (bits & HPSJAM_BIT_INVERT) ? - mon_gain : mon_gain;

@@ -172,8 +172,8 @@ hpsjam_equalizer :: init(const char *pfilter)
 	ssize_t size = (HPSJAM_SAMPLE_RATE * ms) / 1000.0;
 	if (size < 0)
 		size = 0;
-	else if (size > 512)
-		size = 512;
+	else if (size > 4096)
+		size = 4096;
 	/* skip rest of line */
 	while (*pfilter != 0) {
 		if (*pfilter == '\n') {
