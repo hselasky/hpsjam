@@ -179,5 +179,6 @@ void
 HpsJamClientButton :: handle_released()
 {
 	flashing = false;
+	setFlat(false);
 	watchdog.stop();
 }
