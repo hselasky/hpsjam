@@ -230,7 +230,7 @@ HpsJamPan :: handle_pan_right()
 }
 
 HpsJamStrip :: HpsJamStrip() : gl(this),
-    b_eq(tr("EQ")),
+    b_eq(tr("EQ\nDELAY")),
     b_inv(tr("INV")),
     b_mute(tr("MUTE")),
     b_solo(tr("SOLO"))

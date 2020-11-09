@@ -36,6 +36,7 @@ public:
 		memset(this, 0, sizeof(*this));
 	};
 	size_t filter_size;
+	size_t filter_predelay;
 	size_t filter_offset;
 	float *filter_data;
 	float *filter_in[2];
