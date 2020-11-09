@@ -105,7 +105,7 @@ public:
 	class hpsjam_audio_level in_level[2];
 	class hpsjam_equalizer local_eq;
 	class hpsjam_equalizer eq;
-	float mon_gain;
+	float mon_gain[2];
 	float mon_pan;
 	float in_gain;
 	float in_pan;
@@ -125,7 +125,8 @@ public:
 		in_level[0].clear();
 		in_level[1].clear();
 		in_gain = 1.0f;
-		mon_gain = 0.0f;
+		mon_gain[0] = 0.0f;
+		mon_gain[1] = 1.0f;
 		mon_pan = 0.0f;
 		in_pan = 0.0f;
 		in_peak = 0.0;

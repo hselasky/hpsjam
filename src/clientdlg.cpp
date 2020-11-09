@@ -144,7 +144,13 @@ HpsJamClient :: handle_watchdog()
 		temp[1] = hpsjam_client_peer->in_level[1].getLevel();
 
 		hpsjam_client_peer->bits = w_mixer->self_strip.getBits();
-		hpsjam_client_peer->mon_gain = level_decode(w_mixer->self_strip.w_slider.value);
+		const float mg[2] = {
+			level_decode(w_mixer->self_strip.w_slider.value),
+			level_decode(1.0f - w_mixer->self_strip.w_slider.value),
+		};
+		hpsjam_client_peer->mon_gain[0] = mg[0] / (mg[0] + mg[1]);
+		hpsjam_client_peer->mon_gain[1] = mg[1] / (mg[0] + mg[1]);
+
 		hpsjam_client_peer->mon_pan = w_mixer->self_strip.w_slider.pan;
 	}
 

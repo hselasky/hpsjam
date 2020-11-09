@@ -188,19 +188,23 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 	/* Process local equalizer */
 	local_eq.doit(temp_l, temp_r, samples);
 
-	/* Add monitor */
-	if (mon_gain != 0.0f) {
-		float gain = (bits & HPSJAM_BIT_INVERT) ? - mon_gain : mon_gain;
+	/* Balance fader */
+	const float mg[2] = {
+		(bits & HPSJAM_BIT_INVERT) ? - mon_gain[0] : mon_gain[0],
+		mon_gain[1],
+	};
 
-		/* Process panning */
+	/* Add monitor */
+	if (mg[0] != 0.0f) {
+		/* Process panning and balance */
 		if (mon_pan < 0.0f) {
 			const float g[3] = { 1.0f + mon_pan, 2.0f + mon_pan, - mon_pan };
 			for (size_t x = 0; x != samples; x++) {
 				float l = (temp_l[x] * g[1] + temp_r[x] * g[2]) / 2.0f;
 				float r = temp_r[x] * g[0];
 
-				left[x] += l * gain;
-				right[x] += r * gain;
+				left[x] = left[x] * mg[1] + l * mg[0];
+				right[x] = right[x] * mg[1] + r * mg[0];
 			}
 		} else if (mon_pan > 0.0f) {
 			const float g[3] = { 1.0f - mon_pan, 2.0f - mon_pan, mon_pan };
@@ -208,13 +212,13 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 				float l = temp_l[x] * g[0];
 				float r = (temp_r[x] * g[1] + temp_l[x] * g[2]) / 2.0f;
 
-				left[x] += l * gain;
-				right[x] += r * gain;
+				left[x] = left[x] * mg[1] + l * mg[0];
+				right[x] = right[x] * mg[1] + r * mg[0];
 			}
 		} else {
 			for (size_t x = 0; x != samples; x++) {
-				left[x] += temp_l[x] * gain;
-				right[x] += temp_r[x] * gain;
+				left[x] = left[x] * mg[1] + temp_l[x] * mg[0];
+				right[x] = right[x] * mg[1] + temp_r[x] * mg[0];
 			}
 		}
 	}
