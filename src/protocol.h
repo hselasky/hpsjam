@@ -444,6 +444,7 @@ struct hpsjam_input_packetizer {
 	union hpsjam_frame mask[HPSJAM_SEQ_MAX];
 	uint8_t valid[HPSJAM_SEQ_MAX];
 	uint64_t packet_loss;
+	uint8_t last_red;
 
 	void init() {
 		for (size_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
@@ -452,19 +453,20 @@ struct hpsjam_input_packetizer {
 		}
 		memset(valid, 0, sizeof(valid));
 		packet_loss = 0;
+		last_red = 2;
 	};
 
 	const union hpsjam_frame *first_pkt() {
 		unsigned mask = 0;
+		unsigned red;
 		unsigned start;
-		unsigned min_x;
+		uint8_t min_x;
 
-		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
-			if (valid[x] != 0)
-				mask |= (1 << x);
-		}
+		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++)
+			mask |= ((valid[x] & 1) << x);
 
 		start = mask;
+		min_x = 0;
 		for (uint8_t x = min_x = 0; x != HPSJAM_SEQ_MAX; x++) {
 			if (start > mask) {
 				start = mask;
@@ -475,49 +477,72 @@ struct hpsjam_input_packetizer {
 			mask >>= 1;
 		}
 
+		/* align to red */
+		start <<= (min_x % last_red);
+		min_x -= (min_x % last_red);
+
+		/* compute the redundancy mask */
+		red = (1U << last_red) - 1U;
+
 		/*
-		 * Check that we've received a valid packet after
-		 * the first packet-loss, if any.
+		 * Start processing if all packets are present in a
+		 * redundancy sequence or packets are received beyond
+		 * the redundancy mask.
 		 */
-		if ((start & ~2) >= 5) {
-			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
-				if (valid[min_x] & 1) {
-					valid[min_x] = 0;
-					return (current + min_x);
+		while ((start & red) == red || (start & ~red) != 0) {
+			/* check if we can consume packets */
+			for (uint8_t x = 0; x != last_red; x++) {
+				const uint8_t z = (min_x + x) % HPSJAM_SEQ_MAX;
+				if ((valid[z] & 5) == 1) {
+					valid[z] |= 4;
+					return (current + z);
 				}
-				valid[min_x] = 0;
-				min_x = (min_x + 1) % HPSJAM_SEQ_MAX;
-				packet_loss++;
 			}
+
+			/* reset the valid bits and account for packet loss */
+			for (uint8_t x = 0; x != last_red; x++) {
+				const uint8_t z = (min_x + x) % HPSJAM_SEQ_MAX;
+				packet_loss += (~valid[z] & 1);
+				valid[z] = 0;
+			}
+
+			/* see if there is more data */
+			min_x = (min_x + last_red) % HPSJAM_SEQ_MAX;
+			start >>= last_red;
 		}
+
+		/* no packets can be received */
 		return (0);
 	};
 
 	void recovery() {
-		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
+		if (last_red <= 1)
+			return;
+		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x += last_red) {
 			if (~valid[x] & 2)
 				continue;
-			const uint8_t rx_red = mask[x].hdr.getRedNo();
+			if (mask[x].hdr.getRedNo() != last_red)
+				continue;
 			uint8_t rx_missing = 0;
-			for (uint8_t y = 0; y != rx_red; y++) {
+			for (uint8_t y = 0; y != last_red; y++) {
 				const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
 				rx_missing += (~valid[z] & 1);
 			}
 			if (rx_missing == 1) {
-				/* one frame missing and we have the XOR frame */
-				for (uint8_t y = 0; y != rx_red; y++) {
+				/* one frame missing */
+				for (uint8_t y = 0; y != last_red; y++) {
 					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
 					if (valid[z] & 1)
 						mask[x].do_xor(current[z]);
 				}
-				for (uint8_t y = 0; y != rx_red; y++) {
+				/* recover the missing frame */
+				for (uint8_t y = 0; y != last_red; y++) {
 					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
-					if (~valid[z] & 1)
+					if (~valid[z] & 1) {
 						current[z] = mask[x];
+						valid[z] |= 1;
+					}
 				}
-				valid[x] &= ~2;
-			} else if (rx_missing == 0) {
-				valid[x] &= ~2;
 			}
 		}
 	};
@@ -527,8 +552,12 @@ struct hpsjam_input_packetizer {
 		const uint8_t rx_red = frame.hdr.getRedNo();
 
 		if (rx_red != 0) {
-			mask[rx_seqno] = frame;
-			valid[rx_seqno] |= 2;
+			/* check that the redundancy count is valid */
+			if ((HPSJAM_SEQ_MAX % rx_red) == 0 && (rx_seqno % rx_red) == 0) {
+				last_red = rx_red;
+				mask[rx_seqno] = frame;
+				valid[rx_seqno] |= 2;
+			}
 		} else {
 			current[rx_seqno] = frame;
 			valid[rx_seqno] |= 1;
