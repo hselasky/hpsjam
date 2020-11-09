@@ -83,9 +83,7 @@ public:
 	HpsJamStats *w_stats;
 	HpsJamEqualizer *eq_copy;
 
-	void closeEvent(QCloseEvent *event) {
-		QCoreApplication::exit(0);
-	};
+	void closeEvent(QCloseEvent *event);
 
 public slots:
 	void handle_connect();

@@ -152,6 +152,15 @@ HpsJamClient :: handle_watchdog()
 }
 
 void
+HpsJamClient :: closeEvent(QCloseEvent *event)
+{
+	handle_connect();
+	w_connect->handle_disconnect();
+
+	QCoreApplication::exit(0);
+}
+
+void
 HpsJamClientButton :: handle_timeout()
 {
 	if (flashing == false || isFlat() == true)
