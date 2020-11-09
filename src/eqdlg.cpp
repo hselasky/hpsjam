@@ -28,6 +28,7 @@
 #include "hpsjam.h"
 #include "eqdlg.h"
 #include "clientdlg.h"
+#include "peer.h"
 
 HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
     gl_spec(&g_spec), gl_control(&g_control)
@@ -160,9 +161,9 @@ void
 HpsJamEqualizer :: handle_longdelay()
 {
 	edit.setText(QString(
-	    "filtersize 40.0ms\n"
+	    "filtersize %1.0ms\n"
 	    "norm\n"
-	));
+	).arg(hpsjam_client_peer->output_pkt.ping_time + 10));
 };
 
 void
