@@ -496,3 +496,18 @@ HpsJamMixer :: handle_local_eq_changed()
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 	hpsjam_client_peer->local_eq.init(eq.constData());
 }
+
+void
+HpsJamMixer :: enable(unsigned index)
+{
+	peer_strip[index].show();
+	hpsjam_client->b_mixer.setFlashing();
+};
+
+void
+HpsJamMixer :: disable(unsigned index)
+{
+	peer_strip[index].init();
+	peer_strip[index].hide();
+	hpsjam_client->b_mixer.setFlashing();
+};

@@ -187,13 +187,8 @@ public:
 	QGridLayout gl;
 	HpsJamStrip self_strip;
 	HpsJamStrip peer_strip[HPSJAM_PEERS_MAX];
-	void enable(unsigned index) {
-		peer_strip[index].show();
-	};
-	void disable(unsigned index) {
-		peer_strip[index].init();
-		peer_strip[index].hide();
-	};
+	void enable(unsigned index);
+	void disable(unsigned index);
 	void init() {
 		for (unsigned x = 0; x != HPSJAM_PEERS_MAX; x++) {
 			peer_strip[x].init();
