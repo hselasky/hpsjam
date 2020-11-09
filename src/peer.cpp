@@ -561,8 +561,8 @@ hpsjam_server_peer :: audio_export()
 		pres->insert_tail(&output_pkt.head);
 	}
 
-	/* check if we should adjust the timer */
-	do_adjust = (in_audio[0].total != 0);
+	/* check if we should adjust the timer XXX */
+	do_adjust = true;
 
 	/* extract samples for this tick */
 	in_audio[0].remSamples(tmp_audio[0], HPSJAM_SAMPLE_RATE / 1000);
@@ -961,8 +961,8 @@ hpsjam_client_peer :: tick()
 		pres->insert_tail(&output_pkt.head);
 	}
 
-	/* check if we should adjust the timer */
-	do_adjust = (in_audio[0].total != 0);
+	/* check if we should adjust the timer XXX */
+	do_adjust = true;
 
 	/* extract samples for this tick */
 	in_audio[0].remSamples(audio[0], HPSJAM_SAMPLE_RATE / 1000);
