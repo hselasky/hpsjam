@@ -225,8 +225,8 @@ hpsjam_equalizer :: init(const char *pfilter)
 		filter_out[0] = new float [2 * size + osize];
 		filter_out[1] = new float [2 * size + osize];
 
-		memset(filter_out[0], 0, sizeof(float) * 2 * size + osize);
-		memset(filter_out[1], 0, sizeof(float) * 2 * size + osize);
+		memset(filter_out[0], 0, sizeof(float) * (2 * size + osize));
+		memset(filter_out[1], 0, sizeof(float) * (2 * size + osize));
 
 		filter_size = size;
 		filter_predelay = osize;
