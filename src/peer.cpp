@@ -124,7 +124,7 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 
 	/* Make a copy of input */
 	memcpy(temp_l, left, sizeof(temp_l));
-	memcpy(temp_r, left, sizeof(temp_r));
+	memcpy(temp_r, right, sizeof(temp_r));
 
 	/* Process bits */
 	if (bits & HPSJAM_BIT_MUTE) {
