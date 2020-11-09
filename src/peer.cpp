@@ -268,6 +268,7 @@ hpsjam_server_peer :: audio_export()
 	struct hpsjam_packet_entry *pres;
 	float temp[HPSJAM_MAX_PKT];
 	size_t num;
+	bool do_adjust;
 
 	input_pkt.recovery();
 
@@ -560,22 +561,27 @@ hpsjam_server_peer :: audio_export()
 		pres->insert_tail(&output_pkt.head);
 	}
 
+	/* check if we should adjust the timer */
+	do_adjust = (in_audio[0].total != 0);
+
 	/* extract samples for this tick */
 	in_audio[0].remSamples(tmp_audio[0], HPSJAM_SAMPLE_RATE / 1000);
 	in_audio[1].remSamples(tmp_audio[1], HPSJAM_SAMPLE_RATE / 1000);
 
 	/* check if we should adjust the timer */
-	switch (in_audio[0].getLowWater()) {
-	case 0:
-	case 1:
-		hpsjam_timer_adjust++;	/* go slower */
-		break;
-	case 2:
-	case 3:
-		break;
-	default:
-		hpsjam_timer_adjust--;	/* go faster */
-		break;
+	if (do_adjust) {
+		switch (in_audio[0].getLowWater()) {
+		case 0:
+		case 1:
+			hpsjam_timer_adjust++;	/* go slower */
+			break;
+		case 2:
+		case 3:
+			break;
+		default:
+			hpsjam_timer_adjust--;	/* go faster */
+			break;
+		}
 	}
 
 	/* clear output audio */
@@ -759,6 +765,7 @@ hpsjam_client_peer :: tick()
 		float audio[2][HPSJAM_SAMPLE_RATE / 1000];
 	};
 	size_t num;
+	bool do_adjust;
 
 	input_pkt.recovery();
 
@@ -956,22 +963,29 @@ hpsjam_client_peer :: tick()
 		pres->insert_tail(&output_pkt.head);
 	}
 
+	/* check if we should adjust the timer */
+	do_adjust = (in_audio[0].total != 0);
+
 	/* extract samples for this tick */
 	in_audio[0].remSamples(audio[0], HPSJAM_SAMPLE_RATE / 1000);
 	in_audio[1].remSamples(audio[1], HPSJAM_SAMPLE_RATE / 1000);
 
 	/* check if we should adjust the timer */
-	switch (in_audio[0].getLowWater()) {
-	case 0:
-		hpsjam_timer_adjust = 1;	/* go slower */
-		break;
-	case 1:
-	case 2:
+	if (do_adjust) {
+		switch (in_audio[0].getLowWater()) {
+		case 0:
+			hpsjam_timer_adjust = 1;	/* go slower */
+			break;
+		case 1:
+		case 2:
+			hpsjam_timer_adjust = 0;
+			break;
+		default:
+			hpsjam_timer_adjust = -1;	/* go faster */
+			break;
+		}
+	} else {
 		hpsjam_timer_adjust = 0;
-		break;
-	default:
-		hpsjam_timer_adjust = -1;	/* go faster */
-		break;
 	}
 
 	switch (out_format) {
