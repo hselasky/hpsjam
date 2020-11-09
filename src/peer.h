@@ -70,6 +70,7 @@ public:
 		memset(out_audio, 0, sizeof(out_audio));
 		name = QString();
 		icon = QByteArray();
+		memset(bits, 0, sizeof(bits));
 		output_fmt = 0;
 		gain = 1.0f;
 		pan = 0.0f;
