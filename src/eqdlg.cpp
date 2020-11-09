@@ -38,16 +38,24 @@ HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
 	g_control.setTitle(tr("Control"));
 
 	b_defaults.setText(tr("Defaults"));
-	b_disable.setText(tr("Disable"));
-	b_apply.setText(tr("Apply"));
-	b_close.setText(tr("Close"));
+	b_lowpass.setText(tr("&LowPass"));
+	b_highpass.setText(tr("&HighPass"));
+	b_bandpass.setText(tr("&BandPass"));
+
+	b_disable.setText(tr("&Disable"));
+	b_apply.setText(tr("&Apply"));
+	b_close.setText(tr("&Close"));
 
 	gl_spec.addWidget(&edit, 0,0);
 
 	gl_control.addWidget(&b_defaults, 0,0);
-	gl_control.addWidget(&b_disable, 0,1);
-	gl_control.addWidget(&b_apply, 0,2);
-	gl_control.addWidget(&b_close, 0,3);
+	gl_control.addWidget(&b_lowpass, 0,1);
+	gl_control.addWidget(&b_highpass, 1,0);
+	gl_control.addWidget(&b_bandpass, 1,1);
+
+	gl_control.addWidget(&b_disable, 0,2);
+	gl_control.addWidget(&b_apply, 1,2);
+	gl_control.addWidget(&b_close, 1,3);
 
 	gl.addWidget(&g_spec, 0,0);
 	gl.addWidget(&g_control, 1,0);
@@ -57,6 +65,9 @@ HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
 	connect(&b_disable, SIGNAL(released()), this, SLOT(handle_disable()));
 	connect(&b_apply, SIGNAL(released()), this, SLOT(handle_apply()));
 	connect(&b_close, SIGNAL(released()), this, SLOT(handle_close()));
+	connect(&b_lowpass, SIGNAL(released()), this, SLOT(handle_lowpass()));
+	connect(&b_highpass, SIGNAL(released()), this, SLOT(handle_highpass()));
+	connect(&b_bandpass, SIGNAL(released()), this, SLOT(handle_bandpass()));
 
 	handle_disable();
 }
@@ -106,6 +117,41 @@ HpsJamEqualizer :: handle_disable()
 {
 	edit.setText(QString("filtersize 0.0ms\n"));
 }
+
+void
+HpsJamEqualizer :: handle_lowpass()
+{
+	edit.setText(QString(
+	    "filtersize 2.0ms\n"
+	    "norm\n"
+	    "150 1\n"
+	    "1000 0\n"
+	));
+}
+
+void
+HpsJamEqualizer :: handle_highpass()
+{
+	edit.setText(QString(
+	    "filtersize 2.0ms\n"
+	    "norm\n"
+	    "150 0\n"
+	    "1000 1\n"
+	));
+}
+
+void
+HpsJamEqualizer :: handle_bandpass()
+{
+	edit.setText(QString(
+	    "filtersize 2.0ms\n"
+	    "norm\n"
+	    "250 0\n"
+	    "500 1\n"
+	    "1000 1\n"
+	    "2000 0\n"
+	));
+};
 
 void
 HpsJamEqualizer :: handle_apply()

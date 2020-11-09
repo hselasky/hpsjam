@@ -51,12 +51,18 @@ public:
 	QPushButton b_disable;
 	QPushButton b_apply;
 	QPushButton b_close;
+	QPushButton b_lowpass;
+	QPushButton b_highpass;
+	QPushButton b_bandpass;
 
 public slots:
 	void handle_defaults();
 	void handle_disable();
 	void handle_apply();
 	void handle_close();
+	void handle_lowpass();
+	void handle_highpass();
+	void handle_bandpass();
 };
 
 #endif		/* _HPSJAM_EQDLG_H_ */
