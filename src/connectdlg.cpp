@@ -113,12 +113,10 @@ HpsJamConnect :: HpsJamConnect() : gl(this)
 	gl.addWidget(&icon, 0,0);
 	gl.addWidget(&name, 1,0);
 	gl.addWidget(&password, 2,0);
-	gl.addWidget(&location, 3,0);
-	gl.addWidget(&server, 4,0);
-	gl.setRowStretch(4,1);
-	gl.addWidget(&buttons, 5,0);
+	gl.addWidget(&server, 3,0);
+	gl.setRowStretch(3,1);
+	gl.addWidget(&buttons, 4,0);
 
-	connect(&location.list, SIGNAL(valueChanged()), this, SLOT(handle_location_change()));
 	connect(&server.list, SIGNAL(valueChanged()), this, SLOT(handle_server_change()));
 	connect(&buttons.b_refresh, SIGNAL(released()), this, SLOT(handle_refresh()));
 	connect(&buttons.b_connect, SIGNAL(released()), this, SLOT(handle_connect()));
@@ -127,12 +125,6 @@ HpsJamConnect :: HpsJamConnect() : gl(this)
 	connect(&hpsjam_client_peer->output_pkt, SIGNAL(pendingTimeout()), this, SLOT(handle_disconnect()));
 
 	buttons.b_disconnect.setEnabled(false);
-}
-
-void
-HpsJamConnect :: handle_location_change()
-{
-
 }
 
 void
