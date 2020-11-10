@@ -30,6 +30,18 @@
 #include <pthread.h>
 #include <err.h>
 
+static void
+hpsjam_socket_set_priority()
+{
+	pthread_t pt = pthread_self();
+	struct sched_param param;
+	int policy;
+
+	pthread_getschedparam(pt, &policy, &param);
+	param.sched_priority = sched_get_priority_max(policy);
+	pthread_setschedparam(pt, policy, &param);
+}
+
 static void *
 hpsjam_socket_receive(void *arg)
 {
@@ -37,6 +49,8 @@ hpsjam_socket_receive(void *arg)
 	int tries = (hpsjam_num_server_peers ? 1 : 128);
 	union hpsjam_frame frame;
 	ssize_t ret;
+
+	hpsjam_socket_set_priority();
 
 	frame.clear();
 
