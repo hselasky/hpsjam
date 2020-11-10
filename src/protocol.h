@@ -203,7 +203,7 @@ struct hpsjam_packet {
 	void setFaderData(uint8_t, uint8_t, const char *, size_t);
 	bool getFaderData(uint8_t &, uint8_t &, const char **, size_t &) const;
 
-	void setRawData(const char *, size_t);
+	void setRawData(const char *, size_t, char pad = 0);
 	bool getRawData(const char **, size_t &) const;
 
 	bool getConfigure(uint8_t &out_format) const {

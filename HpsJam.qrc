@@ -1,5 +1,17 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
+<file>icons/heart.svg</file>
+<file>icons/bell.svg</file>
+<file>icons/circle.svg</file>
+<file>icons/speaker.svg</file>
+<file>icons/smiley.svg</file>
+<file>icons/guitar.svg</file>
+<file>icons/microphone.svg</file>
+<file>icons/tuba.svg</file>
+<file>icons/flute.svg</file>
+<file>icons/waveform.svg</file>
+<file>icons/sun.svg</file>
+<file>icons/jack.svg</file>
+<file>icons/note.svg</file>
 </qresource>
 </RCC>
-

@@ -33,9 +33,20 @@
 #include "protocol.h"
 #include "clientdlg.h"
 
-HpsJamIcon :: HpsJamIcon()
+HpsJamIcon :: HpsJamIcon(const QString &_fname) :
+    fname(_fname), sel(0)
 {
+	if (!fname.isEmpty())
+		svg.load(fname);
+	setFixedSize(64,64);
+}
 
+void
+HpsJamIcon :: mouseReleaseEvent(QMouseEvent *event)
+{
+	if (event->button() != Qt::LeftButton)
+		return;
+	emit selected();
 }
 
 void
@@ -44,6 +55,36 @@ HpsJamIcon :: paintEvent(QPaintEvent *event)
 	QPainter paint(this);
 
 	paint.setRenderHints(QPainter::Antialiasing, 1);
+
+	static const QColor gh(192,192,192,127);
+	static const QColor gg(192,192,192);
+	static const QColor bg(255,255,255);
+
+	switch (sel) {
+	case 0:
+		paint.fillRect(QRectF(0,0,width(),height()), gh);
+		break;
+	case 1:
+		paint.fillRect(QRectF(0,0,width(),height()), gg);
+		break;
+	case 2:
+		paint.fillRect(QRectF(0,0,width(),height()), bg);
+		break;
+	default:
+		break;
+	}
+	svg.render(&paint);
+}
+
+void
+HpsJamIcon :: setSelection(bool state)
+{
+	uint8_t _sel = state + 1;
+	if (sel == _sel)
+		return;
+	sel = _sel;
+	update();
+	emit selected();
 }
 
 HpsJamSlider :: HpsJamSlider()
@@ -245,8 +286,8 @@ HpsJamStrip :: HpsJamStrip() : gl(this),
 	connect(&b_solo, SIGNAL(released()), this, SLOT(handleSolo()));
 	connect(&b_mute, SIGNAL(released()), this, SLOT(handleMute()));
 
-	gl.addWidget(&w_icon, 0,0);
-	gl.addWidget(&w_name, 1,0);
+	gl.addWidget(&w_icon, 0,0, Qt::AlignCenter);
+	gl.addWidget(&w_name, 1,0, Qt::AlignCenter);
 	gl.addWidget(&b_eq, 2,0);
 	gl.addWidget(&b_inv, 3,0);
 	gl.addWidget(&w_pan, 4,0);

@@ -25,6 +25,7 @@
 
 #include <QMutexLocker>
 #include <QMessageBox>
+#include <QFile>
 
 #include "hpsjam.h"
 #include "peer.h"
@@ -33,6 +34,65 @@
 #include "configdlg.h"
 #include "mixerdlg.h"
 #include "timer.h"
+
+HpsJamConnectIcon :: HpsJamConnectIcon() : gl(this)
+{
+	selection = 0;
+
+	icon[0] = new HpsJamIcon(QString());
+	icon[1] = new HpsJamIcon(QString(":/icons/heart.svg"));
+	icon[2] = new HpsJamIcon(QString(":/icons/bell.svg"));
+	icon[3] = new HpsJamIcon(QString(":/icons/circle.svg"));
+	icon[4] = new HpsJamIcon(QString(":/icons/speaker.svg"));
+	icon[5] = new HpsJamIcon(QString(":/icons/smiley.svg"));
+	icon[6] = new HpsJamIcon(QString(":/icons/guitar.svg"));
+	icon[7] = new HpsJamIcon(QString(":/icons/microphone.svg"));
+	icon[8] = new HpsJamIcon(QString(":/icons/tuba.svg"));
+	icon[9] = new HpsJamIcon(QString(":/icons/flute.svg"));
+	icon[10] = new HpsJamIcon(QString(":/icons/waveform.svg"));
+	icon[11] = new HpsJamIcon(QString(":/icons/sun.svg"));
+	icon[12] = new HpsJamIcon(QString(":/icons/jack.svg"));
+	icon[13] = new HpsJamIcon(QString(":/icons/note.svg"));
+
+	for (unsigned x = 0; x != numIcons; x++) {
+		icon[x]->setSelection(x == selection);
+		gl.addWidget(icon[x], x / 8, x % 8);
+		connect(icon[x], SIGNAL(selected()), this, SLOT(handle_selection()));
+	}
+
+	setTitle(tr("Select icon"));
+}
+
+void
+HpsJamConnectIcon :: loadSelection(QByteArray &ba)
+{
+	QFile file;
+
+	if (icon[selection]->fname.isEmpty())
+		goto error;
+
+	file.setFileName(icon[selection]->fname);
+
+	if(!file.open(QIODevice::ReadOnly))
+		goto error;
+	ba = file.readAll();
+	return;
+error:
+	ba = QByteArray();
+}
+
+void
+HpsJamConnectIcon :: handle_selection()
+{
+	for (unsigned x = 0; x != numIcons; x++) {
+		if (sender() == icon[x]) {
+			HPSJAM_NO_SIGNAL(icon[x][0],setSelection(true));
+			selection = x;
+		} else {
+			HPSJAM_NO_SIGNAL(icon[x][0],setSelection(false));
+		}
+	}
+}
 
 void
 HpsJamConnectList :: selectionChanged(const QItemSelection &cur, const QItemSelection &prev)
@@ -92,6 +152,7 @@ HpsJamConnect :: handle_connect()
 	QByteArray host;
 	QByteArray port;
 	QByteArray temp;
+	QByteArray idata;
 
 	auto parts = text.split(QString(":"));
 
@@ -125,9 +186,11 @@ HpsJamConnect :: handle_connect()
 		}
 	}
 
-	if (icon.curr.length() > 256) {
+	icon.loadSelection(idata);
+
+	if (idata.length() > 1000) {
 		QMessageBox::information(this, tr("CONNECT"),
-		    tr("Icon size is bigger than 256 bytes.\n"
+		    tr("Icon size is bigger than 1000 bytes.\n"
 		       "Try selecting another icon."));
 		return;
 	}
@@ -168,12 +231,15 @@ HpsJamConnect :: handle_connect()
 
 	/* send icon */
 	pkt = new struct hpsjam_packet_entry;
-	pkt->packet.setRawData(temp.constData(), temp.length());
+	pkt->packet.setRawData(idata.constData(), idata.length(), ' ');
 	pkt->packet.type = HPSJAM_TYPE_ICON_REQUEST;
 	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
 
-	/* set local format */
+	/* set local format, nickname and icon */
 	hpsjam_client_peer->out_format = hpsjam_client->w_config->up_fmt.format;
+	hpsjam_client->w_mixer->self_strip.w_name.setText(nick);
+	hpsjam_client->w_mixer->self_strip.w_icon.svg.load(idata);
+	hpsjam_client->w_mixer->self_strip.w_icon.update();
 }
 
 void

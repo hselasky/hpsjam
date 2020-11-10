@@ -44,12 +44,21 @@ signals:
 	void valueChanged();
 };
 
+class HpsJamIcon;
 class HpsJamConnectIcon : public QGroupBox {
+	Q_OBJECT;
 public:
-	QByteArray curr;
-	HpsJamConnectIcon() {
-		setTitle(tr("Select icon"));
-	};
+	enum { numIcons = 14 };
+
+	QGridLayout gl;
+	HpsJamIcon *icon[numIcons];
+	unsigned selection;
+
+	HpsJamConnectIcon();
+	void loadSelection(QByteArray &);
+
+public slots:
+	void handle_selection();
 };
 
 class HpsJamConnectName : public QGroupBox {

@@ -366,7 +366,7 @@ hpsjam_packet::getFaderData(uint8_t &mix, uint8_t &index, const char **pp, size_
 };
 
 void
-hpsjam_packet::setRawData(const char *ptr, size_t len)
+hpsjam_packet::setRawData(const char *ptr, size_t len, char pad)
 {
 	const size_t tot = 1 + (len + 3) / 4;
 	assert(tot <= 255);
@@ -376,9 +376,9 @@ hpsjam_packet::setRawData(const char *ptr, size_t len)
 	sequence[1] = 0;
 	memcpy(sequence + 2, ptr, len);
 
-	/* zero-pad remainder */
+	/* pad remainder */
 	while (len % 4)
-		sequence[2 + len++] = 0;
+		sequence[2 + len++] = pad;
 };
 
 bool

@@ -43,12 +43,19 @@
 #include "eqdlg.h"
 
 class HpsJamIcon : public QWidget {
+	Q_OBJECT;
 public:
-	HpsJamIcon();
+	HpsJamIcon(const QString & = QString());
 
+	QString fname;
 	QSvgRenderer svg;
+	uint8_t sel;
 
 	void paintEvent(QPaintEvent *);
+	void mouseReleaseEvent(QMouseEvent *);
+	void setSelection(bool);
+signals:
+	void selected();
 };
 
 class HpsJamSlider : public QWidget {
@@ -124,6 +131,7 @@ public:
 	void init() {
 		w_name.setText(QString());
 		w_icon.svg.load(QByteArray());
+		w_icon.update();
 		HPSJAM_NO_SIGNAL(w_slider,setValue(1));
 		HPSJAM_NO_SIGNAL(w_slider,setPan(0));
 		HPSJAM_NO_SIGNAL(w_slider,setLevel(0,0));
