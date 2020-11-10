@@ -299,8 +299,9 @@ public:
 	union hpsjam_frame mask;
 	hpsjam_packet_head_t head;
 	struct hpsjam_packet_entry *pending;
+	uint16_t start_time; /* start time for message */
 	uint16_t ping_time; /* response time in ticks */
-	uint16_t pend_count; /* pending tick count */
+	uint16_t pend_count; /* pending timeout counter */
 	uint8_t pend_seqno; /* pending sequence number */
 	uint8_t peer_seqno; /* peer sequence number */
 	uint8_t d_cur;	/* current distance between XOR frames */
@@ -333,8 +334,9 @@ public:
 		struct hpsjam_packet_entry *pkt;
 		d_cur = 0;
 		d_max = distance % HPSJAM_SEQ_MAX;
+		start_time = 0;
 		ping_time = 0;
-		pend_count = 0;
+		pend_count = 65535;
 		pend_seqno = 0;
 		peer_seqno = 0;
 		seqno = 0;
@@ -352,7 +354,7 @@ public:
 		pending = 0;
 	};
 
-	bool append(const struct hpsjam_packet_entry &entry)
+	bool append_pkt(const struct hpsjam_packet_entry &entry)
 	{
 		size_t remainder = sizeof(current) - sizeof(current.hdr) - offset;
 		size_t len = entry.packet.getBytes();
@@ -383,16 +385,18 @@ public:
 	};
 
 	void advance() {
+		if (pending == 0)
+			return;
 		delete pending;
 		pending = 0;
-		ping_time = pend_count + (pend_count / (d_max - 1));
+		ping_time = hpsjam_ticks - start_time;
 	};
 
 	void send(const struct hpsjam_socket_address &addr) {
 		if (d_cur == d_max) {
 			/* finalize XOR packet */
 			mask.hdr.setSequence(seqno, d_max);
-			addr.sendto((const char *)&mask, d_len + sizeof(current.hdr));
+			addr.sendto((const char *)&mask, d_len + sizeof(mask.hdr));
 			mask.clear();
 			d_cur = 0;
 			d_len = 0;
@@ -404,19 +408,26 @@ public:
 					pending->remove(&head);
 					pending->packet.setLocalSeqNo(pend_seqno);
 					pending->packet.setPeerSeqNo(peer_seqno);
-					send_ack = false;
-					pend_count = 0;
+					start_time = hpsjam_ticks;
 					pend_seqno++;
-					append(*pending);
-				} else {
+					if (append_pkt(*pending)) {
+						send_ack = false;
+						pend_count = 1;
+					} else {
+						pend_count = 0;
+					}
+				} else if (pend_count != 65535) {
 					pend_count++;
 				}
 			} else {
-				pend_count++;
 				if ((pend_count % 64) == 0) {
 					pending->packet.setPeerSeqNo(peer_seqno);
-					send_ack = false;
-					append(*pending);
+					if (append_pkt(*pending)) {
+						send_ack = false;
+						pend_count++;
+					}
+				} else if (pend_count != 65535) {
+					pend_count++;
 				}
 			}
 			if (pend_count == 1000)

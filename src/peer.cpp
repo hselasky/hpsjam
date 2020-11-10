@@ -630,39 +630,39 @@ hpsjam_server_peer :: audio_import()
 	switch (output_fmt) {
 	case HPSJAM_TYPE_AUDIO_8_BIT_1CH:
 		entry.packet.put8Bit1ChSample(out_audio[0], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
 		entry.packet.put16Bit1ChSample(out_audio[0], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
 		entry.packet.put24Bit1ChSample(out_audio[0], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
 		entry.packet.put8Bit1ChSample(out_audio[0], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
 		entry.packet.put8Bit2ChSample(out_audio[0], out_audio[1], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_16_BIT_2CH:
 		entry.packet.put16Bit2ChSample(out_audio[0], out_audio[1], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_24_BIT_2CH:
 		entry.packet.put24Bit2ChSample(out_audio[0], out_audio[1], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_32_BIT_2CH:
 		entry.packet.put32Bit2ChSample(out_audio[0], out_audio[1], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	default:
 		entry.packet.putSilence(HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	}
 
@@ -1031,39 +1031,39 @@ hpsjam_client_peer :: tick()
 	switch (out_format) {
 	case HPSJAM_TYPE_AUDIO_8_BIT_1CH:
 		entry.packet.put8Bit1ChSample(audio[0], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
 		entry.packet.put16Bit1ChSample(audio[0], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
 		entry.packet.put24Bit1ChSample(audio[0], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
 		entry.packet.put8Bit1ChSample(audio[0], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
 		entry.packet.put8Bit2ChSample(audio[0], audio[1], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_16_BIT_2CH:
 		entry.packet.put16Bit2ChSample(audio[0], audio[1], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_24_BIT_2CH:
 		entry.packet.put24Bit2ChSample(audio[0], audio[1], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_32_BIT_2CH:
 		entry.packet.put32Bit2ChSample(audio[0], audio[1], HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	default:
 		entry.packet.putSilence(HPSJAM_SAMPLE_RATE / 1000);
-		output_pkt.append(entry);
+		output_pkt.append_pkt(entry);
 		break;
 	}
 
