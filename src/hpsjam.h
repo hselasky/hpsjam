@@ -34,7 +34,7 @@
 #define	HPSJAM_WINDOW_TITLE "HPS Online Jamming"
 #define	HPSJAM_PEERS_MAX 256
 #define	HPSJAM_SEQ_MAX 16
-#define	HPSJAM_MAX_UDP 1400 /* bytes */
+#define	HPSJAM_MAX_UDP 1416 /* bytes */
 #define	HPSJAM_DEFAULT_PORT 22124
 #define	HPSJAM_DEFAULT_PORT_STR "22124"
 #define	HPSJAM_BIT_MUTE (1 << 0)
