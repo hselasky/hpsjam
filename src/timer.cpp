@@ -41,9 +41,23 @@
 uint16_t hpsjam_ticks;
 int hpsjam_timer_adjust;
 
+static void
+hpsjam_timer_set_priority()
+{
+	pthread_t pt = pthread_self();
+	struct sched_param param;
+	int policy;
+
+	pthread_getschedparam(pt, &policy, &param);
+	param.sched_priority = sched_get_priority_max(policy);
+	pthread_setschedparam(pt, policy, &param);
+}
+
 static void *
 hpsjam_timer_loop(void *arg)
 {
+	hpsjam_timer_set_priority();
+
 #if defined(__APPLE__) || defined(__MACOSX)
 	struct mach_timebase_info time_base_info;
 	uint64_t next;
