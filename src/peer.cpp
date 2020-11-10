@@ -274,9 +274,15 @@ hpsjam_server_peer :: audio_export()
 	const struct hpsjam_packet *ptr;
 	struct hpsjam_packet_entry *pres;
 	float temp[HPSJAM_MAX_PKT];
+	uint16_t jitter;
 	size_t num;
 
 	input_pkt.recovery();
+
+	/* update jitter */
+	jitter = input_pkt.jitter.get_jitter_in_ms();
+	in_audio[0].set_jitter_limit_in_ms(jitter);
+	in_audio[1].set_jitter_limit_in_ms(jitter);
 
 	while ((pkt = input_pkt.first_pkt())) {
 		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {
@@ -580,11 +586,9 @@ hpsjam_server_peer :: audio_export()
 	/* check if we should adjust the timer */
 	switch (in_audio[0].getLowWater()) {
 	case 0:
-	case 1:
 		hpsjam_timer_adjust++;	/* go slower */
 		break;
-	case 2:
-	case 3:
+	case 1:
 		break;
 	default:
 		hpsjam_timer_adjust--;	/* go faster */
@@ -774,8 +778,14 @@ hpsjam_client_peer :: tick()
 		float audio[2][HPSJAM_SAMPLE_RATE / 1000];
 	};
 	size_t num;
+	uint16_t jitter;
 
 	input_pkt.recovery();
+
+	/* update jitter */
+	jitter = input_pkt.jitter.get_jitter_in_ms();
+	out_audio[0].set_jitter_limit_in_ms(jitter);
+	out_audio[1].set_jitter_limit_in_ms(jitter);
 
 	while ((pkt = input_pkt.first_pkt())) {
 		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {

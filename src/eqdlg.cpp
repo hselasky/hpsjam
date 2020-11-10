@@ -24,6 +24,7 @@
  */
 
 #include <QMessageBox>
+#include <QMutexLocker>
 
 #include "hpsjam.h"
 #include "eqdlg.h"
@@ -160,10 +161,18 @@ HpsJamEqualizer :: handle_bandpass()
 void
 HpsJamEqualizer :: handle_longdelay()
 {
+	int rtt_ms;
+
+	if (1) {
+		QMutexLocker locker(&hpsjam_client_peer->lock);
+		rtt_ms = hpsjam_client_peer->output_pkt.ping_time +
+		    hpsjam_client_peer->input_pkt.jitter.get_jitter_in_ms();
+	}
+
 	edit.setText(QString(
 	    "filtersize %1.0ms\n"
 	    "norm\n"
-	).arg(hpsjam_client_peer->output_pkt.ping_time + 10));
+	).arg(rtt_ms + 8));
 };
 
 void

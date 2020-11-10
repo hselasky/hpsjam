@@ -93,28 +93,54 @@ public:
 	float last_sample;
 	size_t consumer;
 	size_t total;
-	uint8_t limit;
+	uint16_t limit;
 
-	void clear(uint8_t _limit = 3) {
+	void clear() {
 		memset(samples, 0, sizeof(samples));
 		memset(stats, 0, sizeof(stats));
 		last_sample = 0;
 		consumer = 0;
 		total = 0;
-		limit = _limit;
+		limit = 3;	/* minimum value for handling one packet loss */
+	};
+	void set_jitter_limit_in_ms(uint16_t _limit) {
+		limit = _limit + 3;
 	};
 
 	hpsjam_audio_buffer() {
 		clear();
 	};
 
+	/* getLowWater() returns one of 0,1 or 2. */
 	uint8_t getLowWater() const {
 		uint8_t x;
 		for (x = 0; x != HPSJAM_SEQ_MAX * 2; x++) {
 			if (stats[x] >= 0.5f)
 				break;
 		}
-		return (x);
+		/* try to keep the low water level around 2ms */
+		if (x < 2)
+			return (0);
+		else if (x > 2)
+			return (2);
+		else
+			return (1);
+	};
+
+	/* getHighWater() returns one of 0,1 or 2. */
+	uint8_t getHighWater() const {
+		uint8_t x;
+		for (x = 0; x != HPSJAM_SEQ_MAX * 2; x++) {
+			if (stats[x] >= 0.5f)
+				break;
+		}
+		/* try to keep the high water level down */
+		if (x < limit)
+			return (0);
+		else if (x > limit)
+			return (2);
+		else
+			return (1);
 	};
 
 	/* remove samples from buffer, must be called periodically */
@@ -139,13 +165,13 @@ public:
 			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++)
 				stats[x] /= 2.0f;
 
-			const uint8_t low = getLowWater();
+			const uint8_t high = getHighWater();
 
 			/*
-			 * Grow or shrink the buffer depending on the
-			 * amount of supplied data:
+			 * Shrink the buffer depending on the amount
+			 * of supplied data:
 			 */
-			if (total > num && low > limit)
+			if (total > num && high > 1)
 				shrink();
 		}
 

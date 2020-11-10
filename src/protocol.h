@@ -28,7 +28,9 @@
 
 #include <QObject>
 
+#include "hpsjam.h"
 #include "socket.h"
+#include "jitter.h"
 
 #include <assert.h>
 
@@ -37,9 +39,7 @@
 
 #include <sys/queue.h>
 
-#define	HPSJAM_SEQ_MAX 16
 #define	HPSJAM_MAX_PKT (255 * 4)
-#define	HPSJAM_MAX_UDP 1400 /* bytes */
 
 enum {
 	HPSJAM_TYPE_END,
@@ -445,19 +445,19 @@ signals:
 };
 
 struct hpsjam_input_packetizer {
+	struct hpsjam_jitter jitter;
 	union hpsjam_frame current[HPSJAM_SEQ_MAX];
 	union hpsjam_frame mask[HPSJAM_SEQ_MAX];
 	uint8_t valid[HPSJAM_SEQ_MAX];
-	uint64_t packet_loss;
 	uint8_t last_red;
 
 	void init() {
+		jitter.clear();
 		for (size_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
 			current[x].clear();
 			mask[x].clear();
 		}
 		memset(valid, 0, sizeof(valid));
-		packet_loss = 0;
 		last_red = 2;
 	};
 
@@ -504,10 +504,16 @@ struct hpsjam_input_packetizer {
 				}
 			}
 
+			/* account for RX loss */
+			if (~valid[min_x] & 2)
+				jitter.rx_loss();
+
 			/* reset the valid bits and account for packet loss */
 			for (uint8_t x = 0; x != last_red; x++) {
 				const uint8_t z = (min_x + x) % HPSJAM_SEQ_MAX;
-				packet_loss += (~valid[z] & 1);
+				/* account for RX loss */
+				if ((valid[z] & 9) != 1)
+					jitter.rx_loss();
 				valid[z] = 0;
 			}
 
@@ -545,7 +551,7 @@ struct hpsjam_input_packetizer {
 					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
 					if (~valid[z] & 1) {
 						current[z] = mask[x];
-						valid[z] |= 1;
+						valid[z] |= 9;
 					}
 				}
 			}
@@ -567,6 +573,8 @@ struct hpsjam_input_packetizer {
 			current[rx_seqno] = frame;
 			valid[rx_seqno] |= 1;
 		}
+
+		jitter.rx_packet();
 	};
 };
 
