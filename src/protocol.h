@@ -273,6 +273,11 @@ struct hpsjam_packet_entry {
 
 union hpsjam_frame {
 	uint8_t raw[HPSJAM_MAX_UDP];
+	uint32_t raw32[HPSJAM_MAX_UDP / 4];
+	uint64_t raw64[HPSJAM_MAX_UDP / 8];
+#if (HPSJAM_MAX_UDP % 8)
+#error "HPSJAM_MAX_UDP must be divisible by 8."
+#endif
   	struct {
 		struct hpsjam_header hdr;
 		struct hpsjam_packet start[(HPSJAM_MAX_UDP - sizeof(hdr)) / sizeof(hpsjam_packet)];
@@ -282,8 +287,8 @@ union hpsjam_frame {
 		memset(this, 0, sizeof(*this));
 	};
 	void do_xor(const union hpsjam_frame &other) {
-		for (size_t x = 0; x != sizeof(this); x++)
-			raw[x] ^= other.raw[x];
+		for (size_t x = 0; x != (sizeof(this) / 8); x++)
+			raw64[x] ^= other.raw64[x];
 	};
 };
 
