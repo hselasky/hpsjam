@@ -267,6 +267,8 @@ hpsjam_server_peer :: handle_pending_timeout()
 	delete pkt;
 }
 
+static unsigned hpsjam_server_adjust[3];
+
 void
 hpsjam_server_peer :: audio_export()
 {
@@ -584,16 +586,7 @@ hpsjam_server_peer :: audio_export()
 	in_audio[1].remSamples(tmp_audio[1], HPSJAM_SAMPLE_RATE / 1000);
 
 	/* check if we should adjust the timer */
-	switch (in_audio[0].getLowWater()) {
-	case 0:
-		hpsjam_timer_adjust++;	/* go slower */
-		break;
-	case 1:
-		break;
-	default:
-		hpsjam_timer_adjust--;	/* go faster */
-		break;
-	}
+	hpsjam_server_adjust[in_audio[0].getLowWater()]++;
 
 	/* clear output audio */
 	memset(out_audio, 0, sizeof(out_audio));
@@ -681,7 +674,7 @@ Q_DECL_EXPORT void
 hpsjam_server_tick()
 {
 	/* reset timer adjustment */
-	hpsjam_timer_adjust = 0;
+	memset(hpsjam_server_adjust, 0, sizeof(hpsjam_server_adjust));
 
 	/* get audio */
 	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
@@ -748,6 +741,17 @@ hpsjam_server_tick()
 		if (hpsjam_server_peers[x].valid == false)
 			continue;
 		hpsjam_server_peers[x].audio_import();
+	}
+
+	/* adjust timer, if any */
+	if (hpsjam_server_adjust[1] >= hpsjam_server_adjust[0] &&
+	    hpsjam_server_adjust[1] >= hpsjam_server_adjust[2]) {
+		hpsjam_timer_adjust = 0;	/* go normal */
+	} else if (hpsjam_server_adjust[0] >= hpsjam_server_adjust[1] &&
+		   hpsjam_server_adjust[0] >= hpsjam_server_adjust[2]) {
+		hpsjam_timer_adjust = 1;	/* go slower */
+	} else {
+		hpsjam_timer_adjust = -1;	/* go faster */
 	}
 }
 
@@ -1005,7 +1009,7 @@ hpsjam_client_peer :: tick()
 		hpsjam_timer_adjust = 1;	/* go slower */
 		break;
 	case 1:
-		hpsjam_timer_adjust = 0;
+		hpsjam_timer_adjust = 0;	/* go normal */
 		break;
 	default:
 		hpsjam_timer_adjust = -1;	/* go faster */
