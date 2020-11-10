@@ -56,6 +56,7 @@ public:
 
 	HpsJamConnectIcon();
 	void loadSelection(QByteArray &);
+	void setEnabled(bool);
 
 public slots:
 	void handle_selection();
@@ -143,6 +144,7 @@ public:
 	HpsJamConnectButtons buttons;
 
 	void activate(bool state) {
+		icon.setEnabled(state);
 		buttons.b_connect.setEnabled(state);
 		buttons.b_disconnect.setEnabled(!state);
 		name.edit.setEnabled(state);

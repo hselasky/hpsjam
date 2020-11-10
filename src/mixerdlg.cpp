@@ -36,6 +36,7 @@
 HpsJamIcon :: HpsJamIcon(const QString &_fname) :
     fname(_fname), sel(0)
 {
+	enabled = true;
 	if (!fname.isEmpty())
 		svg.load(fname);
 	setFixedSize(64,64);
@@ -46,7 +47,8 @@ HpsJamIcon :: mouseReleaseEvent(QMouseEvent *event)
 {
 	if (event->button() != Qt::LeftButton)
 		return;
-	emit selected();
+	if (enabled)
+		emit selected();
 }
 
 void
@@ -74,6 +76,9 @@ HpsJamIcon :: paintEvent(QPaintEvent *event)
 		break;
 	}
 	svg.render(&paint);
+
+	if (!enabled)
+		paint.fillRect(QRectF(0,0,width(),height()), gh);
 }
 
 void

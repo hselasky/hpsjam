@@ -50,10 +50,17 @@ public:
 	QString fname;
 	QSvgRenderer svg;
 	uint8_t sel;
+	bool enabled;
 
 	void paintEvent(QPaintEvent *);
 	void mouseReleaseEvent(QMouseEvent *);
 	void setSelection(bool);
+	void setEnabled(bool state) {
+		if (enabled == state)
+			return;
+		enabled = state;
+		update();
+	};
 signals:
 	void selected();
 };

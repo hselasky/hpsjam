@@ -64,6 +64,13 @@ HpsJamConnectIcon :: HpsJamConnectIcon() : gl(this)
 }
 
 void
+HpsJamConnectIcon :: setEnabled(bool state)
+{
+	for (unsigned x = 0; x != numIcons; x++)
+		icon[x]->setEnabled(state);
+}
+
+void
 HpsJamConnectIcon :: loadSelection(QByteArray &ba)
 {
 	QFile file;
