@@ -38,14 +38,15 @@ public:
 	size_t filter_size;
 	size_t filter_predelay;
 	size_t filter_offset;
+	size_t filter_doffset;
 	float *filter_data;
 	float *filter_in[2];
 	float *filter_out[2];
+	float *filter_delay[2];
 
 	bool init(const char *);
 	void cleanup();
 	void doit(float *left, float *right, size_t samples);
-	void doit(float *left, size_t samples);
 };
 
 #endif		/* _HPSJAM_EQUALIZER_ */

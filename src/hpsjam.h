@@ -46,6 +46,11 @@
   a.b;					\
   a.blockSignals(false);		\
 } while (0)
+#define	HPSJAM_SWAP(a,b) do {		\
+	typeof(a) __temp = (b);		\
+	(b) = (a);			\
+	(a) = __temp;			\
+} while (0)
 
 class hpsjam_server_peer;
 class hpsjam_client_peer;

@@ -165,24 +165,33 @@ hpsjam_equalizer :: init(const char *pfilter)
 	/* check if filter starts with filtersize */
 	if (strncasecmp(pfilter, "filtersize ", 11) != 0)
 		return (true);
-	/* get filter size */
-	double ms = 1.0;
-	if (sscanf(pfilter + 11, "%lfms", &ms) != 1)
-		return (true);
-	ssize_t osize;
-	ssize_t size = osize = (HPSJAM_SAMPLE_RATE * ms) / 1000.0;
 
-	/* limit size of EQ filter */
-	if (size < 0)
-		size = 0;
-	else if (size > 512)
-		size = 512;
+	/* get filter sizes */
+	double ms[2] = {};
+	if (sscanf(pfilter + 11, "%lfms %lfms", ms + 0, ms + 1) != 2)
+		return (true);
+	ssize_t osize = (HPSJAM_SAMPLE_RATE * ms[0]) / 1000.0;
+	ssize_t size = (HPSJAM_SAMPLE_RATE * ms[1]) / 1000.0;
 
 	/* range check prefilter size */
 	if (osize < 0)
 		osize = 0;
 	else if (osize > HPSJAM_SAMPLE_RATE)
 		osize = HPSJAM_SAMPLE_RATE;
+
+	/* limit size of EQ filter */
+	if (size <= 0)
+		size = 0;
+	else if (size < 8)
+		size = 8;
+	else if (size > 4096)
+		size = 4096;
+
+	/* make EQ size power of two, by rounding down */
+	while ((size & -size) != size) {
+		osize += size & -size;
+		size -= size & -size;
+	}
 
 	/* skip rest of line */
 	while (*pfilter != 0) {
@@ -193,49 +202,52 @@ hpsjam_equalizer :: init(const char *pfilter)
 		pfilter++;
 	}
 
-	/* make filter size power of two, by rounding down */
-	while ((size & -size) != size)
-		size -= size & -size;
+	struct equalizer eq = {};
 
-	/* compute pre-filter size */
-	osize -= size;
-	if (osize < 0)
-		osize = 0;
+	/* check if EQ should be enabled */
+	if (size != 0) {
+		eq.init(HPSJAM_SAMPLE_RATE, size);
 
-	/* check if EQ should be disabled */
-	if (size == 0) {
-		cleanup();
-		return (false);
+		if (eq.load(pfilter)) {
+			eq.cleanup();
+			return (true);
+		}
 	}
 
-	struct equalizer eq;
-
-	eq.init(HPSJAM_SAMPLE_RATE, size);
-
-	if (eq.load(pfilter)) {
-		eq.cleanup();
-		return (true);
-	}
-
+	/* allocate new buffers, if any */
 	if (filter_size != (size_t)size || filter_predelay != (size_t)osize) {
 		cleanup();
-		filter_data = new float [size];
-		filter_in[0] = new float [size];
-		filter_in[1] = new float [size];
-		filter_out[0] = new float [2 * size + osize];
-		filter_out[1] = new float [2 * size + osize];
 
-		memset(filter_out[0], 0, sizeof(float) * (2 * size + osize));
-		memset(filter_out[1], 0, sizeof(float) * (2 * size + osize));
+		if (size != 0) {
+			filter_data = new float [size];
+			filter_in[0] = new float [size];
+			filter_in[1] = new float [size];
+			filter_out[0] = new float [2 * size];
+			filter_out[1] = new float [2 * size];
 
-		filter_size = size;
-		filter_predelay = osize;
+			memset(filter_out[0], 0, sizeof(float) * 2 * size);
+			memset(filter_out[1], 0, sizeof(float) * 2 * size);
+
+			filter_size = size;
+		}
+
+		if (osize != 0) {
+			filter_delay[0] = new float [osize];
+			filter_delay[1] = new float [osize];
+
+			memset(filter_delay[0], 0, sizeof(float) * osize);
+			memset(filter_delay[1], 0, sizeof(float) * osize);
+
+			filter_predelay = osize;
+		}
 	}
 
-	for (ssize_t x = 0; x != size; x++)
-		filter_data[x] = eq.fftw_time[x];
+	if (size != 0) {
+		for (ssize_t x = 0; x != size; x++)
+			filter_data[x] = eq.fftw_time[x];
 
-	eq.cleanup();
+		eq.cleanup();
+	}
 	return (false);
 }
 
@@ -247,6 +259,8 @@ hpsjam_equalizer :: cleanup()
 	delete [] filter_in[1];
 	delete [] filter_out[0];
 	delete [] filter_out[1];
+	delete [] filter_delay[0];
+	delete [] filter_delay[1];
 
 	memset(this, 0, sizeof(*this));
 }
@@ -254,86 +268,54 @@ hpsjam_equalizer :: cleanup()
 void
 hpsjam_equalizer :: doit(float *left, float *right, size_t samples)
 {
-	if (filter_data == 0 || filter_size == 0 || samples == 0)
+	if (samples == 0)
 		return;
 
-	while (1) {
-		size_t delta = filter_size - filter_offset;
-
-		if (delta > samples)
-			delta = samples;
-
-		for (size_t y = 0; y != delta; y++) {
-			filter_in[0][y + filter_offset] = left[y];
-			left[y] = filter_out[0][y + filter_offset];
-
-			filter_in[1][y + filter_offset] = right[y];
-			right[y] = filter_out[1][y + filter_offset];
+	/* execute delay, if any */
+	if (filter_predelay != 0) {
+		for (size_t x = 0; x != samples; x++) {
+			HPSJAM_SWAP(left[x], filter_delay[0][filter_doffset]);
+			HPSJAM_SWAP(right[x], filter_delay[1][filter_doffset]);
+			if (++filter_doffset == filter_predelay)
+				filter_doffset = 0;
 		}
-
-		filter_offset += delta;
-		samples -= delta;
-		left += delta;
-		right += delta;
-
-		/* check if there is enough data for a new transform */
-		if (filter_offset == filter_size) {
-			for (size_t x = 0; x != 2; x++) {
-				/* shift down output by filter_size samples */
-				for (size_t y = 0; y != filter_size + filter_predelay; y++) {
-					filter_out[x][y] = filter_out[x][y + filter_size];
-					filter_out[x][y + filter_size] = 0;
-				}
-				/* perform transform */
-				hpsjam_x3_multiply_float(filter_in[x],
-				    filter_data, filter_out[x] + filter_predelay, filter_size);
-			}
-			filter_offset = 0;
-		}
-
-		/* check if all samples are consumed */
-		if (samples == 0)
-			break;
 	}
-}
 
-void
-hpsjam_equalizer :: doit(float *left, size_t samples)
-{
-	if (filter_data == 0 || filter_size == 0 || samples == 0)
-		return;
+	/* execute equalizer, if any */
+	if (filter_size != 0) {
+		do {
+			size_t delta = filter_size - filter_offset;
 
-	while (1) {
-		size_t delta = filter_size - filter_offset;
+			if (delta > samples)
+				delta = samples;
 
-		if (delta > samples)
-			delta = samples;
+			for (size_t y = 0; y != delta; y++) {
+				filter_in[0][y + filter_offset] = left[y];
+				left[y] = filter_out[0][y + filter_offset];
 
-		for (size_t y = 0; y != delta; y++) {
-			filter_in[0][y + filter_offset] = left[y];
-			left[y] = filter_out[0][y + filter_offset];
-		}
-
-		filter_offset += delta;
-		samples -= delta;
-		left += delta;
-
-		/* check if there is enough data for a new transform */
-		if (filter_offset == filter_size) {
-			/* shift down output by filter_size samples */
-			for (size_t y = 0; y != filter_size + filter_predelay; y++) {
-				filter_out[0][y] = filter_out[0][y + filter_size];
-				filter_out[0][y + filter_size] = 0;
+				filter_in[1][y + filter_offset] = right[y];
+				right[y] = filter_out[1][y + filter_offset];
 			}
-			/* perform transform */
-			hpsjam_x3_multiply_float(filter_in[0],
-			    filter_data, filter_out[0] + filter_predelay, filter_size);
 
-			filter_offset = 0;
-		}
+			filter_offset += delta;
+			samples -= delta;
+			left += delta;
+			right += delta;
 
-		/* check if all samples are consumed */
-		if (samples == 0)
-			break;
+			/* check if there is enough data for a new transform */
+			if (filter_offset == filter_size) {
+				for (size_t x = 0; x != 2; x++) {
+					/* shift down output by filter_size samples */
+					for (size_t y = 0; y != filter_size; y++) {
+						filter_out[x][y] = filter_out[x][y + filter_size];
+						filter_out[x][y + filter_size] = 0;
+					}
+					/* perform transform */
+					hpsjam_x3_multiply_float(filter_in[x],
+					    filter_data, filter_out[x], filter_size);
+				}
+				filter_offset = 0;
+			}
+		} while (samples != 0);
 	}
 }

@@ -81,7 +81,7 @@ void
 HpsJamEqualizer :: handle_defaults()
 {
 	edit.setText(QString(
-	    "filtersize 2.0ms\n"
+	    "filtersize 0.0ms 2.0ms\n"
 	    "normalize\n"
 	    "20 1\n"
 	    "25 1\n"
@@ -120,14 +120,14 @@ HpsJamEqualizer :: handle_defaults()
 void
 HpsJamEqualizer :: handle_disable()
 {
-	edit.setText(QString("filtersize 0.0ms\n"));
+	edit.setText(QString("filtersize 0.0ms 0.0ms\n"));
 }
 
 void
 HpsJamEqualizer :: handle_lowpass()
 {
 	edit.setText(QString(
-	    "filtersize 2.0ms\n"
+	    "filtersize 0.0ms 2.0ms\n"
 	    "norm\n"
 	    "150 1\n"
 	    "1000 0\n"
@@ -138,7 +138,7 @@ void
 HpsJamEqualizer :: handle_highpass()
 {
 	edit.setText(QString(
-	    "filtersize 2.0ms\n"
+	    "filtersize 0.0ms 2.0ms\n"
 	    "norm\n"
 	    "150 0\n"
 	    "1000 1\n"
@@ -149,7 +149,7 @@ void
 HpsJamEqualizer :: handle_bandpass()
 {
 	edit.setText(QString(
-	    "filtersize 2.0ms\n"
+	    "filtersize 0.0ms 2.0ms\n"
 	    "norm\n"
 	    "250 0\n"
 	    "500 1\n"
@@ -170,7 +170,7 @@ HpsJamEqualizer :: handle_longdelay()
 	}
 
 	edit.setText(QString(
-	    "filtersize %1.0ms\n"
+	    "filtersize %1.0ms 0.0ms\n"
 	    "norm\n"
 	).arg(rtt_ms + 8));
 };
