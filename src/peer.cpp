@@ -119,6 +119,12 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 {
 	QMutexLocker locker(&lock);
 
+	if (address.valid() == false) {
+		memset(left, 0, sizeof(left[0]) * samples);
+		memset(right, 0, sizeof(right[0]) * samples);
+		return;
+	}
+
 	float temp_l[samples];
 	float temp_r[samples];
 
@@ -772,6 +778,9 @@ void
 hpsjam_client_peer :: tick()
 {
 	QMutexLocker locker(&lock);
+
+	if (address.valid() == false)
+		return;
 
 	struct hpsjam_packet_entry entry = {};
 	const union hpsjam_frame *pkt;
