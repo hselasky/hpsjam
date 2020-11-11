@@ -518,7 +518,7 @@ struct hpsjam_input_packetizer {
 					 * chunks and second packet
 					 * carries one chunk:
 					 */
-					valid[z] |= 5;
+					valid[z] |= 1 | 4 | 8;
 					current[z].clear();
 					current[z].start[0].putSilence(HPSJAM_SAMPLE_RATE / 1000);
 					if (x == 0)
