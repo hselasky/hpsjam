@@ -38,76 +38,17 @@
 class HpsJamLyricsAnim {
 public:
 	QString str;
-	float opacity_curr;
-	float opacity_step;
-	float xpos_curr;
-	float xpos_step;
-	float ypos_curr;
-	float ypos_step;
-	float width;
 	float height;
-	uint8_t currStep;
 
 	void reset()
 	{
-		opacity_curr = 0.0f;
-		opacity_step = 0.0f;
-		xpos_curr = 0.0f;
-		xpos_step = 0.0f;
-		ypos_curr = 0.0f;
-		ypos_step = 0.0f;
-		width = 0.0f;
 		height = 0.0f;
-		currStep = 0;
 		str = QString();
 	}
+
 	HpsJamLyricsAnim()
 	{
 		reset();
-		currStep = HPSJAM_TRAN_MAX;
-	}
-	bool step()
-	{
-		if (currStep >= HPSJAM_TRAN_MAX) {
-			/* animation finished */
-			opacity_step = 0;
-			xpos_step = 0;
-			ypos_step = 0;
-			currStep++;
-			return (false);
-		}
-		/* animation in progress */
-		opacity_curr += opacity_step;
-		xpos_curr += xpos_step;
-		ypos_curr += ypos_step;
-		currStep++;
-		return (true);
-	};
-	void fadeOut()
-	{
-		opacity_step = -(opacity_curr / HPSJAM_TRAN_MAX);
-		currStep = 0;
-	}
-	void fadeIn()
-	{
-		opacity_step = ((1.0 - opacity_curr) / HPSJAM_TRAN_MAX);
-		currStep = 0;
-	}
-	void moveUp(float pix)
-	{
-		if (pix != 0.0f) {
-			ypos_step = -(pix / HPSJAM_TRAN_MAX);
-			currStep = 0;
-		}
-	}
-	bool isVisible()
-	{
-		return ((ypos_curr + height) >= 0.0f &&
-		    (opacity_curr >= (1.0 / 1024.0)));
-	}
-	bool isAnimating()
-	{
-		return (currStep <= HPSJAM_TRAN_MAX);
 	}
 };
 
@@ -117,14 +58,20 @@ public:
 	enum { maxIndex = 3 };
 
 	HpsJamLyrics() {
+		needupdate = false;
+		step = 0;
 		index = 0;
+		draw_index = 0;
 		customFont = false;
 		connect(&watchdog, SIGNAL(timeout()), this, SLOT(handle_watchdog()));
 		watchdog.start(1000 / (3 * HPSJAM_TRAN_MAX));
 	};
+	uint8_t step;
 	uint8_t index;
+	uint8_t draw_index;
 	HpsJamLyricsAnim anim[maxIndex];
 	bool customFont;
+	bool needupdate;
 	QFont font;
 	QTimer watchdog;
 

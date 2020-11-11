@@ -38,61 +38,61 @@ HpsJamLyrics :: paintEvent(QPaintEvent *event)
 	int w = width();
 	int h = height();
 
-	QColor bg(0,0,0);
-	QColor fg(255,255,255);
-
-	paint.setRenderHints(QPainter::Antialiasing, 1);
-	paint.fillRect(QRectF(0,0,w,h), bg);
+	static const QColor bg(0,0,0);
+	static const QColor fg(255,255,255);
 
 	if (customFont == false)
 		font.setPixelSize(w / 16);
 
-	float y_pos = 0;
+	HpsJamLyricsAnim *obj[3] = {
+		&anim[(draw_index + 0) % maxIndex],
+		&anim[(draw_index + 1) % maxIndex],
+		&anim[(draw_index + 2) % maxIndex],
+	};
 
-	for (uint8_t x = 0; x != maxIndex; x++) {
-		HpsJamLyricsAnim &aobj = anim[(index + x) % maxIndex];
+	paint.setRenderHints(QPainter::Antialiasing, 1);
 
-		if (aobj.isVisible() == false)
-			continue;
+	while (1) {
+		paint.fillRect(QRectF(0,0,w,h), bg);
 
-		if (aobj.ypos_curr == 0.0f)
-			aobj.ypos_curr = y_pos;
-		else
-			y_pos = aobj.ypos_curr;
+		float y_pos = - (obj[0]->height * step) / HPSJAM_TRAN_MAX;
 
 		paint.setFont(font);
 
-		float wf = font.pixelSize();
-		int flags = Qt::TextWordWrap | Qt::TextDontClip | Qt::AlignTop;
+		for (uint8_t x = 0; x != maxIndex; x++) {
 
-		QRectF txtBound;
-		QRectF txtMax(0,0,w,h);
+			const float wf = font.pixelSize();
+			int flags = Qt::TextWordWrap | Qt::TextDontClip | Qt::AlignTop;
 
-		paint.drawText(txtMax, Qt::AlignLeft |
-		    Qt::TextDontPrint | flags, aobj.str, &txtBound);
-		txtMax.setHeight(txtBound.height() + wf);
+			QRectF txtBound;
+			QRectF txtMax(0,0,w,h);
 
-		flags |= Qt::AlignHCenter | Qt::AlignVCenter;
+			paint.drawText(txtMax, Qt::AlignLeft |
+			    Qt::TextDontPrint | flags, obj[x]->str, &txtBound);
+			txtMax.setHeight(txtBound.height() + wf);
 
-		/* offset bounding box */
-		txtMax.adjust(
-		    aobj.xpos_curr,
-		    aobj.ypos_curr + wf / 2.0f,
-		    aobj.xpos_curr,
-		    aobj.ypos_curr + wf / 2.0f);
+			flags |= Qt::AlignHCenter | Qt::AlignVCenter;
 
-		/* draw text */
-		paint.setPen(fg);
-		paint.setBrush(fg);
-		paint.setOpacity(aobj.opacity_curr);
-		paint.drawText(txtMax, flags, aobj.str);
+			/* offset bounding box */
+			txtMax.adjust(0, y_pos + wf / 2.0f, 0, y_pos + wf / 2.0f);
 
-		/* store height and width */
-		aobj.height = txtMax.height();
-		aobj.width = txtMax.width();
+			/* draw text */
+			paint.setPen(fg);
+			paint.setBrush(fg);
+			paint.setOpacity((x == 2) ? (float)step / (float)HPSJAM_TRAN_MAX : 1.0f);
+			paint.drawText(txtMax, flags, obj[x]->str);
 
-		/* get next position */
-		y_pos += aobj.height;
+			/* store height */
+			obj[x]->height = txtMax.height();
+
+			/* get next position */
+			y_pos += obj[x]->height;
+		}
+
+		/* check if we can reuse already computed heights */
+		if (needupdate == false)
+			break;
+		needupdate = false;
 	}
 }
 
@@ -121,9 +121,13 @@ HpsJamLyrics :: handle_fullscreen()
 void
 HpsJamLyrics :: handle_watchdog()
 {
-	for (uint8_t x = 0; x != maxIndex; x++) {
-		if (anim[x].step())
-			update();
+	if (step < HPSJAM_TRAN_MAX) {
+		step++;
+		update();
+	} else if (draw_index != index) {
+		draw_index = (draw_index + 1) % maxIndex;
+		step = 0;
+		update();
 	}
 }
 
@@ -139,28 +143,19 @@ HpsJamLyrics :: handle_font_dialog()
 		font = temp;
 		customFont = true;
 		update();
+	} else {
+		customFont = false;
 	}
 }
 
 void
 HpsJamLyrics :: append(const QString &str)
 {
-	const uint8_t n = (index + 1) % maxIndex;
-	const uint8_t p = (maxIndex + index - 1) % maxIndex;
-
 	anim[index].reset();
 	anim[index].str = str;
-	anim[index].fadeIn();
-	anim[index].ypos_curr = anim[p].ypos_curr + anim[p].height;
 
-	const float shift = anim[n].ypos_curr + anim[n].height;
-
-	/* shift rest of text blocks up */
-	for (uint8_t x = 0; x != maxIndex; x++)
-		anim[x].moveUp(shift);
-
-	/* advance index */
 	index = (index + 1) % maxIndex;
+	needupdate = true;
 
 	if (!isVisible())
 		hpsjam_client->b_lyrics.setFlashing();
