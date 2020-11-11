@@ -38,6 +38,7 @@
 #include <err.h>
 
 unsigned hpsjam_num_server_peers;
+unsigned hpsjam_udp_buffer_size;
 uint64_t hpsjam_server_passwd;
 class hpsjam_server_peer *hpsjam_server_peers;
 class hpsjam_client_peer *hpsjam_client_peer;
@@ -139,6 +140,9 @@ main(int argc, char **argv)
 #endif
 		hpsjam_client->show();
 
+		/* set a valid UDP buffer size */
+		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX;
+
 		/* create sockets, if any */
 		hpsjam_socket_init(port);
 
@@ -150,6 +154,9 @@ main(int argc, char **argv)
 		QCoreApplication app(argc, argv);
 
 		hpsjam_server_peers = new class hpsjam_server_peer [hpsjam_num_server_peers];
+
+		/* set a valid UDP buffer size */
+		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX * hpsjam_num_server_peers;
 
 		/* create sockets, if any */
 		hpsjam_socket_init(port);

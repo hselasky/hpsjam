@@ -56,7 +56,7 @@ hpsjam_socket_receive(void *arg)
 
 	ps->setup();
 
-	ret = ps->socket();
+	ret = ps->socket(hpsjam_udp_buffer_size);
 	assert(ret > -1);
 
 	while (tries--) {

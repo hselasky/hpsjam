@@ -71,16 +71,23 @@ struct hpsjam_socket_address {
 		}
 	};
 	bool resolve(const char *, const char *, struct hpsjam_socket_address &);
-	int socket() {
+	int socket(int buffer) {
 		assert(fd < 0);
 		switch (v4.sin_family) {
 		case AF_INET:
-			return (fd = ::socket(AF_INET, SOCK_DGRAM, 0));
+			fd = ::socket(AF_INET, SOCK_DGRAM, 0);
+			break;
 		case AF_INET6:
-			return (fd = ::socket(AF_INET6, SOCK_DGRAM, 0));
+			fd = ::socket(AF_INET6, SOCK_DGRAM, 0);
+			break;
 		default:
 			assert(0);
 		}
+		if (fd > -1) {
+			setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer, sizeof(buffer));
+			setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer, sizeof(buffer));
+		}
+		return (fd);
 	};
 	int bind() const {
 		switch (v4.sin_family) {
