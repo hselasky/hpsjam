@@ -167,7 +167,7 @@ struct hpsjam_packet {
 	size_t get24Bit1ChSample(float *left) const;
 	size_t get32Bit1ChSample(float *left) const;
 
-	size_t getSilence(float *left) const;
+	size_t getSilence() const;
 
 	void put8Bit2ChSample(float *left, float *right, size_t samples);
 	void put16Bit2ChSample(float *left, float *right, size_t samples);
@@ -509,9 +509,26 @@ struct hpsjam_input_packetizer {
 			/* check if we can consume packets */
 			for (uint8_t x = 0; x != last_red; x++) {
 				const uint8_t z = (min_x + x) % HPSJAM_SEQ_MAX;
-				if ((valid[z] & 5) == 1) {
-					valid[z] |= 4;
+				switch (valid[z] & 5) {
+				case 0:
+				case 4:
+					/*
+					 * Fill in missing audio data:
+					 * First packet carries two
+					 * chunks and second packet
+					 * carries one chunk:
+					 */
+					valid[z] |= 5;
+					current[z].clear();
+					current[z].start[0].putSilence(HPSJAM_SAMPLE_RATE / 1000);
+					if (x == 0)
+						current[z].start[1].putSilence(HPSJAM_SAMPLE_RATE / 1000);
 					return (current + z);
+				case 1:
+					valid[z] |= 5;
+					return (current + z);
+				default:
+					break;
 				}
 			}
 

@@ -222,6 +222,36 @@ public:
 		}
 	};
 
+	/* add silence to buffer */
+	void addSilence(size_t num) {
+		size_t producer = (consumer + total) % HPSJAM_MAX_SAMPLES;
+		size_t fwd = HPSJAM_MAX_SAMPLES - producer;
+		size_t max = HPSJAM_MAX_SAMPLES - total;
+
+		if (num > max)
+			num = max;
+
+		/* copy samples to ring-buffer */
+		while (num != 0) {
+			if (fwd > num)
+				fwd = num;
+			if (fwd != 0) {
+				for (size_t x = 0; x != fwd; x++) {
+					last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
+					samples[producer + x] = last_sample;
+				}
+				num -= fwd;
+				total += fwd;
+			}
+			if (producer == HPSJAM_MAX_SAMPLES) {
+				producer = 0;
+				fwd = HPSJAM_MAX_SAMPLES;
+			} else {
+				break;
+			}
+		}
+	};
+
 	/* grow ring-buffer */
 	void grow() {
 		const size_t p[2] =

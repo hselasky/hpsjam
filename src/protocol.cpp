@@ -273,9 +273,8 @@ hpsjam_packet::putSilence(size_t samples)
 }
 
 size_t
-hpsjam_packet::getSilence(float *left) const
+hpsjam_packet::getSilence() const
 {
-	memset(left, 0, sizeof(left[0]) * sequence[0]);
 	return (sequence[0]);
 }
 

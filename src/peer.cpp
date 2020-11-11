@@ -347,10 +347,9 @@ hpsjam_server_peer :: audio_export()
 				/* for the future */
 				continue;
 			case HPSJAM_TYPE_AUDIO_SILENCE:
-				num = ptr->getSilence(temp);
-				assert(num <= HPSJAM_MAX_PKT);
-				in_audio[0].addSamples(temp, num);
-				in_audio[1].addSamples(temp, num);
+				num = ptr->getSilence();
+				in_audio[0].addSilence(num);
+				in_audio[1].addSilence(num);
 				continue;
 			case HPSJAM_TYPE_ACK:
 				/* check if other side received packet */
@@ -855,10 +854,9 @@ hpsjam_client_peer :: tick()
 				/* for the future */
 				continue;
 			case HPSJAM_TYPE_AUDIO_SILENCE:
-				num = ptr->getSilence(temp);
-				assert(num <= HPSJAM_MAX_PKT);
-				out_audio[0].addSamples(temp, num);
-				out_audio[1].addSamples(temp, num);
+				num = ptr->getSilence();
+				out_audio[0].addSilence(num);
+				out_audio[1].addSilence(num);
 				continue;
 			case HPSJAM_TYPE_ACK:
 				/* check if other side received packet */
