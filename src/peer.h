@@ -179,6 +179,7 @@ signals:
 	void receivedFaderDisconnect(uint8_t, uint8_t);
 };
 
+extern void hpsjam_cli_process(const struct hpsjam_socket_address &, const char *, size_t);
 extern void hpsjam_peer_receive(const struct hpsjam_socket_address &,
     const union hpsjam_frame &);
 extern void hpsjam_server_tick();

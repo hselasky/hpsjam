@@ -61,8 +61,9 @@ extern class hpsjam_client_peer *hpsjam_client_peer;
 extern class HpsJamClient *hpsjam_client;
 extern struct hpsjam_socket_address hpsjam_v4;
 extern struct hpsjam_socket_address hpsjam_v6;
+extern struct hpsjam_socket_address hpsjam_cli;
 
-extern void hpsjam_socket_init(unsigned short port);
+extern void hpsjam_socket_init(unsigned short port, unsigned short cliport);
 
 /* sound APIs */
 extern bool hpsjam_sound_init(const char *, bool);

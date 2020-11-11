@@ -1091,3 +1091,32 @@ hpsjam_client_peer :: handleLyrics(QString *str)
 	hpsjam_client->w_lyrics->append(*str);
 	delete str;
 }
+
+void
+hpsjam_cli_process(const struct hpsjam_socket_address &addr, const char *data, size_t len)
+{
+	if (hpsjam_num_server_peers == 0) {
+		QByteArray ba(data, len);
+		QString str = QString::fromUtf8(ba);
+
+		if (str.startsWith("set lyrics.text=")) {
+			str.truncate(128 + 16);
+
+			QByteArray temp = str.toUtf8();
+
+			QMutexLocker locker(&hpsjam_client_peer->lock);
+
+			if (hpsjam_client_peer->address.valid()) {
+				struct hpsjam_packet_entry *pkt;
+
+				assert(temp.length() >= 16);
+
+				/* send text */
+				pkt = new struct hpsjam_packet_entry;
+				pkt->packet.setRawData(temp.constData() + 16, temp.length() - 16);
+				pkt->packet.type = HPSJAM_TYPE_LYRICS_REQUEST;
+				pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
+			}
+		}
+	}
+}

@@ -45,10 +45,12 @@ class hpsjam_client_peer *hpsjam_client_peer;
 class HpsJamClient *hpsjam_client;
 struct hpsjam_socket_address hpsjam_v4;
 struct hpsjam_socket_address hpsjam_v6;
+struct hpsjam_socket_address hpsjam_cli;
 
 static const struct option hpsjam_opts[] = {
 	{ "NSDocumentRevisionsDebugMode", required_argument, NULL, ' ' },
 	{ "port", required_argument, NULL, 'p' },
+	{ "cli-port", required_argument, NULL, 'q' },
 	{ "server", no_argument, NULL, 's' },
 	{ "peers", required_argument, NULL, 'P' },
 	{ "password", required_argument, NULL, 'K' },
@@ -63,7 +65,7 @@ usage(void)
 {
         fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_PORT_STR "] "
 		"[--daemon] [--password <64_bit_hex_password>] \\\n"
-		"	[--jacknoconnect] [--jackname <name>]\n");
+		"	[--jacknoconnect] [--jackname <name>] [--cli-port <portnumber>]\n");
         exit(1);
 }
 
@@ -72,11 +74,12 @@ main(int argc, char **argv)
 {
 	int c;
 	int port = HPSJAM_DEFAULT_PORT;
+	int cliport = 0;
 	int do_fork = 0;
 	bool jackconnect = true;
 	const char *jackname = "hpsjam";
 
-	while ((c = getopt_long_only(argc, argv, "p:sP:hBJ:n:K:", hpsjam_opts, NULL)) != -1) {
+	while ((c = getopt_long_only(argc, argv, "q:p:sP:hBJ:n:K:", hpsjam_opts, NULL)) != -1) {
 		switch (c) {
 		case 's':
 			if (hpsjam_num_server_peers == 0)
@@ -85,6 +88,11 @@ main(int argc, char **argv)
 		case 'p':
 			port = atoi(optarg);
 			if (port <= 0 || port >= 65536)
+				usage();
+			break;
+		case 'q':
+			cliport = atoi(optarg);
+			if (cliport <= 0 || cliport >= 65536)
 				usage();
 			break;
 		case 'P':
@@ -144,7 +152,7 @@ main(int argc, char **argv)
 		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX;
 
 		/* create sockets, if any */
-		hpsjam_socket_init(port);
+		hpsjam_socket_init(port, cliport);
 
 		/* create timer, if any */
 		hpsjam_timer_init();
@@ -159,7 +167,7 @@ main(int argc, char **argv)
 		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX * hpsjam_num_server_peers;
 
 		/* create sockets, if any */
-		hpsjam_socket_init(port);
+		hpsjam_socket_init(port, cliport);
 
 		/* create timer, if any */
 		hpsjam_timer_init();

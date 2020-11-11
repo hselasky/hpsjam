@@ -86,6 +86,58 @@ hpsjam_socket_receive(void *arg)
 	return (NULL);
 }
 
+static void *
+hpsjam_cli_receive(void *arg)
+{
+	struct hpsjam_socket_address *ps = (struct hpsjam_socket_address *)arg;
+	struct hpsjam_socket_address self;
+	static char buffer[HPSJAM_MAX_UDP];
+	char port[8];
+	ssize_t ret;
+
+	hpsjam_socket_set_priority();
+
+	ps->setup();
+
+	ret = ps->socket(16384);
+	assert(ret > -1);
+
+	switch (ps->v4.sin_family) {
+	case AF_INET:
+		snprintf(port, sizeof(port), "%u", ntohs(ps->v4.sin_port));
+		break;
+	case AF_INET6:
+		snprintf(port, sizeof(port), "%u", ntohs(ps->v6.sin6_port));
+		break;
+	default:
+		assert(0);
+	}
+
+	if (ps->resolve("127.0.0.1", port, *ps) == false) {
+		warn("Cannot resolve 127.0.0.1");
+		goto done;
+	}
+
+	ret = ps->bind();
+	if (ret < 0) {
+		warn("Cannot bind CLI to IP port %s", port);
+		goto done;
+	}
+
+	/* protect against receiving packets from ourself */
+	self = *ps;
+
+	while (1) {
+		ret = ps->recvfrom(buffer, sizeof(buffer));
+		if (*ps != self && ret > 0)
+			hpsjam_cli_process(*ps, buffer, ret);
+	}
+done:
+	ps->cleanup();
+
+	return (NULL);
+}
+
 bool
 hpsjam_socket_address :: resolve(const char *host, const char *port, struct hpsjam_socket_address &result)
 {
@@ -105,7 +157,8 @@ hpsjam_socket_address :: resolve(const char *host, const char *port, struct hpsj
 	if (getaddrinfo(host, port, &hints, &res))
 		return (false);
 
-	result = *this;
+	if (&result != this)
+		result = *this;
 
 	res0 = res;
 
@@ -129,7 +182,7 @@ hpsjam_socket_address :: resolve(const char *host, const char *port, struct hpsj
 }
 
 Q_DECL_EXPORT void
-hpsjam_socket_init(unsigned short port)
+hpsjam_socket_init(unsigned short port, unsigned short cliport)
 {
 	pthread_t pt;
 	int ret;
@@ -141,4 +194,10 @@ hpsjam_socket_init(unsigned short port)
 	hpsjam_v6.init(AF_INET6, port);
 	ret = pthread_create(&pt, NULL, &hpsjam_socket_receive, &hpsjam_v6);
 	assert(ret == 0);
+
+	if (cliport != 0) {
+		hpsjam_cli.init(AF_INET, cliport);
+		ret = pthread_create(&pt, NULL, &hpsjam_cli_receive, &hpsjam_cli);
+		assert(ret == 0);
+	}
 }
