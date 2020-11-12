@@ -180,7 +180,7 @@ class HpsJamMixer : public QScrollArea {
 public:
 	HpsJamMixer() : gl(&w_main) {
 		setWidgetResizable(true);
-		self_strip.setTitle(QString("Local"));
+		self_strip.setTitle(QString("Local Balance"));
 		connect(&self_strip, SIGNAL(eqChanged(int)), this, SLOT(handle_local_eq_changed()));
 		self_strip.id = 0;
 		gl.addWidget(&self_strip, 0, 0);
