@@ -365,6 +365,10 @@ HpsJamStrip :: handleMute()
 void
 HpsJamMixer :: handle_fader_level(uint8_t mix, uint8_t index, float left, float right)
 {
+	/* make scale logarithmic */
+	left = level_encode(left);
+	right = level_encode(right);
+
 	switch (mix) {
 	case 0:
 		HPSJAM_NO_SIGNAL(peer_strip[index].w_slider,setLevel(left, right));

@@ -98,7 +98,7 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 
 static void
 hpsjam_server_broadcast(const struct hpsjam_packet_entry &entry,
-    class hpsjam_server_peer *except)
+    class hpsjam_server_peer *except = 0, bool single = false)
 {
 	struct hpsjam_packet_entry *ptr;
 
@@ -111,6 +111,9 @@ hpsjam_server_broadcast(const struct hpsjam_packet_entry &entry,
 		if (hpsjam_server_peers[x].valid == false)
 			continue;
 
+		/* check if a level packet is already pending */
+		if (single && hpsjam_server_peers[x].output_pkt.find(entry.packet.type))
+			continue;
 		/* duplicate packet */
 		ptr = new struct hpsjam_packet_entry;
 		*ptr = entry;
@@ -304,48 +307,64 @@ hpsjam_server_peer :: audio_export()
 				assert(num <= HPSJAM_MAX_PKT);
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp, num);
+				in_level[0].addSamples(temp, num);
+				in_level[1].addSamples(temp, num);
 				continue;
 			case HPSJAM_TYPE_AUDIO_16_BIT_1CH:
 				num = ptr->get16Bit1ChSample(temp);
 				assert(num <= HPSJAM_MAX_PKT);
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp, num);
+				in_level[0].addSamples(temp, num);
+				in_level[1].addSamples(temp, num);
 				continue;
 			case HPSJAM_TYPE_AUDIO_24_BIT_1CH:
 				num = ptr->get24Bit1ChSample(temp);
 				assert(num <= HPSJAM_MAX_PKT);
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp, num);
+				in_level[0].addSamples(temp, num);
+				in_level[1].addSamples(temp, num);
 				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
 				num = ptr->get32Bit1ChSample(temp);
 				assert(num <= HPSJAM_MAX_PKT);
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp, num);
+				in_level[0].addSamples(temp, num);
+				in_level[1].addSamples(temp, num);
 				continue;
 			case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
 				num = ptr->get8Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				in_level[0].addSamples(temp, num);
+				in_level[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
 				continue;
 			case HPSJAM_TYPE_AUDIO_16_BIT_2CH:
 				num = ptr->get16Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				in_level[0].addSamples(temp, num);
+				in_level[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
 				continue;
 			case HPSJAM_TYPE_AUDIO_24_BIT_2CH:
 				num = ptr->get24Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				in_level[0].addSamples(temp, num);
+				in_level[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
 				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_2CH:
 				num = ptr->get32Bit2ChSample(temp, temp + (HPSJAM_MAX_PKT / 2));
 				assert(num <= (HPSJAM_MAX_PKT / 2));
 				in_audio[0].addSamples(temp, num);
 				in_audio[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
+				in_level[0].addSamples(temp, num);
+				in_level[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
 				continue;
 			case HPSJAM_TYPE_AUDIO_32_BIT_2CH + 1 ... HPSJAM_TYPE_AUDIO_MAX:
 				/* for the future */
@@ -604,7 +623,7 @@ hpsjam_server_peer :: audio_export()
 void
 hpsjam_server_peer :: audio_import()
 {
-	struct hpsjam_packet_entry entry = {};
+	struct hpsjam_packet_entry entry;
 
 	/* compute levels */
 	out_level[0].addSamples(out_audio[0], HPSJAM_SAMPLE_RATE / 1000);
@@ -679,6 +698,45 @@ hpsjam_server_peer :: audio_import()
 	output_pkt.send(address);
 }
 
+static void
+hpsjam_send_levels()
+{
+	constexpr size_t maxLevel = 32;
+	static unsigned group;
+	struct hpsjam_packet_entry entry;
+	float temp[maxLevel][2];
+
+	if (hpsjam_ticks % 128)
+		return;
+
+	for (unsigned x = 0; x != maxLevel; x++) {
+		unsigned index = x + group * maxLevel;
+
+		if (index >= hpsjam_num_server_peers) {
+			temp[x][0] = 0.0f;
+			temp[x][1] = 0.0f;
+			continue;
+		}
+
+		QMutexLocker locker(&hpsjam_server_peers[index].lock);
+		if (hpsjam_server_peers[index].valid) {
+			temp[x][0] = hpsjam_server_peers[index].in_level[0].getLevel();
+			temp[x][1] = hpsjam_server_peers[index].in_level[1].getLevel();
+		} else {
+			temp[x][0] = 0.0f;
+			temp[x][1] = 0.0f;
+		}
+	}
+	entry.packet.setFaderValue(0, group * maxLevel, temp[0], 2 * maxLevel);
+	entry.packet.type = HPSJAM_TYPE_FADER_LEVEL_REPLY;
+	hpsjam_server_broadcast(entry, 0, true);
+
+	/* advance to next group */
+	group++;
+	if ((group * maxLevel) >= hpsjam_num_server_peers)
+		group = 0;
+}
+
 Q_DECL_EXPORT void
 hpsjam_server_tick()
 {
@@ -696,6 +754,9 @@ hpsjam_server_tick()
 		}
 		hpsjam_server_peers[x].audio_export();
 	}
+
+	/* send out levels, if any */
+	hpsjam_send_levels();
 
 	/* mix everything */
 	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
@@ -1135,7 +1196,7 @@ hpsjam_cli_process(const struct hpsjam_socket_address &addr, const char *data, s
 			pkt = new struct hpsjam_packet_entry;
 			pkt->packet.setRawData(temp.constData() + 16, temp.length() - 16);
 			pkt->packet.type = HPSJAM_TYPE_LYRICS_REPLY;
-			hpsjam_server_broadcast(*pkt, 0);
+			hpsjam_server_broadcast(*pkt);
 			delete pkt;
 		}
 	}

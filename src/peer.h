@@ -46,6 +46,7 @@ public:
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;
 	class hpsjam_audio_buffer in_audio[2];
+	class hpsjam_audio_level in_level[2];
 	class hpsjam_audio_level out_level[2];
 	float tmp_audio[2][HPSJAM_SAMPLE_RATE / 1000];
 	float out_audio[2][HPSJAM_SAMPLE_RATE / 1000];
@@ -65,6 +66,8 @@ public:
 		output_pkt.init();
 		in_audio[0].clear();
 		in_audio[1].clear();
+		in_level[0].clear();
+		in_level[1].clear();
 		out_level[0].clear();
 		out_level[1].clear();
 		memset(out_audio, 0, sizeof(out_audio));
