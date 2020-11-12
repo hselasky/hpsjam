@@ -48,7 +48,7 @@ SOURCES		+= src/volumedlg.cpp
 isEmpty(WITHOUT_AUDIO) {
 # JACK audio backend
 SOURCES		+= linux/sound_jack.cpp
-LIBS		+= -L${PREFIX}/lib -ljack
+LIBS		+= -L$${PREFIX}/lib -ljack
 DEFINES		+= HAVE_JACK_AUDIO
 }
 
@@ -56,7 +56,8 @@ RESOURCES	+= HpsJam.qrc
 
 TARGET		= HpsJam
 
-LIBS		+= -L${PREFIX}/lib -lfftw3 -pthread
+INCLUDEPATH     += $${PREFIX}/include
+LIBS		+= -L$${PREFIX}/lib -lfftw3 -pthread
 
 target.path	= $${PREFIX}/bin
 INSTALLS	+= target
