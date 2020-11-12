@@ -34,6 +34,54 @@
 #include "multiply.h"
 #include "equalizer.h"
 
+static void
+hpsjam_skip_space(const char **pp, bool newline)
+{
+	const char *ptr = *pp;
+	while (*ptr == ' ' || *ptr == '\t' || *ptr == '\r' || (*ptr == '\n' && newline))
+		ptr++;
+	*pp = ptr;
+}
+
+static bool
+hpsjam_parse_double(const char **pp, bool is_ms, double &out)
+{
+	const char *ptr = *pp;
+	bool any = false;
+
+	out = 0;
+
+	hpsjam_skip_space(&ptr, false);
+
+	while (*ptr >= '0' && *ptr <= '9') {
+		out *= 10.0;
+		out += *ptr - '0';
+		any = true;
+		ptr++;
+	}
+
+	if (*ptr == '.') {
+		double k = 1.0 / 1.0;
+		ptr ++;
+		while (*ptr >= '0' && *ptr <= '9') {
+			out += k * (*ptr - '0');
+			k /= 10.0;
+			any = true;
+			ptr++;
+		}
+	}
+
+	if (is_ms) {
+		if (ptr[0] != 'm' || ptr[1] != 's')
+			any = false;
+		else
+			ptr += 2;
+	}
+
+	*pp = ptr;
+	return (any);
+}
+
 struct equalizer {
 	double rate;
 	size_t block_size;
@@ -94,14 +142,14 @@ struct equalizer {
 				prev_f = next_f;
 				prev_amp = next_amp;
 
+				hpsjam_skip_space(&config, true);
+
 				if (*config == 0) {
 					next_f = rate;
 					next_amp = prev_amp;
 				} else {
-					int len;
-
-					if (sscanf(config, "%lf %lf %n", &next_f, &next_amp, &len) == 2) {
-						config += len;
+					if (hpsjam_parse_double(&config, false, next_f) &&
+					    hpsjam_parse_double(&config, false, next_amp)) {
 						if (next_f < prev_f)
 							return (true);
 					} else {
@@ -165,11 +213,15 @@ hpsjam_equalizer :: init(const char *pfilter)
 	/* check if filter starts with filtersize */
 	if (strncasecmp(pfilter, "filtersize ", 11) != 0)
 		return (true);
+	pfilter += 11;
 
 	/* get filter sizes */
-	double ms[2] = {};
-	if (sscanf(pfilter + 11, "%lfms %lfms", ms + 0, ms + 1) != 2)
+	double ms[2];
+
+	if (hpsjam_parse_double(&pfilter, true, ms[0]) == false ||
+	    hpsjam_parse_double(&pfilter, true, ms[1]) == false)
 		return (true);
+
 	ssize_t osize = (HPSJAM_SAMPLE_RATE * ms[0]) / 1000.0;
 	ssize_t size = (HPSJAM_SAMPLE_RATE * ms[1]) / 1000.0;
 
