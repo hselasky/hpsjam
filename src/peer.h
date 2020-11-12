@@ -111,6 +111,7 @@ public:
 	float in_pan;
 	float in_peak;
 	float out_peak;
+	int self_index;
 	uint8_t bits;
 	uint8_t out_format;
 
@@ -135,6 +136,7 @@ public:
 		bits = 0;
 		eq.cleanup();
 		local_eq.cleanup();
+		self_index = -1;
 	};
 	hpsjam_client_peer() {
 		init();
@@ -177,6 +179,7 @@ signals:
 	void receivedFaderPan(uint8_t, uint8_t, float);
 	void receivedFaderEQ(uint8_t, uint8_t, QString *);
 	void receivedFaderDisconnect(uint8_t, uint8_t);
+	void receivedFaderSelf(uint8_t, uint8_t);
 };
 
 extern void hpsjam_cli_process(const struct hpsjam_socket_address &, const char *, size_t);

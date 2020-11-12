@@ -218,6 +218,7 @@ public slots:
 	void handle_fader_gain(uint8_t, uint8_t, float);
 	void handle_fader_pan(uint8_t, uint8_t, float);
 	void handle_fader_eq(uint8_t, uint8_t, QString *);
+	void handle_fader_self(uint8_t, uint8_t);
 	void handle_fader_disconnect(uint8_t, uint8_t);
 
 	void handle_bits_changed(int);

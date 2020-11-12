@@ -378,6 +378,17 @@ HpsJamMixer :: handle_fader_level(uint8_t mix, uint8_t index, float left, float 
 }
 
 void
+HpsJamMixer :: handle_fader_self(uint8_t mix, uint8_t index)
+{
+	switch (mix) {
+	case 0:
+		break;
+	default:
+		break;
+	}
+}
+
+void
 HpsJamMixer :: handle_fader_name(uint8_t mix, uint8_t index, QString *str)
 {
 	switch (mix) {
@@ -547,7 +558,8 @@ void
 HpsJamMixer :: enable(unsigned index)
 {
 	peer_strip[index].show();
-	hpsjam_client->b_mixer.setFlashing();
+	if (!hpsjam_client->b_mixer.isVisible())
+		hpsjam_client->b_mixer.setFlashing();
 };
 
 void
@@ -555,5 +567,6 @@ HpsJamMixer :: disable(unsigned index)
 {
 	peer_strip[index].init();
 	peer_strip[index].hide();
-	hpsjam_client->b_mixer.setFlashing();
+	if (!hpsjam_client->b_mixer.isVisible())
+		hpsjam_client->b_mixer.setFlashing();
 };

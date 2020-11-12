@@ -92,6 +92,8 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 		w_mixer, SLOT(handle_fader_eq(uint8_t,uint8_t,QString *)));
 	connect(hpsjam_client_peer, SIGNAL(receivedFaderDisconnect(uint8_t,uint8_t)),
 		w_mixer, SLOT(handle_fader_disconnect(uint8_t,uint8_t)));
+	connect(hpsjam_client_peer, SIGNAL(receivedFaderSelf(uint8_t,uint8_t)),
+		w_mixer, SLOT(handle_fader_self(uint8_t,uint8_t)));
 
 	connect(&watchdog, SIGNAL(timeout()), this, SLOT(handle_watchdog()));
 	watchdog.start(250);
