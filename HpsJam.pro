@@ -46,18 +46,39 @@ SOURCES		+= src/timer.cpp
 SOURCES		+= src/volumedlg.cpp
 
 isEmpty(WITHOUT_AUDIO) {
+
+# MacOS audio backend
+macx {
+SOURCES		+= mac/sound_mac.cpp
+LIBS+=		-framework AudioUnit
+LIBS+=		-framework CoreAudio
+DEFINES		+= HAVE_MAC_AUDIO
+}
+
 # JACK audio backend
+!macx {
 SOURCES		+= linux/sound_jack.cpp
 LIBS		+= -L$${PREFIX}/lib -ljack
 DEFINES		+= HAVE_JACK_AUDIO
+}
+
 }
 
 RESOURCES	+= HpsJam.qrc
 
 TARGET		= HpsJam
 
+macx {
+INCLUDEPATH 	+= /opt/local/include
+LIBS		+= /opt/local/lib/libfftw3.a
+}
+
+!macx {
 INCLUDEPATH     += $${PREFIX}/include
-LIBS		+= -L$${PREFIX}/lib -lfftw3 -pthread
+LIBS		+= -L$${PREFIX}/lib -lfftw3
+}
+
+LIBS		+= -pthread
 
 target.path	= $${PREFIX}/bin
 INSTALLS	+= target

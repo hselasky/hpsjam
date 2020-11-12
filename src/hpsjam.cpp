@@ -55,8 +55,10 @@ static const struct option hpsjam_opts[] = {
 	{ "peers", required_argument, NULL, 'P' },
 	{ "password", required_argument, NULL, 'K' },
 	{ "daemon", no_argument, NULL, 'B' },
+#ifdef HAVE_JACK_AUDIO
 	{ "jacknoconnect", no_argument, NULL, 'J' },
 	{ "jackname", required_argument, NULL, 'n' },
+#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -65,7 +67,10 @@ usage(void)
 {
         fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_PORT_STR "] "
 		"[--daemon] [--password <64_bit_hex_password>] \\\n"
-		"	[--jacknoconnect] [--jackname <name>] [--cli-port <portnumber>]\n");
+#ifdef HAVE_JACK_AUDIO
+		"	[--jacknoconnect] [--jackname <name>] \\\n"
+#endif
+		"	[--cli-port <portnumber>]\n");
         exit(1);
 }
 
@@ -144,6 +149,15 @@ main(int argc, char **argv)
 				QObject::tr("Cannot connect to JACK server or \n"
 					    "sample rate is different from %1Hz or \n"
 					    "latency is too high").arg(HPSJAM_SAMPLE_RATE));
+		}
+#endif
+
+#ifdef HAVE_MAC_AUDIO
+		if (hpsjam_sound_init(jackname, jackconnect)) {
+			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+				QObject::tr("Cannot connect to audio subsystem.\n"
+					    "Check that you have a audio device connected and\n"
+					    "that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
 		}
 #endif
 		hpsjam_client->show();
