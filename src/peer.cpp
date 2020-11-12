@@ -56,9 +56,13 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 			}
 		}
 
-		/* all new connections must start on a ping request */
+		/*
+		 * All new connections must start on a ping request
+		 * having sequence number zero:
+		 */
 		for (ptr = frame.start; ptr->valid(frame.end); ptr = ptr->next()) {
-			if (ptr->type == HPSJAM_TYPE_PING_REQUEST)
+			if (ptr->type == HPSJAM_TYPE_PING_REQUEST &&
+			    ptr->sequence[0] == 0 && ptr->sequence[1] == 0)
 				break;
 		}
 
