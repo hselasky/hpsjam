@@ -99,9 +99,9 @@ public:
 	QPushButton b[2];
 
 	HpsJamPan() : gl(this) {
-		int w = b[0].fontMetrics().boundingRect(QString("L_R")).width();
-		b[0].setText(QString("L"));
-		b[1].setText(QString("R"));
+		int w = b[0].fontMetrics().boundingRect(QString("_L_R_")).width();
+		b[0].setText(QString(" L "));
+		b[1].setText(QString(" R "));
 		b[0].setFixedWidth(w);
 		b[1].setFixedWidth(w);
 		connect(b + 0, SIGNAL(released()), this, SLOT(handle_pan_left()));
