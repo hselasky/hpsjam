@@ -162,7 +162,7 @@ public:
 
 		stats[index] += 1.0f;
 
-		if (stats[index] >= HPSJAM_SEQ_MAX * 2) {
+		if (stats[index] >= 8) {
 			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++)
 				stats[x] /= 2.0f;
 
