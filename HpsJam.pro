@@ -69,6 +69,7 @@ RESOURCES	+= HpsJam.qrc
 TARGET		= HpsJam
 
 macx {
+QMAKE_INFO_PLIST += HpsJamMacOSX.plist
 INCLUDEPATH 	+= /opt/local/include
 LIBS		+= /opt/local/lib/libfftw3.a
 }
