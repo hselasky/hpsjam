@@ -774,14 +774,18 @@ hpsjam_server_tick()
 			if (hpsjam_server_peers[x].bits[y] & HPSJAM_BIT_MUTE)
 				continue;
 			if (hpsjam_server_peers[x].bits[y] & HPSJAM_BIT_INVERT) {
-				for (unsigned z = 0; z != (HPSJAM_SAMPLE_RATE / 1000); z++) {
-					hpsjam_server_peers[x].out_audio[0][z] -= hpsjam_server_peers[y].tmp_audio[0][z];
-					hpsjam_server_peers[x].out_audio[1][z] -= hpsjam_server_peers[y].tmp_audio[1][z];
+				for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
+					hpsjam_server_peers[x].out_audio[0][z] -=
+					    hpsjam_server_peers[y].tmp_audio[0][z];
+					hpsjam_server_peers[x].out_audio[1][z] -=
+					    hpsjam_server_peers[y].tmp_audio[1][z];
 				}
 			} else {
-				for (unsigned z = 0; z != (HPSJAM_SAMPLE_RATE / 1000); z++) {
-					hpsjam_server_peers[x].out_audio[0][z] += hpsjam_server_peers[y].tmp_audio[0][z];
-					hpsjam_server_peers[x].out_audio[1][z] += hpsjam_server_peers[y].tmp_audio[1][z];
+				for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
+					hpsjam_server_peers[x].out_audio[0][z] +=
+					    hpsjam_server_peers[y].tmp_audio[0][z];
+					hpsjam_server_peers[x].out_audio[1][z] +=
+					    hpsjam_server_peers[y].tmp_audio[1][z];
 				}
 			}
 		}
@@ -791,14 +795,18 @@ hpsjam_server_tick()
 			if (~hpsjam_server_peers[x].bits[y] & HPSJAM_BIT_SOLO)
 				continue;
 			if (hpsjam_server_peers[x].bits[y] & HPSJAM_BIT_INVERT) {
-				for (unsigned z = 0; z != (HPSJAM_SAMPLE_RATE / 1000); z++) {
-					hpsjam_server_peers[x].out_audio[0][z] -= hpsjam_server_peers[y].tmp_audio[0][z];
-					hpsjam_server_peers[x].out_audio[1][z] -= hpsjam_server_peers[y].tmp_audio[1][z];
+				for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
+					hpsjam_server_peers[x].out_audio[0][z] -=
+					    hpsjam_server_peers[y].tmp_audio[0][z];
+					hpsjam_server_peers[x].out_audio[1][z] -=
+					    hpsjam_server_peers[y].tmp_audio[1][z];
 				}
 			} else {
-				for (unsigned z = 0; z != (HPSJAM_SAMPLE_RATE / 1000); z++) {
-					hpsjam_server_peers[x].out_audio[0][z] += hpsjam_server_peers[y].tmp_audio[0][z];
-					hpsjam_server_peers[x].out_audio[1][z] += hpsjam_server_peers[y].tmp_audio[1][z];
+				for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
+					hpsjam_server_peers[x].out_audio[0][z] +=
+					    hpsjam_server_peers[y].tmp_audio[0][z];
+					hpsjam_server_peers[x].out_audio[1][z] +=
+					    hpsjam_server_peers[y].tmp_audio[1][z];
 				}
 			}
 		}
