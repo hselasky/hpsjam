@@ -83,6 +83,12 @@ LIBS		+= -pthread
 target.path	= $${PREFIX}/bin
 INSTALLS	+= target
 
+macx {
+icons.path= $${DESTDIR}/Contents/Resources
+icons.files= HpsJam.icns
+QMAKE_BUNDLE_DATA+= icons
+}
+
 !macx:!android:!ios:!win32:unix {
 icons.path	= $${PREFIX}/share/pixmaps
 icons.files	= HpsJam.png

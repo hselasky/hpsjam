@@ -1,5 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
+<file>HpsJam.png</file>
 <file>icons/heart.svg</file>
 <file>icons/bell.svg</file>
 <file>icons/circle.svg</file>

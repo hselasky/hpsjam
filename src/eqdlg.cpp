@@ -35,6 +35,7 @@ HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
     gl_spec(&g_spec), gl_control(&g_control)
 {
 	setWindowTitle(QString("HPS JAM Equalizer"));
+	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
 
 	g_spec.setTitle(tr("Filter specification"));
 	g_control.setTitle(tr("Control"));

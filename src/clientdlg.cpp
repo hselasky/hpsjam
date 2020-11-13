@@ -39,6 +39,7 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
     b_config(tr("CON&FIG")), b_stats(tr("&STATS"))
 {
 	setWindowTitle(HPSJAM_WINDOW_TITLE " Client");
+	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
 
 	connect(&b_connect, SIGNAL(released()), this, SLOT(handle_connect()));
 	connect(&b_mixer, SIGNAL(released()), this, SLOT(handle_mixer()));
