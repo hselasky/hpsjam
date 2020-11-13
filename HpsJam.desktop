@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=HPS Online Jamming Client
 Comment=Online audio collaboration tool for low latency audio with lyrics and chat support.
-Exec=hpsjam
-Icon=hpsjam
+Exec=HpsJam
+Icon=HpsJam
 Categories=AudioVideo;Audio;Midi;
 Terminal=false
 Type=Application
