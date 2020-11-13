@@ -27,6 +27,7 @@
 #define	_HPSJAM_AUDIOBUFFER_H_
 
 #include <math.h>
+#include <assert.h>
 
 #include "hpsjam.h"
 #include "protocol.h"
@@ -212,11 +213,13 @@ public:
 				src += fwd;
 				num -= fwd;
 				total += fwd;
+				producer += fwd;
 			}
 			if (producer == HPSJAM_MAX_SAMPLES) {
 				producer = 0;
 				fwd = HPSJAM_MAX_SAMPLES;
 			} else {
+				assert(num == 0);
 				break;
 			}
 		}
@@ -242,11 +245,13 @@ public:
 				}
 				num -= fwd;
 				total += fwd;
+				producer += fwd;
 			}
 			if (producer == HPSJAM_MAX_SAMPLES) {
 				producer = 0;
 				fwd = HPSJAM_MAX_SAMPLES;
 			} else {
+				assert(num == 0);
 				break;
 			}
 		}
