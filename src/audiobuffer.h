@@ -189,6 +189,7 @@ public:
 				consumer = 0;
 				fwd = HPSJAM_MAX_SAMPLES;
 			} else {
+				assert(num == 0);
 				break;
 			}
 		}
