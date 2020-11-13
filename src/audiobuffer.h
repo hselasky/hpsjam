@@ -33,7 +33,7 @@
 #include "protocol.h"
 
 #define	HPSJAM_MAX_SAMPLES \
-	(HPSJAM_SEQ_MAX * 2 * (HPSJAM_SAMPLE_RATE / 1000))	/* samples */
+	(HPSJAM_SEQ_MAX * 2 * HPSJAM_DEF_SAMPLES)	/* samples */
 
 static inline float
 level_encode(float value)

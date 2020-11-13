@@ -31,6 +31,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 
+#include "hpsjam.h"
 #include "audiobuffer.h"
 #include "equalizer.h"
 #include "socket.h"
@@ -46,10 +47,13 @@ public:
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;
 	class hpsjam_audio_buffer in_audio[2];
+	class hpsjam_audio_buffer out_buffer[2];
 	class hpsjam_audio_level in_level[2];
-	class hpsjam_audio_level out_level[2];
-	float tmp_audio[2][HPSJAM_SAMPLE_RATE / 1000];
-	float out_audio[2][HPSJAM_SAMPLE_RATE / 1000];
+#if (HPSJAM_DEF_SAMPLES > 64)
+#error "Please update the two arrays below"
+#endif
+	float tmp_audio[2][64];
+	float out_audio[2][64];
 
 	QString name;
 	QByteArray icon;
@@ -66,10 +70,10 @@ public:
 		output_pkt.init();
 		in_audio[0].clear();
 		in_audio[1].clear();
+		out_buffer[0].clear();
+		out_buffer[1].clear();
 		in_level[0].clear();
 		in_level[1].clear();
-		out_level[0].clear();
-		out_level[1].clear();
 		memset(out_audio, 0, sizeof(out_audio));
 		name = QString();
 		icon = QByteArray();
@@ -104,8 +108,10 @@ public:
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;
 	class hpsjam_audio_buffer in_audio[2];
-	class hpsjam_audio_buffer out_audio[2];
 	class hpsjam_audio_level in_level[2];
+	class hpsjam_audio_buffer out_buffer[2];
+	class hpsjam_audio_buffer out_audio[2];
+	class hpsjam_audio_level out_level[2];
 	class hpsjam_equalizer local_eq;
 	class hpsjam_equalizer eq;
 	float mon_gain[2];
@@ -114,9 +120,10 @@ public:
 	float in_pan;
 	float in_peak;
 	float out_peak;
+	float local_peak;
 	int self_index;
 	uint8_t bits;
-	uint8_t out_format;
+	uint8_t output_fmt;
 
 	void init() {
 		address.clear();
@@ -124,18 +131,23 @@ public:
 		output_pkt.init();
 		in_audio[0].clear();
 		in_audio[1].clear();
-		out_audio[0].clear();
-		out_audio[1].clear();
 		in_level[0].clear();
 		in_level[1].clear();
+		out_buffer[0].clear();
+		out_buffer[1].clear();
+		out_audio[0].clear();
+		out_audio[1].clear();
+		out_level[0].clear();
+		out_level[1].clear();
 		in_gain = 1.0f;
 		mon_gain[0] = 0.0f;
 		mon_gain[1] = 1.0f;
 		mon_pan = 0.0f;
 		in_pan = 0.0f;
-		in_peak = 0.0;
-		out_peak = 0.0;
-		out_format = HPSJAM_TYPE_AUDIO_SILENCE;
+		in_peak = 0.0f;
+		out_peak = 0.0f;
+		local_peak = 0.0f;
+		output_fmt = HPSJAM_TYPE_AUDIO_SILENCE;
 		bits = 0;
 		eq.cleanup();
 		local_eq.cleanup();

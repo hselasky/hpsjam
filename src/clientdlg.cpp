@@ -142,8 +142,8 @@ HpsJamClient :: handle_watchdog()
 
 	if (1) {
 		QMutexLocker locker(&hpsjam_client_peer->lock);
-		temp[0] = hpsjam_client_peer->in_level[0].getLevel();
-		temp[1] = hpsjam_client_peer->in_level[1].getLevel();
+		temp[0] = hpsjam_client_peer->out_level[0].getLevel();
+		temp[1] = hpsjam_client_peer->out_level[1].getLevel();
 
 		hpsjam_client_peer->bits = w_mixer->self_strip.getBits();
 		const float mg[2] = {

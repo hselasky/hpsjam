@@ -392,6 +392,10 @@ public:
 		ping_time = hpsjam_ticks - start_time;
 	};
 
+	bool isXorFrame() const {
+		return (d_cur == d_max);
+	};
+
 	void send(const struct hpsjam_socket_address &addr) {
 		if (d_cur == d_max) {
 			/* finalize XOR packet */
@@ -520,9 +524,7 @@ struct hpsjam_input_packetizer {
 					 */
 					valid[z] |= 1 | 4 | 8;
 					current[z].clear();
-					current[z].start[0].putSilence(HPSJAM_SAMPLE_RATE / 1000);
-					if (x == 0)
-						current[z].start[1].putSilence(HPSJAM_SAMPLE_RATE / 1000);
+					current[z].start[0].putSilence(HPSJAM_NOM_SAMPLES);
 					return (current + z);
 				case 1:
 					valid[z] |= 5;

@@ -235,7 +235,7 @@ HpsJamConnect :: handle_connect()
 	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
 
 	/* set local format, nickname and icon */
-	hpsjam_client_peer->out_format = hpsjam_client->w_config->up_fmt.format;
+	hpsjam_client_peer->output_fmt = hpsjam_client->w_config->up_fmt.format;
 	hpsjam_client->w_mixer->self_strip.w_name.setText(nick);
 	hpsjam_client->w_mixer->self_strip.w_icon.svg.load(idata);
 	hpsjam_client->w_mixer->self_strip.w_icon.update();

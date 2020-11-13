@@ -52,10 +52,10 @@ HpsJamStats :: paintEvent(QPaintEvent *event)
 	if (1) {
 		QMutexLocker locker(&hpsjam_client_peer->lock);
 
-		assert(sizeof(stats[0]) >= sizeof(hpsjam_client_peer->out_audio[0].stats));
+		assert(sizeof(stats[0]) >= sizeof(hpsjam_client_peer->in_audio[0].stats));
 		assert(sizeof(stats[1]) >= sizeof(hpsjam_client_peer->input_pkt.jitter.stats));
 		memcpy(stats[0], hpsjam_client_peer->input_pkt.jitter.stats, sizeof(stats[0]));
-		memcpy(stats[1], hpsjam_client_peer->out_audio[0].stats, sizeof(stats[1]));
+		memcpy(stats[1], hpsjam_client_peer->in_audio[0].stats, sizeof(stats[1]));
 		packet_loss = hpsjam_client_peer->input_pkt.jitter.packet_loss;
 		ping_time = hpsjam_client_peer->output_pkt.ping_time;
 		jitter_time = hpsjam_client_peer->input_pkt.jitter.get_jitter_in_ms();

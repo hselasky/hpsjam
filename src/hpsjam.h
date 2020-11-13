@@ -31,6 +31,8 @@
 #include <sys/types.h>
 
 #define	HPSJAM_SAMPLE_RATE 48000
+#define	HPSJAM_DEF_SAMPLES (HPSJAM_SAMPLE_RATE / 1000)
+#define	HPSJAM_NOM_SAMPLES ((3 * HPSJAM_SAMPLE_RATE) / (2 * 1000))
 #define	HPSJAM_WINDOW_TITLE "HPS Online Jamming"
 #define	HPSJAM_PEERS_MAX 256
 #define	HPSJAM_SEQ_MAX 16

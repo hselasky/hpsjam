@@ -57,7 +57,7 @@ HpsJamConfig :: handle_up_config()
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 
 	if (hpsjam_client_peer->address.valid())
-		hpsjam_client_peer->out_format = up_fmt.format;
+		hpsjam_client_peer->output_fmt = up_fmt.format;
 }
 
 void
