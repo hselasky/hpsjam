@@ -1,3 +1,4 @@
+<IMG SRC="https://raw.githubusercontent.com/hselasky/hpsjam/main/HpsJam.svg"></IMG> 
 # HPS JAM
 An online audio collaboration tool for low latency audio with lyrics and chat support.
 
@@ -14,7 +15,7 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
   <li> QT widgets</li>
   <li> QT SVG renderer</li>
   <li>FFTW3</li>
-</u>
+</ul>
 
 ## Example how to start client
 <pre>
