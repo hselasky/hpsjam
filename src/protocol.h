@@ -82,6 +82,9 @@ enum {
 
 struct hpsjam_header {
 	uint8_t sequence;
+	void clear() {
+		sequence = 0;
+	};
 	uint8_t getSeqNo() const {
 		return (sequence % HPSJAM_SEQ_MAX);
 	};
@@ -369,8 +372,8 @@ public:
 
 	bool append_ack()
 	{
-		size_t remainder = sizeof(current) - sizeof(current.hdr) - offset;
-		size_t len = 4;
+		const size_t remainder = sizeof(current) - sizeof(current.hdr) - offset;
+		const size_t len = 4;
 
 		if (len <= remainder) {
 			uint8_t *ptr = current.raw + sizeof(current.hdr) + offset;
@@ -492,9 +495,12 @@ struct hpsjam_input_packetizer {
 				start = mask;
 				min_x = x;
 			}
-			if (mask & 1)
-				mask |= 1 << HPSJAM_SEQ_MAX;
-			mask >>= 1;
+			if (mask & 1) {
+				mask >>= 1;
+				mask |= 1 << (HPSJAM_SEQ_MAX - 1);
+			} else {
+				mask >>= 1;
+			}
 		}
 
 		/* align to red */
@@ -527,7 +533,7 @@ struct hpsjam_input_packetizer {
 					current[z].start[0].putSilence(HPSJAM_NOM_SAMPLES);
 					return (current + z);
 				case 1:
-					valid[z] |= 5;
+					valid[z] |= 1 | 4;
 					return (current + z);
 				default:
 					break;
@@ -581,7 +587,11 @@ struct hpsjam_input_packetizer {
 					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
 					if (~valid[z] & 1) {
 						current[z] = mask[x];
-						valid[z] |= 9;
+						/* invalidate headers */
+						mask[x].hdr.clear();
+						current[z].hdr.clear();
+						/* set valid bit */
+						valid[z] |= 1 | 8;
 					}
 				}
 			}
