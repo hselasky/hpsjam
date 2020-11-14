@@ -2,26 +2,38 @@
 An online audio collaboration tool for low latency audio with lyrics and chat support.
 
 ## How to build
-qmake
-make
+<ul>
+  <li>qmake</li>
+  <li>make</li>
+</pre>
 
 ## Dependencies
-QT core
-QT gui
-QT widgets
-QT SVG renderer
-FFTW3
+<ul>
+  <li> QT core</li>
+  <li> QT GUI</li>
+  <li> QT widgets</li>
+  <li> QT SVG renderer</li>
+  <li>FFTW3</li>
+</u>
 
 ## Example how to start client
+<pre>
 HpsJam --cli-port 1234
+</pre>
 
 ## Example how to start server
+<pre>
 HpsJam --port 22124 --peers 16 --daemon
+</pre>
 
 ## How to get more help
+<pre>
 HpsJam -h
+</pre>
 
 ## Supported platforms
-FreeBSD
-Linux
-MacOSX
+<ul>
+  <li>FreeBSD</li>
+  <li>Linux</li>
+  <li>MacOSX <A HREF="http://home.selasky.org/privat/HpsJam.dmg">Binary build here</A></li>
+</ul>
