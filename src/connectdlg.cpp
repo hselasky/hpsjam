@@ -158,7 +158,7 @@ HpsJamConnect :: handle_connect()
 	switch (parts.length()) {
 	case 1:
 		host = parts[0].toLatin1();
-		port = HPSJAM_DEFAULT_PORT_STR;
+		port = HPSJAM_DEFAULT_IPV4_PORT_STR;
 		break;
 	case 2:
 		host = parts[0].toLatin1();

@@ -90,7 +90,7 @@ class HpsJamConnectServer : public QGroupBox {
 public:
 	HpsJamConnectServer() : gl(this) {
 		setTitle(tr("Select server"));
-		edit.setText(QString("127.0.0.1" ":" HPSJAM_DEFAULT_PORT_STR));
+		edit.setText(QString("127.0.0.1" ":" HPSJAM_DEFAULT_IPV4_PORT_STR));
 		gl.addWidget(&edit, 0,0);
 		gl.addWidget(&list, 1,0);
 		gl.setRowStretch(1,1);

@@ -50,6 +50,8 @@ struct hpsjam_socket_address hpsjam_cli;
 static const struct option hpsjam_opts[] = {
 	{ "NSDocumentRevisionsDebugMode", required_argument, NULL, ' ' },
 	{ "port", required_argument, NULL, 'p' },
+	{ "ipv4-port", required_argument, NULL, 't' },
+	{ "ipv6-port", required_argument, NULL, 'u' },
 	{ "cli-port", required_argument, NULL, 'q' },
 	{ "server", no_argument, NULL, 's' },
 	{ "peers", required_argument, NULL, 'P' },
@@ -65,11 +67,13 @@ static const struct option hpsjam_opts[] = {
 static void
 usage(void)
 {
-        fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_PORT_STR "] "
+        fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_IPV4_PORT_STR "] "
 		"[--daemon] [--password <64_bit_hex_password>] \\\n"
 #ifdef HAVE_JACK_AUDIO
 		"	[--jacknoconnect] [--jackname <name>] \\\n"
 #endif
+		"	[--ipv4-port " HPSJAM_DEFAULT_IPV4_PORT_STR "] \\\n"
+		"	[--ipv6-port " HPSJAM_DEFAULT_IPV6_PORT_STR "] \\\n"
 		"	[--cli-port <portnumber>]\n");
         exit(1);
 }
@@ -78,21 +82,32 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	int c;
-	int port = HPSJAM_DEFAULT_PORT;
+	int ipv4_port = HPSJAM_DEFAULT_IPV4_PORT;
+	int ipv6_port = HPSJAM_DEFAULT_IPV6_PORT;
 	int cliport = 0;
 	int do_fork = 0;
 	bool jackconnect = true;
 	const char *jackname = "hpsjam";
 
-	while ((c = getopt_long_only(argc, argv, "q:p:sP:hBJ:n:K:", hpsjam_opts, NULL)) != -1) {
+	while ((c = getopt_long_only(argc, argv, "q:p:sP:hBJ:n:K:t:u:", hpsjam_opts, NULL)) != -1) {
 		switch (c) {
 		case 's':
 			if (hpsjam_num_server_peers == 0)
 				hpsjam_num_server_peers = 1;
 			break;
 		case 'p':
-			port = atoi(optarg);
-			if (port <= 0 || port >= 65536)
+			ipv4_port = ipv6_port = atoi(optarg);
+			if (ipv4_port <= 0 || ipv4_port >= 65536)
+				usage();
+			break;
+		case 't':
+			ipv4_port = atoi(optarg);
+			if (ipv4_port <= 0 || ipv4_port >= 65536)
+				usage();
+			break;
+		case 'u':
+			ipv6_port = atoi(optarg);
+			if (ipv6_port <= 0 || ipv6_port >= 65536)
 				usage();
 			break;
 		case 'q':
@@ -166,7 +181,7 @@ main(int argc, char **argv)
 		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX;
 
 		/* create sockets, if any */
-		hpsjam_socket_init(port, cliport);
+		hpsjam_socket_init(ipv4_port, ipv6_port, cliport);
 
 		/* create timer, if any */
 		hpsjam_timer_init();
@@ -181,7 +196,7 @@ main(int argc, char **argv)
 		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX * hpsjam_num_server_peers;
 
 		/* create sockets, if any */
-		hpsjam_socket_init(port, cliport);
+		hpsjam_socket_init(ipv4_port, ipv6_port, cliport);
 
 		/* create timer, if any */
 		hpsjam_timer_init();

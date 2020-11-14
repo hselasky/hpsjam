@@ -39,8 +39,10 @@
 #define	HPSJAM_SEQ_MAX 16
 #define	HPSJAM_ICON_SIZE 64 /* 64x64 px SVG */
 #define	HPSJAM_MAX_UDP 1416 /* bytes */
-#define	HPSJAM_DEFAULT_PORT 22124
-#define	HPSJAM_DEFAULT_PORT_STR "22124"
+#define	HPSJAM_DEFAULT_IPV4_PORT 22124
+#define	HPSJAM_DEFAULT_IPV6_PORT 22125
+#define	HPSJAM_DEFAULT_IPV4_PORT_STR "22124"
+#define	HPSJAM_DEFAULT_IPV6_PORT_STR "22125"
 #define	HPSJAM_BIT_MUTE (1 << 0)
 #define	HPSJAM_BIT_SOLO (1 << 1)
 #define	HPSJAM_BIT_INVERT (1 << 2)
@@ -71,7 +73,8 @@ extern struct hpsjam_socket_address hpsjam_v4;
 extern struct hpsjam_socket_address hpsjam_v6;
 extern struct hpsjam_socket_address hpsjam_cli;
 
-extern void hpsjam_socket_init(unsigned short port, unsigned short cliport);
+extern void hpsjam_socket_init(unsigned short ipv4_port,
+    unsigned short ipv6_port, unsigned short cliport);
 
 /* sound APIs */
 extern bool hpsjam_sound_init(const char *, bool);
