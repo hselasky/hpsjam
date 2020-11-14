@@ -6,7 +6,7 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
 <ul>
   <li>qmake</li>
   <li>make</li>
-</pre>
+</ul>
 
 ## Dependencies
 <ul>
