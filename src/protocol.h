@@ -287,7 +287,7 @@ union hpsjam_frame {
 		memset(this, 0, sizeof(*this));
 	};
 	void do_xor(const union hpsjam_frame &other) {
-		for (size_t x = 0; x != (sizeof(this) / 8); x++)
+		for (size_t x = 0; x != (sizeof(*this) / 8); x++)
 			raw64[x] ^= other.raw64[x];
 	};
 };
