@@ -19,12 +19,12 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
 
 ## Example how to start client
 <pre>
-HpsJam --cli-port 1234
+HpsJam
 </pre>
 
 ## Example how to start server
 <pre>
-HpsJam --port 22124 --peers 16 --daemon
+HpsJam --server --port 22124 --peers 16 --daemon
 </pre>
 
 ## How to get more help
