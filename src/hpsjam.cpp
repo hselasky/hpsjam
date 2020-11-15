@@ -46,6 +46,7 @@ class HpsJamClient *hpsjam_client;
 struct hpsjam_socket_address hpsjam_v4;
 struct hpsjam_socket_address hpsjam_v6;
 struct hpsjam_socket_address hpsjam_cli;
+const char *hpsjam_welcome_message_file;
 
 static const struct option hpsjam_opts[] = {
 	{ "NSDocumentRevisionsDebugMode", required_argument, NULL, ' ' },
@@ -53,6 +54,7 @@ static const struct option hpsjam_opts[] = {
 	{ "ipv4-port", required_argument, NULL, 't' },
 	{ "ipv6-port", required_argument, NULL, 'u' },
 	{ "cli-port", required_argument, NULL, 'q' },
+	{ "welcome-msg-file", required_argument, NULL, 'w' },
 	{ "server", no_argument, NULL, 's' },
 	{ "peers", required_argument, NULL, 'P' },
 	{ "password", required_argument, NULL, 'K' },
@@ -74,6 +76,7 @@ usage(void)
 #endif
 		"	[--ipv4-port " HPSJAM_DEFAULT_IPV4_PORT_STR "] \\\n"
 		"	[--ipv6-port " HPSJAM_DEFAULT_IPV6_PORT_STR "] \\\n"
+		"	[--welcome-msg-file <filename> \\\n"
 		"	[--cli-port <portnumber>]\n");
         exit(1);
 }
@@ -89,8 +92,11 @@ main(int argc, char **argv)
 	bool jackconnect = true;
 	const char *jackname = "hpsjam";
 
-	while ((c = getopt_long_only(argc, argv, "q:p:sP:hBJ:n:K:t:u:", hpsjam_opts, NULL)) != -1) {
+	while ((c = getopt_long_only(argc, argv, "q:p:sP:hBJ:n:K:t:u:w:", hpsjam_opts, NULL)) != -1) {
 		switch (c) {
+		case 'w':
+			hpsjam_welcome_message_file = optarg;
+			break;
 		case 's':
 			if (hpsjam_num_server_peers == 0)
 				hpsjam_num_server_peers = 1;

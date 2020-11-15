@@ -72,6 +72,7 @@ extern class HpsJamClient *hpsjam_client;
 extern struct hpsjam_socket_address hpsjam_v4;
 extern struct hpsjam_socket_address hpsjam_v6;
 extern struct hpsjam_socket_address hpsjam_cli;
+extern const char *hpsjam_welcome_message_file;
 
 extern void hpsjam_socket_init(unsigned short ipv4_port,
     unsigned short ipv6_port, unsigned short cliport);

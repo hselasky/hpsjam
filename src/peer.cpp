@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <QFile>
+#include <QTextStream>
 #include <QMutexLocker>
 
 #include "hpsjam.h"
@@ -91,6 +93,7 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 			hpsjam_server_peers[x].valid = true;
 			hpsjam_server_peers[x].address = src;
 			hpsjam_server_peers[x].input_pkt.receive(frame);
+			hpsjam_server_peers[x].send_welcome_message();
 			return;
 		}
 	}
@@ -727,6 +730,32 @@ hpsjam_server_peer :: audio_import()
 	/* send a packet */
 	HpsJamSendPacket
 	    <class hpsjam_server_peer>(*this);
+}
+
+void
+hpsjam_server_peer :: send_welcome_message()
+{
+	if (hpsjam_welcome_message_file == 0)
+		return;
+
+	QFile file(hpsjam_welcome_message_file);
+
+	if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+		return;
+
+	QTextStream in(&file);
+
+	while (in.atEnd() == false) {
+		QString line = in.readLine();
+		line.truncate(128);
+
+		QByteArray t = line.toUtf8();
+
+		struct hpsjam_packet_entry *pres = new struct hpsjam_packet_entry;
+		pres->packet.setRawData(t.constData(), t.length());
+		pres->packet.type = HPSJAM_TYPE_CHAT_REPLY;
+		pres->insert_tail(&output_pkt.head);
+	}
 }
 
 static void
