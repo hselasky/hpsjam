@@ -77,7 +77,7 @@ HpsJamChatBox :: handle_send_chat()
 void
 HpsJamChat :: append(const QString &str)
 {
-	chat.edit.append(str);
+	chat.edit.appendPlainText(str);
 
 	if (!isVisible())
 		hpsjam_client->b_chat.setFlashing();

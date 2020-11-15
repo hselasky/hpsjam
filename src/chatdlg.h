@@ -30,7 +30,7 @@
 #include <QWidget>
 #include <QGroupBox>
 #include <QGridLayout>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 #include <QLineEdit>
 #include <QPushButton>
 
@@ -50,7 +50,7 @@ public:
 	};
 	QGridLayout gl;
 	QPushButton b_send;
-	QTextEdit edit;
+	QPlainTextEdit edit;
 
 public slots:
 	void handle_send_lyrics();
@@ -62,6 +62,8 @@ public:
 	HpsJamChatBox() : gl(this), b_send(tr("SEND")) {
 		setTitle(tr("Chat box"));
 		line.setMaxLength(128);
+		edit.setReadOnly(true);
+		edit.setMaximumBlockCount(1000);
 
 		gl.addWidget(&edit, 0,0,1,2);
 		gl.addWidget(&line, 1,0,1,1);
@@ -74,7 +76,7 @@ public:
 	};
 	QGridLayout gl;
 	QPushButton b_send;
-	QTextEdit edit;
+	QPlainTextEdit edit;
 	QLineEdit line;
 
 public slots:
