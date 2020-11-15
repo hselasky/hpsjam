@@ -53,7 +53,7 @@ HpsJamLyrics :: paintEvent(QPaintEvent *event)
 	paint.setRenderHints(QPainter::Antialiasing, 1);
 
 	while (1) {
-		paint.fillRect(QRectF(0,0,w,h), bg);
+		paint.fillRect(QRect(0,0,w,h), bg);
 
 		float y_pos = - (obj[0]->height * step) / HPSJAM_TRAN_MAX;
 
@@ -64,8 +64,8 @@ HpsJamLyrics :: paintEvent(QPaintEvent *event)
 			const float wf = font.pixelSize();
 			int flags = Qt::TextWordWrap | Qt::TextDontClip | Qt::AlignTop;
 
-			QRectF txtBound;
-			QRectF txtMax(0,0,w,h);
+			QRect txtBound;
+			QRect txtMax(0,0,w,h);
 
 			paint.drawText(txtMax, Qt::AlignLeft |
 			    Qt::TextDontPrint | flags, obj[x]->str, &txtBound);

@@ -65,13 +65,13 @@ HpsJamIcon :: paintEvent(QPaintEvent *event)
 
 	switch (sel) {
 	case 0:
-		paint.fillRect(QRectF(0,0,width(),height()), gh);
+		paint.fillRect(QRect(0,0,width(),height()), gh);
 		break;
 	case 1:
-		paint.fillRect(QRectF(0,0,width(),height()), gg);
+		paint.fillRect(QRect(0,0,width(),height()), gg);
 		break;
 	case 2:
-		paint.fillRect(QRectF(0,0,width(),height()), bg);
+		paint.fillRect(QRect(0,0,width(),height()), bg);
 		break;
 	default:
 		break;
@@ -79,7 +79,7 @@ HpsJamIcon :: paintEvent(QPaintEvent *event)
 	svg.render(&paint);
 
 	if (!enabled)
-		paint.fillRect(QRectF(0,0,width(),height()), gh);
+		paint.fillRect(QRect(0,0,width(),height()), gh);
 }
 
 void

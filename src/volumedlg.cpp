@@ -154,22 +154,22 @@ HpsJamVolume :: paintEvent(QPaintEvent *event)
 
 	QString descr = QString("%1").arg((double)val/(double)div, 0, 'f', 2);
 
-	paint.fillRect(QRectF(0,0,w,h), background);
+	paint.fillRect(QRect(0,0,w,h), background);
 
 	paint.setPen(QPen(black, 1));
 	paint.setBrush(active);
-	paint.drawPie(QRectF(m,m,w-(2*m),h-(2*m)),(180+45)*16, -angle);
+	paint.drawPie(QRect(m,m,w-(2*m),h-(2*m)),(180+45)*16, -angle);
 
 	if (focus)
 		paint.setBrush(button_focus);
 	else
 		paint.setBrush(button);
 
-	paint.drawEllipse(QRectF((w/4)+m,(h/4)+m,(w/2)-(2*m), (h/2)-(2*m)));
+	paint.drawEllipse(QRect((w/4)+m,(h/4)+m,(w/2)-(2*m), (h/2)-(2*m)));
 
 	paint.setFont(fnt);
 
-	QRectF sz = paint.boundingRect(QRectF(0,0,0,0), descr);
+	QRectF sz = paint.boundingRect(QRect(0,0,0,0), descr);
 
 	paint.drawText(QPointF((w - sz.width()) / 2.0, h), descr);
 }
