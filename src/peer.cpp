@@ -885,7 +885,6 @@ hpsjam_client_peer :: tick()
 	if (address.valid() == false)
 		return;
 
-	struct hpsjam_packet_entry entry = {};
 	const union hpsjam_frame *pkt;
 	const struct hpsjam_packet *ptr;
 	struct hpsjam_packet_entry *pres;
