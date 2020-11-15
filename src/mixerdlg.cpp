@@ -284,6 +284,8 @@ HpsJamStrip :: HpsJamStrip() : gl(this),
 {
 	id = -1;
 
+	setMaximumWidth(128);
+
 	connect(&w_pan, SIGNAL(valueChanged(int)), this, SLOT(handlePan(int)));
 	connect(&w_slider, SIGNAL(valueChanged()), this, SLOT(handleSlider()));
 	connect(&b_eq, SIGNAL(released()), this, SLOT(handleEQShow()));
