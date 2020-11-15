@@ -24,6 +24,7 @@
  */
 
 #include <QMutexLocker>
+#include <QKeyEvent>
 
 #include "hpsjam.h"
 #include "protocol.h"
@@ -31,15 +32,15 @@
 #include "configdlg.h"
 
 const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = {
-	{ HPSJAM_TYPE_AUDIO_SILENCE, "DISABLE" },
-	{ HPSJAM_TYPE_AUDIO_8_BIT_1CH, "1CH@8Bit" },
-	{ HPSJAM_TYPE_AUDIO_16_BIT_1CH, "1CH@16Bit" },
-	{ HPSJAM_TYPE_AUDIO_24_BIT_1CH, "1CH@24Bit" },
-	{ HPSJAM_TYPE_AUDIO_32_BIT_1CH, "1CH@32Bit" },
-	{ HPSJAM_TYPE_AUDIO_8_BIT_2CH, "2CH@8Bit" },
-	{ HPSJAM_TYPE_AUDIO_16_BIT_2CH, "2CH@16Bit" },
-	{ HPSJAM_TYPE_AUDIO_24_BIT_2CH, "2CH@24Bit" },
-	{ HPSJAM_TYPE_AUDIO_32_BIT_2CH, "2CH@32Bit" },
+	{ HPSJAM_TYPE_AUDIO_SILENCE, "DISABLE" , Qt::Key_0 },
+	{ HPSJAM_TYPE_AUDIO_8_BIT_1CH, "1CH@8Bit", Qt::Key_1 },
+	{ HPSJAM_TYPE_AUDIO_16_BIT_1CH, "1CH@16Bit", Qt::Key_3 },
+	{ HPSJAM_TYPE_AUDIO_24_BIT_1CH, "1CH@24Bit", Qt::Key_5 },
+	{ HPSJAM_TYPE_AUDIO_32_BIT_1CH, "1CH@32Bit", Qt::Key_7 },
+	{ HPSJAM_TYPE_AUDIO_8_BIT_2CH, "2CH@8Bit", Qt::Key_2 },
+	{ HPSJAM_TYPE_AUDIO_16_BIT_2CH, "2CH@16Bit", Qt::Key_4 },
+	{ HPSJAM_TYPE_AUDIO_24_BIT_2CH, "2CH@24Bit", Qt::Key_6 },
+	{ HPSJAM_TYPE_AUDIO_32_BIT_2CH, "2CH@32Bit", Qt::Key_8 },
 };
 
 void
@@ -70,5 +71,16 @@ HpsJamConfig :: handle_down_config()
 		pkt->packet.setConfigure(down_fmt.format);
 		pkt->packet.type = HPSJAM_TYPE_CONFIGURE_REQUEST;
 		pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
+	}
+}
+
+void
+HpsJamConfig :: keyPressEvent(QKeyEvent *event)
+{
+	for (unsigned x = 0; x != HPSJAM_AUDIO_FORMAT_MAX; x++) {
+		if (event->key() == hpsjam_audio_format[x].key) {
+			up_fmt.b[x].animateClick();
+			down_fmt.b[x].animateClick();
+		}
 	}
 }

@@ -38,6 +38,14 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
     b_mixer(tr("&MIXER")), b_lyrics(tr("&LYRICS")), b_chat(tr("CH&AT")),
     b_config(tr("CON&FIG")), b_stats(tr("&STATS"))
 {
+	setAccessibleDescription(tr("List of key shortcuts for window selection:\n"
+	    "ALT+E: Select connect window\n"
+	    "ALT+M: Select mixer window\n"
+	    "ALT+L: Select lyrics window\n"
+	    "ALT+A: Select chat window\n"
+	    "ALT+F: Select config window\n"
+	    "ALT+S: Select statistics window\n"));
+
 	setWindowTitle(HPSJAM_WINDOW_TITLE " Client");
 	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
 
@@ -104,36 +112,42 @@ void
 HpsJamClient :: handle_connect()
 {
 	w_stack.setCurrentWidget(w_connect);
+	w_connect->setFocus();
 }
 
 void
 HpsJamClient :: handle_mixer()
 {
 	w_stack.setCurrentWidget(w_mixer);
+	w_mixer->setFocus();
 }
 
 void
 HpsJamClient :: handle_lyrics()
 {
 	w_stack.setCurrentWidget(w_lyrics);
+	w_lyrics->setFocus();
 }
 
 void
 HpsJamClient :: handle_chat()
 {
 	w_stack.setCurrentWidget(w_chat);
+	w_chat->chat.line.setFocus();
 }
 
 void
 HpsJamClient :: handle_config()
 {
 	w_stack.setCurrentWidget(w_config);
+	w_config->setFocus();
 }
 
 void
 HpsJamClient :: handle_stats()
 {
 	w_stack.setCurrentWidget(w_stats);
+	w_stats->setFocus();
 }
 
 void

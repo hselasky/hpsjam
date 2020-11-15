@@ -39,6 +39,7 @@ class HpsJamEqualizer : public QWidget
 	Q_OBJECT;
 public:
 	HpsJamEqualizer();
+	void keyPressEvent(QKeyEvent *);
 
 	QGroupBox g_spec;
 	QGroupBox g_control;

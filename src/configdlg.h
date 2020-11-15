@@ -36,6 +36,7 @@
 struct hpsjam_audio_format {
 	uint8_t format;
 	const char *descr;
+	int key;
 };
 
 extern const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX];
@@ -90,6 +91,17 @@ class HpsJamConfig : public QWidget {
 	Q_OBJECT;
 public:
 	HpsJamConfig() : gl(this) {
+		setAccessibleDescription(tr("List of key shortcuts for configuration window:\n"
+		    "0: Disable all audio\n"
+		    "1: 8-bit mono\n"
+		    "2: 8-bit stereo\n"
+		    "3: 16-bit mono\n"
+		    "4: 16-bit stereo\n"
+		    "5: 24-bit mono\n"
+		    "6: 24-bit stereo\n"
+		    "7: 32-bit mono\n"
+		    "8: 32-bit stereo\n"));
+
 		up_fmt.setTitle(tr("Uplink audio format"));
 		down_fmt.setTitle(tr("Downlink audio format"));
 
@@ -101,6 +113,7 @@ public:
 		connect(&up_fmt, SIGNAL(valueChanged()), this, SLOT(handle_up_config()));
 		connect(&down_fmt, SIGNAL(valueChanged()), this, SLOT(handle_down_config()));
 	};
+	void keyPressEvent(QKeyEvent *);
 	QGridLayout gl;
 	HpsJamConfigFormat up_fmt;
 	HpsJamConfigFormat down_fmt;

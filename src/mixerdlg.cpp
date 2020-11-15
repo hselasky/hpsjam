@@ -25,6 +25,7 @@
 
 #include <QMutexLocker>
 #include <QMouseEvent>
+#include <QKeyEvent>
 #include <QPainter>
 
 #include "hpsjam.h"
@@ -307,6 +308,7 @@ HpsJamStrip :: handleEQShow()
 {
 	w_eq.setWindowTitle(QString("HPS JAM equalizer for ") + title());
 	w_eq.show();
+	w_eq.edit.setFocus();
 }
 
 void
@@ -363,6 +365,61 @@ HpsJamStrip :: handleMute()
 }
 
 void
+HpsJamMixer :: keyPressEvent(QKeyEvent *event)
+{
+	switch (event->key()) {
+	case Qt::Key_L:
+		self_strip.w_pan.b[0].animateClick();
+		break;
+	case Qt::Key_R:
+		self_strip.w_pan.b[1].animateClick();
+		break;
+	case Qt::Key_M:
+		self_strip.b_mute.animateClick();
+		break;
+	case Qt::Key_I:
+		self_strip.b_inv.animateClick();
+		break;
+	case Qt::Key_1:
+		self_strip.w_slider.setValue(0.0f / 8.0f);
+		break;
+	case Qt::Key_2:
+		self_strip.w_slider.setValue(1.0f / 8.0f);
+		break;
+	case Qt::Key_3:
+		self_strip.w_slider.setValue(2.0f / 8.0f);
+		break;
+	case Qt::Key_4:
+		self_strip.w_slider.setValue(3.0f / 8.0f);
+		break;
+	case Qt::Key_5:
+		self_strip.w_slider.setValue(4.0f / 8.0f);
+		break;
+	case Qt::Key_6:
+		self_strip.w_slider.setValue(5.0f / 8.0f);
+		break;
+	case Qt::Key_7:
+		self_strip.w_slider.setValue(6.0f / 8.0f);
+		break;
+	case Qt::Key_8:
+		self_strip.w_slider.setValue(7.0f / 8.0f);
+		break;
+	case Qt::Key_9:
+		self_strip.w_slider.setValue(8.0f / 8.0f);
+		break;
+	case Qt::Key_E:
+		self_strip.b_eq.animateClick();
+		break;
+	case Qt::Key_P:
+		if (my_peer != 0)
+			my_peer->b_mute.animateClick();
+		break;
+	default:
+		break;
+	}
+}
+
+void
 HpsJamMixer :: handle_fader_level(uint8_t mix, uint8_t index, float left, float right)
 {
 	/* make scale logarithmic */
@@ -386,6 +443,7 @@ HpsJamMixer :: handle_fader_self(uint8_t mix, uint8_t index)
 {
 	switch (mix) {
 	case 0:
+		my_peer = peer_strip + index;
 		break;
 	default:
 		break;

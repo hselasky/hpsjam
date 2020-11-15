@@ -25,6 +25,7 @@
 
 #include <QMessageBox>
 #include <QMutexLocker>
+#include <QKeyEvent>
 
 #include "hpsjam.h"
 #include "eqdlg.h"
@@ -34,13 +35,22 @@
 HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
     gl_spec(&g_spec), gl_control(&g_control)
 {
+	setAccessibleDescription(tr("List of key shortcuts for connect window:\n"
+		"ALT+U: Show default ISO template filter\n"
+		"ALT+L: Show lowpass filter\n"
+		"ALT+B: Show bandpass filter\n"
+		"ALT+Y: Show long delay filter\n"
+		"ALT+D: Show disabled filter\n"
+		"ALT+C or Escape: Close this window\n"
+		"ALT+A: Apply currently selected filter\n"));
+
 	setWindowTitle(QString("HPS JAM Equalizer"));
 	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
 
 	g_spec.setTitle(tr("Filter specification"));
 	g_control.setTitle(tr("Control"));
 
-	b_defaults.setText(tr("Defaults"));
+	b_defaults.setText(tr("Defa&ults"));
 	b_lowpass.setText(tr("&LowPass"));
 	b_highpass.setText(tr("&HighPass"));
 	b_bandpass.setText(tr("&BandPass"));
@@ -184,6 +194,14 @@ HpsJamEqualizer :: handle_apply()
 		QMessageBox::information(this, tr("EQUALIZER"),
                     tr("Number of characters %1 in\n"
 		       "filter specification is greater than 255!\n").arg(len));
+	}
+}
+
+void
+HpsJamEqualizer :: keyPressEvent(QKeyEvent *key)
+{
+	if (key->key() == Qt::Key_Escape) {
+		hide();
 	}
 }
 

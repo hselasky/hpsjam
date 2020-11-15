@@ -179,8 +179,22 @@ class HpsJamMixer : public QScrollArea {
 	Q_OBJECT;
 public:
 	HpsJamMixer() : gl(&w_main) {
+		my_peer = 0;
 		setWidgetResizable(true);
+		setAccessibleDescription(tr("List of key shortcuts for local balance fader:\n"
+		    "L: Pan to left\n"
+		    "R: Pan to right\n"
+		    "M: Mute all locally transmitted audio\n"
+		    "I: Negate or invert locally transmitted audio\n"
+		    "E: Show equalizer dialog\n"
+		    "P: Mute myself from received remote audio\n"
+		    "1 to 9: Select balance between local and remote audio\n"
+		    "1: Only hear remote audio\n"
+		    "4: Hear both remote and local audio\n"
+		    "9: Only hear local microphoneaudio\n"));
+
 		self_strip.setTitle(QString("Local Balance"));
+		self_strip.b_solo.setEnabled(false);
 		connect(&self_strip, SIGNAL(eqChanged(int)), this, SLOT(handle_local_eq_changed()));
 		self_strip.id = 0;
 		gl.addWidget(&self_strip, 0, 0);
@@ -198,13 +212,16 @@ public:
 		}
 		setWidget(&w_main);
 	};
+	void keyPressEvent(QKeyEvent *event);
 	QWidget w_main;
 	QGridLayout gl;
 	HpsJamStrip self_strip;
 	HpsJamStrip peer_strip[HPSJAM_PEERS_MAX];
+	HpsJamStrip *my_peer;
 	void enable(unsigned index);
 	void disable(unsigned index);
 	void init() {
+		my_peer = 0;
 		for (unsigned x = 0; x != HPSJAM_PEERS_MAX; x++) {
 			peer_strip[x].init();
 			peer_strip[x].hide();
