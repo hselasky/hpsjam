@@ -32,20 +32,13 @@
 #include "chatdlg.h"
 #include "connectdlg.h"
 #include "statsdlg.h"
+#include "help.h"
 #include "peer.h"
 
 HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
     b_mixer(tr("&MIXER")), b_lyrics(tr("&LYRICS")), b_chat(tr("CH&AT")),
-    b_config(tr("CON&FIG")), b_stats(tr("&STATS"))
+    b_config(tr("CON&FIG")), b_stats(tr("&STATS")), b_help(tr("&HELP"))
 {
-	setAccessibleDescription(tr("List of key shortcuts for window selection:\n"
-	    "ALT+E: Select connect window\n"
-	    "ALT+M: Select mixer window\n"
-	    "ALT+L: Select lyrics window\n"
-	    "ALT+A: Select chat window\n"
-	    "ALT+F: Select config window\n"
-	    "ALT+S: Select statistics window\n"));
-
 	setWindowTitle(HPSJAM_WINDOW_TITLE " Client");
 	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
 
@@ -55,6 +48,7 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 	connect(&b_chat, SIGNAL(released()), this, SLOT(handle_chat()));
 	connect(&b_config, SIGNAL(released()), this, SLOT(handle_config()));
 	connect(&b_stats, SIGNAL(released()), this, SLOT(handle_stats()));
+	connect(&b_help, SIGNAL(released()), this, SLOT(handle_help()));
 
 	gl.addWidget(&b_connect, 0,0);
 	gl.addWidget(&b_mixer, 0,1);
@@ -62,10 +56,10 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 	gl.addWidget(&b_chat, 0,3);
 	gl.addWidget(&b_config, 0,4);
 	gl.addWidget(&b_stats, 0,5);
-	gl.setColumnStretch(6,1);
-	gl.addWidget(&w_stack, 1,0,1,7);
+	gl.addWidget(&b_help, 0,6);
+	gl.addWidget(&w_stack, 1,0,1,8);
+	gl.setColumnStretch(7,1);
 	gl.setRowStretch(1,1);
-	gl.setColumnStretch(6,1);
 
 	w_connect = new HpsJamConnect();
 	w_mixer = new HpsJamMixer();
@@ -73,6 +67,7 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 	w_chat = new HpsJamChat();
 	w_config = new HpsJamConfig();
 	w_stats = new HpsJamStats();
+	w_help = new HpsJamHelp();
 
 	eq_copy = 0;
 
@@ -82,6 +77,7 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 	w_stack.addWidget(w_chat);
 	w_stack.addWidget(w_config);
 	w_stack.addWidget(w_stats);
+	w_stack.addWidget(w_help);
 
 	connect(&w_config->lyrics_fmt.b_font_select, SIGNAL(released()),
 		w_lyrics, SLOT(handle_font_dialog()));
@@ -148,6 +144,13 @@ HpsJamClient :: handle_stats()
 {
 	w_stack.setCurrentWidget(w_stats);
 	w_stats->setFocus();
+}
+
+void
+HpsJamClient :: handle_help()
+{
+	w_stack.setCurrentWidget(w_help);
+	w_help->setFocus();
 }
 
 void

@@ -181,17 +181,6 @@ public:
 	HpsJamMixer() : gl(&w_main) {
 		my_peer = 0;
 		setWidgetResizable(true);
-		setAccessibleDescription(tr("List of key shortcuts for local balance fader:\n"
-		    "L: Pan to left\n"
-		    "R: Pan to right\n"
-		    "M: Mute all locally transmitted audio\n"
-		    "I: Negate or invert locally transmitted audio\n"
-		    "E: Show equalizer dialog\n"
-		    "P: Mute myself from received remote audio\n"
-		    "1 to 9: Select balance between local and remote audio\n"
-		    "1: Only hear remote audio\n"
-		    "4: Hear both remote and local audio\n"
-		    "9: Only hear local microphoneaudio\n"));
 
 		self_strip.setTitle(QString("Local Balance"));
 		self_strip.b_solo.setEnabled(false);

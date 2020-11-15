@@ -110,11 +110,6 @@ HpsJamConnectList :: selectionChanged(const QItemSelection &cur, const QItemSele
 
 HpsJamConnect :: HpsJamConnect() : gl(this)
 {
-	setAccessibleDescription(tr("List of key shortcuts for connect window:\n"
-	    "ALT+C: Connect to selected server\n"
-	    "ALT+D: Disconnect from server\n"
-	    "ALT+R: Refresh server list\n"));
-
 	gl.addWidget(&icon, 0,0);
 	gl.addWidget(&name, 1,0);
 	gl.addWidget(&password, 2,0);

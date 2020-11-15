@@ -35,15 +35,6 @@
 HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
     gl_spec(&g_spec), gl_control(&g_control)
 {
-	setAccessibleDescription(tr("List of key shortcuts for connect window:\n"
-		"ALT+U: Show default ISO template filter\n"
-		"ALT+L: Show lowpass filter\n"
-		"ALT+B: Show bandpass filter\n"
-		"ALT+Y: Show long delay filter\n"
-		"ALT+D: Show disabled filter\n"
-		"ALT+C or Escape: Close this window\n"
-		"ALT+A: Apply currently selected filter\n"));
-
 	setWindowTitle(QString("HPS JAM Equalizer"));
 	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
 

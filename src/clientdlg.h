@@ -41,6 +41,7 @@ class HpsJamChat;
 class HpsJamConfig;
 class HpsJamStats;
 class HpsJamEqualizer;
+class HpsJamHelp;
 
 class HpsJamClientButton : public QPushButton {
 	Q_OBJECT;
@@ -73,6 +74,7 @@ public:
 	HpsJamClientButton b_chat;
 	HpsJamClientButton b_config;
 	HpsJamClientButton b_stats;
+	HpsJamClientButton b_help;
 	QTimer watchdog;
 
 	HpsJamConnect *w_connect;
@@ -82,6 +84,7 @@ public:
 	HpsJamConfig *w_config;
 	HpsJamStats *w_stats;
 	HpsJamEqualizer *eq_copy;
+	HpsJamHelp *w_help;
 
 	void closeEvent(QCloseEvent *event);
 
@@ -92,6 +95,7 @@ public slots:
 	void handle_chat();
 	void handle_config();
 	void handle_stats();
+	void handle_help();
 	void handle_watchdog();
 };
 
