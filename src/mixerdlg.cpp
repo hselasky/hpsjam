@@ -622,15 +622,15 @@ void
 HpsJamMixer :: enable(unsigned index)
 {
 	peer_strip[index].show();
-	if (!hpsjam_client->b_mixer.isVisible())
+	if (!hpsjam_client->w_mixer->isVisible())
 		hpsjam_client->b_mixer.setFlashing();
-};
+}
 
 void
 HpsJamMixer :: disable(unsigned index)
 {
 	peer_strip[index].init();
 	peer_strip[index].hide();
-	if (!hpsjam_client->b_mixer.isVisible())
+	if (!hpsjam_client->w_mixer->isVisible())
 		hpsjam_client->b_mixer.setFlashing();
-};
+}
