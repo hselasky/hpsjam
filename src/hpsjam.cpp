@@ -40,6 +40,7 @@
 unsigned hpsjam_num_server_peers;
 unsigned hpsjam_udp_buffer_size;
 uint64_t hpsjam_server_passwd;
+uint64_t hpsjam_mixer_passwd;
 class hpsjam_server_peer *hpsjam_server_peers;
 class hpsjam_client_peer *hpsjam_client_peer;
 class HpsJamClient *hpsjam_client;
@@ -58,6 +59,7 @@ static const struct option hpsjam_opts[] = {
 	{ "server", no_argument, NULL, 's' },
 	{ "peers", required_argument, NULL, 'P' },
 	{ "password", required_argument, NULL, 'K' },
+	{ "mixer-password", required_argument, NULL, 'M' },
 	{ "daemon", no_argument, NULL, 'B' },
 #ifdef HAVE_JACK_AUDIO
 	{ "jacknoconnect", no_argument, NULL, 'J' },
@@ -70,12 +72,13 @@ static void
 usage(void)
 {
         fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_IPV4_PORT_STR "] "
-		"[--daemon] [--password <64_bit_hex_password>] \\\n"
+		"[--daemon] [--password <64_bit_hexadecimal_password>] \\\n"
 #ifdef HAVE_JACK_AUDIO
 		"	[--jacknoconnect] [--jackname <name>] \\\n"
 #endif
 		"	[--ipv4-port " HPSJAM_DEFAULT_IPV4_PORT_STR "] \\\n"
 		"	[--ipv6-port " HPSJAM_DEFAULT_IPV6_PORT_STR "] \\\n"
+		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
 		"	[--welcome-msg-file <filename> \\\n"
 		"	[--cli-port <portnumber>]\n");
         exit(1);
@@ -92,7 +95,7 @@ main(int argc, char **argv)
 	bool jackconnect = true;
 	const char *jackname = "hpsjam";
 
-	while ((c = getopt_long_only(argc, argv, "q:p:sP:hBJ:n:K:t:u:w:", hpsjam_opts, NULL)) != -1) {
+	while ((c = getopt_long_only(argc, argv, "M:q:p:sP:hBJ:n:K:t:u:w:", hpsjam_opts, NULL)) != -1) {
 		switch (c) {
 		case 'w':
 			hpsjam_welcome_message_file = optarg;
@@ -139,6 +142,10 @@ main(int argc, char **argv)
 			break;
 		case 'K':
 			if (sscanf(optarg, "%llx", (long long *)&hpsjam_server_passwd) != 1)
+				usage();
+			break;
+		case 'M':
+			if (sscanf(optarg, "%llx", (long long *)&hpsjam_mixer_passwd) != 1)
 				usage();
 			break;
 		case ' ':

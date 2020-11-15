@@ -63,6 +63,7 @@ public:
 	float out_peak;
 	uint8_t output_fmt;
 	bool valid;
+	bool allow_mixer_access;
 
 	void init() {
 		address.clear();
@@ -83,6 +84,7 @@ public:
 		pan = 0.0f;
 		out_peak = 0.0f;
 		valid = false;
+		allow_mixer_access = false;
 	};
 
 	size_t serverID();

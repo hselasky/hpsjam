@@ -64,6 +64,7 @@ class QMutex;
 struct hpsjam_socket_address;
 
 extern uint64_t hpsjam_server_passwd;
+extern uint64_t hpsjam_mixer_passwd;
 extern unsigned hpsjam_num_server_peers;
 extern unsigned hpsjam_udp_buffer_size;
 extern class hpsjam_server_peer *hpsjam_server_peers;

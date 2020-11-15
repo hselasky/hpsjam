@@ -600,6 +600,8 @@ hpsjam_server_peer :: audio_export()
 				}
 				break;
 			case HPSJAM_TYPE_FADER_GAIN_REQUEST:
+				if (allow_mixer_access == false)
+					break;
 				if (ptr->getFaderValue(mix, index, temp, num)) {
 					assert(num <= HPSJAM_MAX_PKT);
 					if (mix != 0 || num <= 0)
@@ -630,6 +632,8 @@ hpsjam_server_peer :: audio_export()
 				}
 				break;
 			case HPSJAM_TYPE_FADER_PAN_REQUEST:
+				if (allow_mixer_access == false)
+					break;
 				if (ptr->getFaderValue(mix, index, temp, num)) {
 					assert(num <= HPSJAM_MAX_PKT);
 					if (mix != 0 || num <= 0)
@@ -660,6 +664,8 @@ hpsjam_server_peer :: audio_export()
 				}
 				break;
 			case HPSJAM_TYPE_FADER_EQ_REQUEST:
+				if (allow_mixer_access == false)
+					break;
 				if (ptr->getFaderData(mix, index, &data, num)) {
 					if (mix != 0 || num <= 0)
 						break;
