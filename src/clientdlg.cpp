@@ -214,6 +214,9 @@ HpsJamClientButton :: paintEvent(QPaintEvent *event)
 
 	if (flashing && flashstate) {
 		QPainter paint(this);
-		paint.fillRect(QRect(0,0,width(),height()), fg);
+
+		paint.setBrush(QBrush());
+		paint.setPen(QPen(QBrush(fg), 2, Qt::SolidLine, Qt::RoundCap));
+		paint.drawRect(QRect(0,0,width(),height()));
 	}
 }
