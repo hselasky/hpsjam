@@ -1004,13 +1004,13 @@ hpsjam_client_peer :: tick()
 				break;
 			case HPSJAM_TYPE_FADER_NAME_REPLY:
 				if (ptr->getFaderData(mix, index, &data, num)) {
-					QByteArray t(data, num);
 					if (mix != 0)
 						break;
 					if (self_index == -1) {
 						self_index = index;
 						emit receivedFaderSelf(mix, index);
 					}
+					QByteArray t(data, num);
 					emit receivedFaderName(mix, index, new QString(QString::fromUtf8(t)));
 				}
 				break;
