@@ -23,6 +23,8 @@
  * SUCH DAMAGE.
  */
 
+#include <QPainter>
+
 #include "hpsjam.h"
 
 #include "clientdlg.h"
@@ -189,16 +191,29 @@ HpsJamClient :: closeEvent(QCloseEvent *event)
 void
 HpsJamClientButton :: handle_timeout()
 {
-	if (flashing == false || isFlat() == true)
-		setFlat(false);
-	else
-		setFlat(true);
+	if (flashing) {
+		flashstate = !flashstate;
+		update();
+	}
 }
 
 void
 HpsJamClientButton :: handle_released()
 {
 	flashing = false;
-	setFlat(false);
 	watchdog.stop();
+	update();
+}
+
+void
+HpsJamClientButton :: paintEvent(QPaintEvent *event)
+{
+	static const QColor fg(255,255,255,192);
+
+	QPushButton::paintEvent(event);
+
+	if (flashing && flashstate) {
+		QPainter paint(this);
+		paint.fillRect(QRect(0,0,width(),height()), fg);
+	}
 }

@@ -48,14 +48,19 @@ class HpsJamClientButton : public QPushButton {
 public:
 	HpsJamClientButton(const QString &str) : QPushButton(str) {
 		flashing = false;
+		flashstate = false;
 		connect(&watchdog, SIGNAL(timeout()), this, SLOT(handle_timeout()));
 		connect(this, SIGNAL(released()), this, SLOT(handle_released()));
 	};
 	bool flashing;
+	bool flashstate;
 	QTimer watchdog;
+
+	void paintEvent(QPaintEvent *);
 	void setFlashing() {
 		watchdog.start(1000);
 		flashing = true;
+		flashstate = false;
 	};
 public slots:
 	void handle_timeout();
