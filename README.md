@@ -11,7 +11,7 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
       <li>highpass</li>
       <li>lowpass</li>
       <li>bandpass</li>
-      <li>delay (With this feature you can hear yourself with an "average" delay that fits the real one from the server. This provides a clean local signal without jitter, while maintaining the delay and thus being "in sync" with fellow musicians when playing/jamming). Usage: click "MIXER" then "EQ DELAY" then "Long Delay" and then "Apply". This will apply the calculated average. You may want to click the "Long Delay" button several times before hitting apply, so that you can choose the appropiate delay.</li>
+      <li>delay - With this feature you can hear yourself with an "average" delay that fits the real one from the server. This provides a clean local signal without jitter, while maintaining the delay and thus being "in sync" with fellow musicians when playing/jamming. Usage: click "MIXER" then "EQ DELAY" then "Long Delay" and then "Apply". This will apply the calculated average. You may want to click the "Long Delay" button several times before hitting apply, so that you can choose the appropiate delay. Credits go to Nils for suggesting it.</li>
     </ul>
   </li>
 </ul>
