@@ -58,7 +58,6 @@ struct hpsjam_jitter {
 		if (stats[index] >= HPSJAM_MAX_JITTER) {
 			unsigned mask = 0;
 			unsigned start;
-			uint8_t min_x;
 
 			for (uint8_t x = 0; x != HPSJAM_MAX_JITTER; x++) {
 				stats[x] /= 2.0f;
@@ -66,12 +65,9 @@ struct hpsjam_jitter {
 			}
 
 			start = mask;
-			min_x = 0;
 			for (uint8_t x = 0; x != HPSJAM_MAX_JITTER; x++) {
-				if (start > mask) {
+				if (start > mask)
 					start = mask;
-					min_x = x;
-				}
 				if (mask & 1) {
 					mask >>= 1;
 					mask |= 1U << (HPSJAM_MAX_JITTER - 1);
