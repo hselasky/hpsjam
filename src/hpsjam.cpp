@@ -73,14 +73,15 @@ usage(void)
 {
         fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_IPV4_PORT_STR "] "
 		"[--daemon] [--password <64_bit_hexadecimal_password>] \\\n"
-#ifdef HAVE_JACK_AUDIO
-		"	[--jacknoconnect] [--jackname <name>] \\\n"
-#endif
 		"	[--ipv4-port " HPSJAM_DEFAULT_IPV4_PORT_STR "] \\\n"
 		"	[--ipv6-port " HPSJAM_DEFAULT_IPV6_PORT_STR "] \\\n"
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
 		"	[--welcome-msg-file <filename> \\\n"
 		"	[--cli-port <portnumber>]\n");
+#ifdef HAVE_JACK_AUDIO
+		"	[--jacknoconnect] [--jackname <name>] \\\n"
+#endif
+
         exit(1);
 }
 
