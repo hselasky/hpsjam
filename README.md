@@ -3,14 +3,18 @@
 An online audio collaboration tool for low latency audio with lyrics and chat support.
 
 # Features
-- uncompressed audio transmission in 1CH@8bit up to 2CH@32bit. This results in crystal clear high-end audio over the internet!!!
-- additional protection against jitter by redundancy in packet transmission
-- local audio effects:
--- highpass
--- lowpass
--- bandpass
--- delay (with this feature you can hear yourself with an "average" delay that fits the real one from the server. This provides a clean local signal without jitter, while maintaining the delay and thus being "in sync" with fellow musicians when playing/jamming). Usage: click MIXER -> EQ DELAY -> "Long Delay" and then "apply". This will apply the calculated average. You may want to click the "Long Delay" button several times before hitting apply, so that you can chosse the appropiate delay.
-
+<ul>
+  <li>uncompressed audio transmission in 1 channel 8-bit up to 2 channels 32-bit. This results in crystal clear high-end audio over the internet!</li>
+  <li>additional protection against jitter by redundancy in packet transmission</li>
+  <li>local audio effects:
+    <ul>
+      <li>highpass</li>
+      <li>lowpass</li>
+      <li>bandpass</li>
+      <li>delay (With this feature you can hear yourself with an "average" delay that fits the real one from the server. This provides a clean local signal without jitter, while maintaining the delay and thus being "in sync" with fellow musicians when playing/jamming). Usage: click "MIXER" then "EQ DELAY" then "Long Delay" and then "Apply". This will apply the calculated average. You may want to click the "Long Delay" button several times before hitting apply, so that you can choose the appropiate delay)</li>
+    </ul>
+  </li>
+</ul>
 
 ## How to build
 <ul>
@@ -24,11 +28,19 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
   <li> QT GUI</li>
   <li> QT widgets</li>
   <li> QT SVG renderer</li>
-  <li>FFTW3</li>
+  <li> FFTW3 </li>
+  <li> JACK </li>
 </ul>
 
-Note: for those on Linux that have Jamulus already installed, you need to install additionally: libfftw3-dev and libqt5svg5-dev. This command would do the trick:
+<b>NOTE:</b> for those on Linux that have Jamulus already installed, you need to install additionally:
+<ul>
+  <li>libfftw3-dev</li>
+  <li>libqt5svg5-dev</li>
+</ul>
+This command should do the trick:
+<pre>
 sudo apt-get install libfftw3-dev libqt5svg5-dev
+</pre>
 
 ## Example how to start the client
 <pre>
