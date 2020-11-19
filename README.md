@@ -61,7 +61,7 @@ HpsJam -h
 
 ## Supported platforms
 <ul>
-  <li>FreeBSD</li>
+  <li>FreeBSD <A HREF="https://www.freshports.org/audio/hpsjam">hpsjam port</A></li>
   <li>Linux</li>
   <li>MacOSX <A HREF="http://home.selasky.org/privat/HpsJam.dmg">Binary build here</A></li>
 </ul>
