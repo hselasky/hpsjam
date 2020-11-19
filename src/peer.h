@@ -91,6 +91,7 @@ public:
 
 	void audio_export();
 	void audio_import();
+	void audio_mixing();
 	void send_welcome_message();
 
 	hpsjam_server_peer() {
