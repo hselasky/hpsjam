@@ -18,8 +18,10 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
 
 ## How to build
 <ul>
-  <li>qmake</li>
-  <li>make</li>
+  <li>qmake PREFIX=/usr # Linux</li>
+  <li>qmake PREFIX=/usr/local # FreeBSD</li>
+  <li>make all</li>
+  <li>make install</li>
 </ul>
 
 ## Dependencies
