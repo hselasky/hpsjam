@@ -46,6 +46,7 @@ static void *
 hpsjam_socket_receive(void *arg)
 {
 	struct hpsjam_socket_address *ps = (struct hpsjam_socket_address *)arg;
+	struct hpsjam_socket_address self;
 	int tries = (hpsjam_num_server_peers ? 1 : 128);
 	union hpsjam_frame frame;
 	ssize_t ret;
@@ -57,7 +58,10 @@ hpsjam_socket_receive(void *arg)
 	ps->setup();
 
 	ret = ps->socket(hpsjam_udp_buffer_size);
-	assert(ret > -1);
+	if (ret < 0) {
+		warn("Cannot allocate UDP socket for payload");
+		goto done;
+	}
 
 	while (tries--) {
 		ret = ps->bind();
@@ -67,7 +71,7 @@ hpsjam_socket_receive(void *arg)
 	}
 
 	/* protect against receiving packets from ourself */
-	const struct hpsjam_socket_address self = *ps;
+	self = *ps;
 
 	if (tries < 0) {
 		warn("Cannot bind to IP port");
@@ -80,7 +84,7 @@ hpsjam_socket_receive(void *arg)
 			hpsjam_peer_receive(*ps, frame);
 		}
 	}
-
+done:
 	ps->cleanup();
 
 	return (NULL);
@@ -100,7 +104,10 @@ hpsjam_cli_receive(void *arg)
 	ps->setup();
 
 	ret = ps->socket(16384);
-	assert(ret > -1);
+	if (ret < 0) {
+		warn("Cannot allocate UDP socket for command line interface");
+		goto done;
+	}
 
 	switch (ps->v4.sin_family) {
 	case AF_INET:
