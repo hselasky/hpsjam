@@ -47,6 +47,9 @@
 #define	HPSJAM_BIT_MUTE (1 << 0)
 #define	HPSJAM_BIT_SOLO (1 << 1)
 #define	HPSJAM_BIT_INVERT (1 << 2)
+#define	HPSJAM_BIT_GAIN_SET(x) (((x) & 31) << 3)
+#define	HPSJAM_BIT_GAIN_GET(x) (((x) >> 3) & 31)
+
 #define	HPSJAM_NO_SIGNAL(a,b) do {	\
   a.blockSignals(true);			\
   a.b;					\

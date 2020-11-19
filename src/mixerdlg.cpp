@@ -99,6 +99,7 @@ HpsJamSlider :: HpsJamSlider()
 	start = QPoint(0,0);
 	value = 0;
 	pan = 0;
+	gain = 0;
 	level[0] = 0;
 	level[1] = 0;
 	active = false;
@@ -121,6 +122,15 @@ HpsJamSlider :: setPan(float _pan)
 {
 	if (_pan != pan) {
 		pan = _pan;
+		update();
+	}
+}
+
+void
+HpsJamSlider :: setGain(int _gain)
+{
+	if (_gain != gain) {
+		gain = _gain;
 		update();
 	}
 }
@@ -150,6 +160,24 @@ HpsJamSlider :: setLevel(float _left, float _right)
 }
 
 void
+HpsJamSlider :: adjustGain(int delta)
+{
+	if (delta == 0)
+		return;
+
+	int temp = gain + delta;
+
+	/* range check value */
+	if (temp < -16)
+		temp = -16;
+	else if (temp > 15)
+		temp = 15;
+
+	gain = temp;
+	update();
+}
+
+void
 HpsJamSlider :: paintEvent(QPaintEvent *event)
 {
 	QRect frame(0, 0, width(), height());
@@ -159,12 +187,15 @@ HpsJamSlider :: paintEvent(QPaintEvent *event)
 	paint.setRenderHints(QPainter::Antialiasing, 1);
 
 	/* select foreground color */
-	const QColor fg(0, 0, 0);
+	static const QColor fg(0, 0, 0);
 
 	/* select background color */
-	const QColor bg(255, 255, 255);
+	static const QColor bg(255, 255, 255);
 
-	const QColor lc[3] = {
+	/* select gain color */
+	static const QColor gc(192, 192, 192);
+
+	static const QColor lc[3] = {
 		QColor(0, 255, 0),
 		QColor(255, 255, 0),
 		QColor(255, 0, 0),
@@ -175,6 +206,12 @@ HpsJamSlider :: paintEvent(QPaintEvent *event)
 	const unsigned dots = height() / dsize;
 	if (dots < 2)
 		return;
+
+	/* compute height of gain bar */
+	int gh = height() - (height() * (gain + 16)) / 31;
+	paint.fillRect(QRect(0, height() / 2 - 2, width(), 1), gc);
+	paint.fillRect(QRect(0, gh, dsize, height() - gh), gc);
+	paint.fillRect(QRect(0, gh, dsize, 2), fg);
 
 	const unsigned dist[3] = {
 		dots - (dots + 7) / 8 - (dots + 4) / 5,
@@ -276,6 +313,18 @@ HpsJamPan :: handle_pan_right()
 	emit valueChanged(+1);
 }
 
+void
+HpsJamGain :: handle_gain_up()
+{
+	emit valueChanged(+1);
+}
+
+void
+HpsJamGain :: handle_gain_down()
+{
+	emit valueChanged(-1);
+}
+
 HpsJamStrip :: HpsJamStrip() : gl(this),
     b_eq(tr("EQ\nDELAY")),
     b_inv(tr("INV")),
@@ -286,6 +335,7 @@ HpsJamStrip :: HpsJamStrip() : gl(this),
 
 	setMaximumWidth(128);
 
+	connect(&w_gain, SIGNAL(valueChanged(int)), this, SLOT(handleGain(int)));
 	connect(&w_pan, SIGNAL(valueChanged(int)), this, SLOT(handlePan(int)));
 	connect(&w_slider, SIGNAL(valueChanged()), this, SLOT(handleSlider()));
 	connect(&b_eq, SIGNAL(released()), this, SLOT(handleEQShow()));
@@ -298,11 +348,12 @@ HpsJamStrip :: HpsJamStrip() : gl(this),
 	gl.addWidget(&w_name, 1,0, Qt::AlignCenter);
 	gl.addWidget(&b_eq, 2,0);
 	gl.addWidget(&b_inv, 3,0);
-	gl.addWidget(&w_pan, 4,0);
-	gl.addWidget(&w_slider, 5,0);
-	gl.setRowStretch(5,1);
-	gl.addWidget(&b_solo, 6,0);
-	gl.addWidget(&b_mute, 7,0);
+	gl.addWidget(&w_gain, 4,0);
+	gl.addWidget(&w_pan, 5,0);
+	gl.addWidget(&w_slider, 6,0);
+	gl.setRowStretch(6,1);
+	gl.addWidget(&b_solo, 7,0);
+	gl.addWidget(&b_mute, 8,0);
 }
 
 void
@@ -331,6 +382,15 @@ HpsJamStrip :: handlePan(int delta)
 	w_slider.adjustPan(delta / 16.0f);
 
 	emit panChanged(id);
+}
+
+void
+HpsJamStrip :: handleGain(int delta)
+{
+	w_slider.adjustGain(delta);
+	w_gain.setValue(w_slider.gain);
+
+	emit bitsChanged(id);
 }
 
 void

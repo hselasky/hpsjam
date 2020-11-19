@@ -825,6 +825,24 @@ hpsjam_send_levels()
 		group = 0;
 }
 
+static inline float
+float_gain(float value, uint32_t gain)
+{
+	return (value * gain) * (1.0f / 256.0f);
+}
+
+static uint32_t
+get_gain_from_bits(uint8_t value)
+{
+	int32_t temp = HPSJAM_BIT_GAIN_GET(value);
+
+	/* sign extend to fit float exponent */
+	temp <<= (32 - 5);
+	temp >>= (32 - 5);
+
+	return (powf(256.0f, (temp + 16) / 16.0f));
+}
+
 void
 hpsjam_server_peer :: audio_mixing()
 {
@@ -840,18 +858,19 @@ hpsjam_server_peer :: audio_mixing()
 
 	for (unsigned y = 0; y != hpsjam_num_server_peers; y++) {
 		const class hpsjam_server_peer &other = hpsjam_server_peers[y];
+		const uint32_t gain = get_gain_from_bits(bits[y]);
 
 		if (bits[y] & HPSJAM_BIT_MUTE)
 			continue;
 		if (bits[y] & HPSJAM_BIT_INVERT) {
 			for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
-				out_audio[0][z] -= other.tmp_audio[0][z];
-				out_audio[1][z] -= other.tmp_audio[1][z];
+				out_audio[0][z] -= float_gain(other.tmp_audio[0][z], gain);
+				out_audio[1][z] -= float_gain(other.tmp_audio[1][z], gain);
 			}
 		} else {
 			for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
-				out_audio[0][z] += other.tmp_audio[0][z];
-				out_audio[1][z] += other.tmp_audio[1][z];
+				out_audio[0][z] += float_gain(other.tmp_audio[0][z], gain);
+				out_audio[1][z] += float_gain(other.tmp_audio[1][z], gain);
 			}
 		}
 	}
@@ -860,18 +879,19 @@ hpsjam_server_peer :: audio_mixing()
 do_solo:
 	for (unsigned y = 0; y != hpsjam_num_server_peers; y++) {
 		const class hpsjam_server_peer &other = hpsjam_server_peers[y];
+		const uint32_t gain = get_gain_from_bits(bits[y]);
 
 		if (~bits[y] & HPSJAM_BIT_SOLO)
 			continue;
 		if (bits[y] & HPSJAM_BIT_INVERT) {
 			for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
-				out_audio[0][z] -= other.tmp_audio[0][z];
-				out_audio[1][z] -= other.tmp_audio[1][z];
+				out_audio[0][z] -= float_gain(other.tmp_audio[0][z], gain);
+				out_audio[1][z] -= float_gain(other.tmp_audio[1][z], gain);
 			}
 		} else {
 			for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
-				out_audio[0][z] += other.tmp_audio[0][z];
-				out_audio[1][z] += other.tmp_audio[1][z];
+				out_audio[0][z] += float_gain(other.tmp_audio[0][z], gain);
+				out_audio[1][z] += float_gain(other.tmp_audio[1][z], gain);
 			}
 		}
 	}

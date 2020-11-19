@@ -78,10 +78,13 @@ public:
 	float value;
 	float pan;
 	float level[2];
+	int gain;
 
 	void setValue(float);
 	void setPan(float);
+	void setGain(int);
 	void adjustPan(float);
+	void adjustGain(int);
 	void setLevel(float, float);
 
 	void paintEvent(QPaintEvent *);
@@ -99,11 +102,8 @@ public:
 	QPushButton b[2];
 
 	HpsJamPan() : gl(this) {
-		int w = b[0].fontMetrics().boundingRect(QString("_L_R_")).width();
 		b[0].setText(QString(" L "));
 		b[1].setText(QString(" R "));
-		b[0].setFixedWidth(w);
-		b[1].setFixedWidth(w);
 		connect(b + 0, SIGNAL(released()), this, SLOT(handle_pan_left()));
 		connect(b + 1, SIGNAL(released()), this, SLOT(handle_pan_right()));
 		gl.addWidget(b + 0,0,0);
@@ -113,6 +113,34 @@ public:
 public slots:
 	void handle_pan_left();
 	void handle_pan_right();
+signals:
+	void valueChanged(int);
+};
+
+class HpsJamGain : public QWidget {
+	Q_OBJECT;
+public:
+	QGridLayout gl;
+	QPushButton b[2];
+
+	HpsJamGain() : gl(this) {
+		setValue(0);
+		b[0].setText(QString("+++"));
+		b[1].setText(QString("---"));
+		connect(b + 0, SIGNAL(released()), this, SLOT(handle_gain_up()));
+		connect(b + 1, SIGNAL(released()), this, SLOT(handle_gain_down()));
+		gl.addWidget(b + 0,0,0);
+		gl.addWidget(b + 1,0,1);
+	};
+
+	void setValue(int x) {
+		b[0].setEnabled(x < 15);
+		b[1].setEnabled(x > -16);
+	};
+
+public slots:
+	void handle_gain_up();
+	void handle_gain_down();
 signals:
 	void valueChanged(int);
 };
@@ -127,6 +155,7 @@ public:
 	QGridLayout gl;
 	QLabel w_name;
 	HpsJamIcon w_icon;
+	HpsJamGain w_gain;
 	HpsJamPan w_pan;
 	HpsJamSlider w_slider;
 	HpsJamEqualizer w_eq;
@@ -142,14 +171,16 @@ public:
 		HPSJAM_NO_SIGNAL(w_slider,setValue(1));
 		HPSJAM_NO_SIGNAL(w_slider,setPan(0));
 		HPSJAM_NO_SIGNAL(w_slider,setLevel(0,0));
+		HPSJAM_NO_SIGNAL(w_slider,setGain(0));
 		w_eq.handle_disable();
 		HPSJAM_NO_SIGNAL(b_inv,setFlat(false));
 		HPSJAM_NO_SIGNAL(b_mute,setFlat(false));
 		HPSJAM_NO_SIGNAL(b_solo,setFlat(false));
+		HPSJAM_NO_SIGNAL(w_gain,setValue(0));
 	};
 
 	uint8_t getBits() {
-		uint8_t ret = 0;
+		uint8_t ret = HPSJAM_BIT_GAIN_SET(w_slider.gain);
 		if (b_inv.isFlat())
 			ret |= HPSJAM_BIT_INVERT;
 		if (b_mute.isFlat())
@@ -167,6 +198,7 @@ public slots:
 	void handleEQApply();
 	void handleInv();
 	void handlePan(int);
+	void handleGain(int);
 
 signals:
 	void gainChanged(int);
@@ -184,6 +216,9 @@ public:
 
 		self_strip.setTitle(QString("Local Balance"));
 		self_strip.b_solo.setEnabled(false);
+		self_strip.w_gain.b[0].setEnabled(false);
+		self_strip.w_gain.b[1].setEnabled(false);
+
 		connect(&self_strip, SIGNAL(eqChanged(int)), this, SLOT(handle_local_eq_changed()));
 		self_strip.id = 0;
 		gl.addWidget(&self_strip, 0, 0);
