@@ -88,6 +88,7 @@ public:
 };
 
 class hpsjam_audio_buffer {
+	enum { fadeSamples = HPSJAM_DEF_SAMPLES };
 public:
 	float samples[HPSJAM_MAX_SAMPLES];
 	float stats[HPSJAM_SEQ_MAX * 2];
@@ -95,6 +96,7 @@ public:
 	size_t consumer;
 	size_t total;
 	uint16_t limit;
+	uint16_t fade_in;
 
 	void clear() {
 		memset(samples, 0, sizeof(samples));
@@ -103,6 +105,7 @@ public:
 		consumer = 0;
 		total = 0;
 		limit = 3;	/* minimum value for handling one packet loss */
+		fade_in = fadeSamples;
 	};
 	void set_jitter_limit_in_ms(uint16_t _limit) {
 		limit = _limit + 3;
@@ -151,9 +154,10 @@ public:
 		/* fill missing samples with last value */
 		if (total < num) {
 			for (size_t x = total; x != num; x++) {
-				dst[x] = last_sample;
 				last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
+				dst[x] = last_sample;
 			}
+			fade_in = fadeSamples;
 			num = total;
 		}
 
@@ -209,8 +213,19 @@ public:
 			if (fwd > num)
 				fwd = num;
 			if (fwd != 0) {
-				last_sample = src[fwd - 1];
-				memcpy(samples + producer, src, sizeof(samples[0]) * fwd);
+				/* check if there was a discontinuity, and fade in audio */
+				if (fade_in != 0) {
+					for (size_t x = 0; x != fwd; x++) {
+						const float f = (float)fade_in / (float)fadeSamples;
+						last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
+						samples[producer + x] = src[x] - f * src[x] + last_sample * f;
+						fade_in -= (fade_in != 0);
+					}
+				} else {
+					memcpy(samples + producer, src, sizeof(samples[0]) * fwd);
+				}
+				/* update last sample */
+				last_sample = samples[producer + fwd - 1];
 				src += fwd;
 				num -= fwd;
 				total += fwd;
@@ -244,6 +259,7 @@ public:
 					last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
 					samples[producer + x] = last_sample;
 				}
+				fade_in = fadeSamples;
 				num -= fwd;
 				total += fwd;
 				producer += fwd;
