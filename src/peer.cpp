@@ -860,6 +860,8 @@ hpsjam_server_peer :: audio_mixing()
 		const class hpsjam_server_peer &other = hpsjam_server_peers[y];
 		const uint32_t gain = get_gain_from_bits(bits[y]);
 
+		if (other.valid == false)
+			continue;
 		if (bits[y] & HPSJAM_BIT_MUTE)
 			continue;
 		if (bits[y] & HPSJAM_BIT_INVERT) {
@@ -881,6 +883,8 @@ do_solo:
 		const class hpsjam_server_peer &other = hpsjam_server_peers[y];
 		const uint32_t gain = get_gain_from_bits(bits[y]);
 
+		if (other.valid == false)
+			continue;
 		if (~bits[y] & HPSJAM_BIT_SOLO)
 			continue;
 		if (bits[y] & HPSJAM_BIT_INVERT) {
