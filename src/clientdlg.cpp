@@ -41,7 +41,7 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
     b_mixer(tr("&MIXER")), b_lyrics(tr("&LYRICS")), b_chat(tr("CH&AT")),
     b_config(tr("CON&FIG")), b_stats(tr("&STATS")), b_help(tr("&HELP"))
 {
-	setWindowTitle(HPSJAM_WINDOW_TITLE " Client");
+	setWindowTitle(HPSJAM_WINDOW_TITLE " Client " HPSJAM_VERSION_STRING);
 	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
 
 	connect(&b_connect, SIGNAL(released()), this, SLOT(handle_connect()));
