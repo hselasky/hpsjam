@@ -5,7 +5,7 @@
 	<key>CFBundleExecutable</key>
 	<string>HpsJam</string>
 	<key>CFBundleIconFile</key>
-	<string></string>
+	<string>HpsJam</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.selasky.osx.HpsJam</string>
 	<key>CFBundlePackageType</key>
