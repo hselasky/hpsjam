@@ -59,6 +59,10 @@ HpsJam --server --port 22124 --peers 16 --daemon
 HpsJam -h
 </pre>
 
+## Privacy policy
+
+HPS JAM does not collect any information from its users.
+
 ## Supported platforms
 <ul>
   <li>FreeBSD <A HREF="https://www.freshports.org/audio/hpsjam">hpsjam port</A></li>
