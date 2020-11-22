@@ -81,7 +81,8 @@ static void
 usage(void)
 {
         fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_IPV4_PORT_STR "] "
-		"[--daemon] [--password <64_bit_hexadecimal_password>] \\\n"
+		"[--daemon] \\\n"
+		"	[--password <64_bit_hexadecimal_password>] \\\n"
 #ifdef HAVE_JACK_AUDIO
 		"	[--jacknoconnect] [--jackname <name>] \\\n"
 #endif
