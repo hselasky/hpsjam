@@ -291,9 +291,10 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	if (audioMaxSelection == 0)
 		return (true);
 
-	/* get list of audio devices */
+	/* get list of audio device IDs */
 	AudioDeviceID audioDevices[audioMaxSelection];
-	AudioObjectGetPropertyData(kAudioObjectSystemObject, &property, 0, 0, &size, audioDevices);
+	AudioObjectGetPropertyData(kAudioObjectSystemObject,
+	    &address, 0, 0, &size, audioDevices);
 
 	/* account for default audio device */
 	audioMaxSelection++;
