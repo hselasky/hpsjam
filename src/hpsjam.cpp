@@ -92,8 +92,8 @@ usage(void)
 		"	[--audio-uplink-format <0..%u>] \\\n"
 		"	[--audio-downlink-format <0..%u>] \\\n"
 
-		"	[--audio-input-device <0,1,2,3 ... , Default is 0>] \\\n"
-		"	[--audio-output-device <0,1,2,3 ... , Default is 0>] \\\n"
+		"	[--audio-input-device <0,1,2,3 ... , System default is 0>] \\\n"
+		"	[--audio-output-device <0,1,2,3 ... , System default is 0>] \\\n"
 		"	[--ipv4-port " HPSJAM_DEFAULT_IPV4_PORT_STR "] \\\n"
 		"	[--ipv6-port " HPSJAM_DEFAULT_IPV6_PORT_STR "] \\\n"
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"

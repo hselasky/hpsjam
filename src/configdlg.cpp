@@ -49,6 +49,8 @@ HpsJamDeviceSelection :: handle_toggle_input()
 
 	if (input == -1)
 		l_input.setText(tr("Selecting audio input device failed"));
+	else if (input == 0)
+		l_input.setText(tr("Selected audio input device is system default"));
 	else
 		l_input.setText(tr("Selected audio input device is %1").arg(input));
 }
@@ -60,6 +62,8 @@ HpsJamDeviceSelection :: handle_toggle_output()
 
 	if (output == -1)
 		l_output.setText(tr("Selecting audio output device failed"));
+	else if (output == 0)
+		l_output.setText(tr("Selected audio output device is system default"));
 	else
 		l_output.setText(tr("Selected audio output device is %1").arg(output));
 }

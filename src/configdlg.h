@@ -46,8 +46,8 @@ class HpsJamDeviceSelection : public QGroupBox {
 	Q_OBJECT;
 public:
 	HpsJamDeviceSelection() : gl(this),
-	    b_toggle_input(tr("Toggle audio input device")),
-	    b_toggle_output(tr("Toggle audio output device")) {
+	    b_toggle_input(tr("Toggle input device")),
+	    b_toggle_output(tr("Toggle output device")) {
 
 		setTitle("Audio device configuration");
 		gl.addWidget(&b_toggle_input, 0,0);
