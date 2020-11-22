@@ -25,8 +25,6 @@
 
 #include <QObject>
 
-#include <stdlib.h>
-
 #include "../src/peer.h"
 
 #include <jack/jack.h>
@@ -149,7 +147,6 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 			jack_free(ports);
 		}
 	}
-	atexit(&hpsjam_sound_uninit);
 	return (false);			/* success */
 }
 
@@ -175,4 +172,16 @@ hpsjam_sound_uninit()
 	jack_port_unregister(jack_client, output_port_right);
 	jack_client_close(jack_client);
 	jack_client = 0;
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_input(int)
+{
+	return (0);
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_output(int)
+{
+	return (0);
 }

@@ -27,8 +27,6 @@
 #include <QMutex>
 #include <QMutexLocker>
 
-#include <stdlib.h>
-
 #include "../src/peer.h"
 
 #include <AudioUnit/AudioUnit.h>
@@ -44,6 +42,9 @@ static uint32_t audioInputChannels;
 static uint32_t audioOutputChannels;
 static float *audioInputBuffer[2];
 static QMutex audioMutex;
+static uint32_t audioInputSelection;
+static uint32_t audioOutputSelection;
+static uint32_t audioMaxSelection;
 
 static OSStatus
 hpsjam_device_notification(AudioDeviceID,
@@ -89,7 +90,8 @@ hpsjam_audio_callback(AudioDeviceID inDevice,
 			goto error;
 	}
 
-	if (n_in > 1 || n_out > 1 || (n_in == 0 && n_out == 0)) {
+	if (n_in > 1 || n_out > 1 || (n_in == 0 && n_out == 0) ||
+	    audioInputBuffer[0] == 0 || audioInputBuffer[1] == 0) {
 error:
 		/* fill silence in all outputs */
 		for (size_t x = 0; x != n_out; x++) {
@@ -187,7 +189,6 @@ hpsjam_set_sample_rate_and_format()
 
 	address.mScope = kAudioObjectPropertyScopeGlobal;
 	address.mElement = kAudioObjectPropertyElementMaster;
-
 	address.mSelector = kAudioDevicePropertyNominalSampleRate;
 	size = sizeof(double);
 
@@ -285,22 +286,49 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	AudioObjectGetPropertyDataSize(kAudioObjectSystemObject,
 	    &address, 0, 0, &size);
 
-	if (size == 0)
+	audioMaxSelection = size / sizeof(AudioDeviceID);
+
+	if (audioMaxSelection == 0)
 		return (true);
 
-	size = sizeof(audioInputDevice);
-	address.mSelector = kAudioHardwarePropertyDefaultInputDevice;
+	/* get list of audio devices */
+	AudioDeviceID audioDevices[audioMaxSelection];
+	AudioObjectGetPropertyData(kAudioObjectSystemObject, &property, 0, 0, &size, audioDevices);
 
-	if (AudioObjectGetPropertyData(kAudioObjectSystemObject,
-	    &address, 0, 0, &size, &audioInputDevice))
-		return (true);
+	/* account for default audio device */
+	audioMaxSelection++;
 
-	size = sizeof(AudioDeviceID);
-	address.mSelector = kAudioHardwarePropertyDefaultOutputDevice;
+	switch (audioInputSelection) {
+	case 0:
+		size = sizeof(audioInputDevice);
+		address.mSelector = kAudioHardwarePropertyDefaultInputDevice;
 
-	if (AudioObjectGetPropertyData(kAudioObjectSystemObject,
-	    &address, 0, 0, &size, &audioOutputDevice))
-		return (true);
+		if (AudioObjectGetPropertyData(kAudioObjectSystemObject,
+		    &address, 0, 0, &size, &audioInputDevice))
+			return (true);
+		break;
+	default:
+		if (audioInputSelection >= audioMaxSelection)
+			return (true);
+		audioInputDevice = audioDevices[audioInputSelection - 1];
+		break;
+	}
+
+	switch (audioOutputSelection) {
+	case 0:
+		size = sizeof(AudioDeviceID);
+		address.mSelector = kAudioHardwarePropertyDefaultOutputDevice;
+
+		if (AudioObjectGetPropertyData(kAudioObjectSystemObject,
+		    &address, 0, 0, &size, &audioOutputDevice))
+			return (true);
+		break;
+	default:
+		if (audioOutputSelection >= audioMaxSelection)
+			return (true);
+		audioOutputDevice = audioDevices[audioOutputSelection - 1];
+		break;
+	}
 
 	address.mSelector = kAudioDevicePropertyDeviceHasChanged;
 
@@ -336,7 +364,6 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 
 	audioInit = true;
 
-	atexit(&hpsjam_sound_uninit);
 	return (false);
 }
 
@@ -371,4 +398,38 @@ hpsjam_sound_uninit()
 
 	audioInputBuffer[0] = 0;
 	audioInputBuffer[1] = 0;
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_input(int value)
+{
+	hpsjam_sound_uninit();
+
+	for (uint32_t x = 0; x < audioMaxSelection; x++) {
+		audioInputSelection++;
+		if (audioInputSelection >= audioMaxSelection)
+			audioInputSelection = 0;
+		if (value > -1 && (uint32_t)value != audioInputSelection)
+			continue;
+		if (hpsjam_sound_init(0,0) == false)
+			return (audioInputSelection);
+	}
+	return (-1);
+}
+
+Q_DECL_EXPORT void
+hpsjam_sound_toggle_output(int value)
+{
+	hpsjam_sound_uninit();
+
+	for (uint32_t x = 0; x < audioMaxSelection; x++) {
+		audioOutputSelection++;
+		if (audioOutputSelection >= audioMaxSelection)
+			audioOutputSelection = 0;
+		if (value > -1 && (uint32_t)value != audioOutputSelection)
+			continue;
+		if (hpsjam_sound_init(0,0) == false)
+			return (audioOutputSelection);
+	}
+	return (-1);
 }
