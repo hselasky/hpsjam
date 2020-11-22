@@ -138,10 +138,11 @@ error:
 				((float *)outData->mBuffers[0].mData)[x * audioOutputChannels + 0] = audioInputBuffer[0][x];
 				((float *)outData->mBuffers[0].mData)[x * audioOutputChannels + 1] = audioInputBuffer[1][x];
 			}
-			/* clear old buffer, just in case there is no input */
-			memset(audioInputBuffer[0], 0, audioBufferSamples * sizeof(float));
-			memset(audioInputBuffer[1], 0, audioBufferSamples * sizeof(float));
 		}
+
+		/* clear old buffer, just in case there is no input */
+		memset(audioInputBuffer[0], 0, audioBufferSamples * sizeof(float));
+		memset(audioInputBuffer[1], 0, audioBufferSamples * sizeof(float));
 	}
 	return (kAudioHardwareNoError);
 }
