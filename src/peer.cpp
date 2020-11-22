@@ -89,9 +89,9 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 
 		/* create new connection, if any */
 		for (unsigned x = hpsjam_num_server_peers; x--; ) {
-			class hpsjam_server_peer &peer = hpsjam_server_peers[x];
 
 			if (1) {
+				class hpsjam_server_peer &peer = hpsjam_server_peers[x];
 				QMutexLocker locker(&peer.lock);
 
 				if (peer.valid == true)
