@@ -417,7 +417,7 @@ hpsjam_sound_toggle_input(int value)
 	return (-1);
 }
 
-Q_DECL_EXPORT void
+Q_DECL_EXPORT int
 hpsjam_sound_toggle_output(int value)
 {
 	hpsjam_sound_uninit();
