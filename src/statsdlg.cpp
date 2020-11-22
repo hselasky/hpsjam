@@ -34,7 +34,7 @@
 #include <QColor>
 
 void
-HpsJamStats :: paintEvent(QPaintEvent *event)
+HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 {
 	constexpr unsigned N = 2 * HPSJAM_SEQ_MAX;
 	uint64_t packet_loss;
@@ -75,16 +75,8 @@ HpsJamStats :: paintEvent(QPaintEvent *event)
 
 	paint.fillRect(frame, bg);
 
-	/* set font size */
-	QFont font(paint.font());
-
-	font.setPixelSize(fsize);
-	paint.setFont(font);
-
-	paint.setPen(QPen(QBrush(fg), 1));
-	paint.drawText(QPoint(frame.x() + fsize, frame.y() + fsize),
-	    QString("%1 packets lost; Round trip time %2ms+%3ms")
-	       .arg(packet_loss).arg(ping_time).arg(jitter_time));
+	l_status.setText(QString("%1 packets lost; Round trip time %2ms+%3ms")
+	    .arg(packet_loss).arg(ping_time).arg(jitter_time));
 
 	for (unsigned x = 0; x != 2; x++) {
 		for (unsigned i = xmax = 0; i != N; i++) {
@@ -132,5 +124,5 @@ HpsJamStats :: paintEvent(QPaintEvent *event)
 void
 HpsJamStats :: handle_timer()
 {
-	update();
+	w_graph.update();
 }

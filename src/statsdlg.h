@@ -28,17 +28,31 @@
 
 #include <QObject>
 #include <QWidget>
+#include <QGridLayout>
 #include <QTimer>
+#include <QLabel>
+
+class HpsJamStatsGraph : public QWidget {
+public:
+	QLabel l_status;
+	void paintEvent(QPaintEvent *);
+};
 
 class HpsJamStats : public QWidget {
 	Q_OBJECT;
 public:
-	HpsJamStats() {
+	QGridLayout gl;
+
+	HpsJamStatsGraph w_graph;
+
+	HpsJamStats() : gl(this) {
+		gl.addWidget(&w_graph.l_status, 0,0);
+		gl.addWidget(&w_graph, 1,0);
+		gl.setRowStretch(1,1);
 		connect(&timer, SIGNAL(timeout()), this, SLOT(handle_timer()));
 		timer.start(1000);
 	};
 	QTimer timer;
-	void paintEvent(QPaintEvent *);
 
 public slots:
 	void handle_timer();
