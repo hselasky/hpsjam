@@ -239,6 +239,8 @@ HpsJamConnect :: handle_connect()
 	hpsjam_client->w_mixer->self_strip.w_name.setText(nick);
 	hpsjam_client->w_mixer->self_strip.w_icon.svg.load(idata);
 	hpsjam_client->w_mixer->self_strip.w_icon.update();
+	hpsjam_client->setWindowTitle(
+	    QString(HPSJAM_WINDOW_TITLE " Client " HPSJAM_VERSION_STRING) + QString(" - ") + nick);
 }
 
 void
