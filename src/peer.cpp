@@ -154,6 +154,10 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 		return;
 	}
 
+	/* compute levels */
+	out_level[0].addSamples(left, samples);
+	out_level[1].addSamples(right, samples);
+
 	float temp_l[samples];
 	float temp_r[samples];
 
@@ -207,9 +211,6 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 
 	out_audio[0].addSamples(left, samples);
 	out_audio[1].addSamples(right, samples);
-
-	out_level[0].addSamples(left, samples);
-	out_level[1].addSamples(right, samples);
 
 	in_audio[0].remSamples(left, samples);
 	in_audio[1].remSamples(right, samples);
