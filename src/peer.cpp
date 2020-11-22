@@ -43,7 +43,8 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 	if (hpsjam_num_server_peers == 0) {
 		QMutexLocker locker(&hpsjam_client_peer->lock);
 
-		if (hpsjam_client_peer->address == src)
+		if (hpsjam_client_peer->address.valid() &&
+		    hpsjam_client_peer->address == src)
 			hpsjam_client_peer->input_pkt.receive(frame);
 	} else {
 		const struct hpsjam_packet *ptr;
