@@ -40,7 +40,9 @@ public:
 	HpsJamChatLyrics() : gl(this),
 	    b_send(tr("Send a line of l&yrics")) {
 		setTitle(tr("Send lyrics"));
-
+#if defined (Q_OS_MACX)
+		b_send.setShortcut(QKeySequence(Qt::ALT + Qt::Key_Y));
+#endif
 		gl.addWidget(&edit, 0,0,1,2);
 		gl.addWidget(&b_send, 1,1,1,1);
 		gl.setRowStretch(0,1);
@@ -59,28 +61,36 @@ public slots:
 class HpsJamChatBox : public QGroupBox {
 	Q_OBJECT;
 public:
-	HpsJamChatBox() : gl(this), b_send(tr("SEND")) {
+	HpsJamChatBox() : gl(this),
+	    b_send(tr("SEND")), b_clear(tr("CLEA&R")) {
+#if defined (Q_OS_MACX)
+		b_clear.setShortcut(QKeySequence(Qt::ALT + Qt::Key_R));
+#endif
 		setTitle(tr("Chat box"));
 		line.setMaxLength(128);
 		edit.setReadOnly(true);
 		edit.setMaximumBlockCount(1000);
 
-		gl.addWidget(&edit, 0,0,1,2);
+		gl.addWidget(&edit, 0,0,1,3);
 		gl.addWidget(&line, 1,0,1,1);
 		gl.addWidget(&b_send, 1,1,1,1);
+		gl.addWidget(&b_clear, 1,2,1,1);
 		gl.setRowStretch(0,1);
 		gl.setColumnStretch(0,1);
 
 		connect(&b_send, SIGNAL(released()), this, SLOT(handle_send_chat()));
+		connect(&b_clear, SIGNAL(released()), this, SLOT(handle_clear_chat()));
 		connect(&line, SIGNAL(returnPressed()), this, SLOT(handle_send_chat()));
 	};
 	QGridLayout gl;
 	QPushButton b_send;
+	QPushButton b_clear;
 	QPlainTextEdit edit;
 	QLineEdit line;
 
 public slots:
 	void handle_send_chat();
+	void handle_clear_chat();
 };
 
 class HpsJamChat : public QWidget {

@@ -24,6 +24,7 @@
  */
 
 #include <QPainter>
+#include <QKeySequence>
 
 #include "hpsjam.h"
 
@@ -43,6 +44,16 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 {
 	setWindowTitle(HPSJAM_WINDOW_TITLE " Client " HPSJAM_VERSION_STRING);
 	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
+
+#if defined (Q_OS_MACX)
+	b_connect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_E));
+	b_mixer.setShortcut(QKeySequence(Qt::ALT + Qt::Key_M));
+	b_lyrics.setShortcut(QKeySequence(Qt::ALT + Qt::Key_L));
+	b_chat.setShortcut(QKeySequence(Qt::ALT + Qt::Key_A));
+	b_config.setShortcut(QKeySequence(Qt::ALT + Qt::Key_F));
+	b_stats.setShortcut(QKeySequence(Qt::ALT + Qt::Key_S));
+	b_help.setShortcut(QKeySequence(Qt::ALT + Qt::Key_H));
+#endif
 
 	connect(&b_connect, SIGNAL(released()), this, SLOT(handle_connect()));
 	connect(&b_mixer, SIGNAL(released()), this, SLOT(handle_mixer()));

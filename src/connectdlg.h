@@ -35,6 +35,7 @@
 #include <QGridLayout>
 #include <QPushButton>
 #include <QByteArray>
+#include <QKeySequence>
 
 class HpsJamConnectList : public QListView {
 	Q_OBJECT;
@@ -107,6 +108,12 @@ public:
 	    b_refresh(tr("&Refresh")),
 	    b_connect(tr("&Connect")),
 	    b_disconnect(tr("&Disconnect")) {
+
+#if defined (Q_OS_MACX)
+		b_refresh.setShortcut(QKeySequence(Qt::ALT + Qt::Key_R));
+		b_connect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_C));
+		b_disconnect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_D));
+#endif
 		gl.addWidget(&b_refresh, 0,0);
 		gl.setColumnStretch(1,1);
 		gl.addWidget(&b_connect, 0,2);

@@ -75,6 +75,12 @@ HpsJamChatBox :: handle_send_chat()
 }
 
 void
+HpsJamChatBox :: handle_clear_chat()
+{
+	edit.setPlainText(QString());
+}
+
+void
 HpsJamChat :: append(const QString &str)
 {
 	chat.edit.appendPlainText(str);
