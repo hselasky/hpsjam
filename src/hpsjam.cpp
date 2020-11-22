@@ -30,6 +30,8 @@
 #include "configdlg.h"
 #include "timer.h"
 
+#include "../mac/activity.h"
+
 #include <QApplication>
 #include <QCoreApplication>
 #include <QMessageBox>
@@ -314,6 +316,10 @@ main(int argc, char **argv)
 		/* create timer, if any */
 		hpsjam_timer_init();
 
+		/* prevent system from sleeping this program */
+#if defined(Q_OS_MACX)
+		HpsJamBeginActivity();
+#endif
 		return (app.exec());
 	}
 }

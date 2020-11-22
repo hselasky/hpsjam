@@ -47,6 +47,11 @@ SOURCES		+= src/statsdlg.cpp
 SOURCES		+= src/timer.cpp
 SOURCES		+= src/volumedlg.cpp
 
+macx {
+HEADERS		+= mac/activity.h
+SOURCES		+= mac/activity.mm
+}
+
 isEmpty(WITHOUT_AUDIO) {
 
 # MacOS audio backend

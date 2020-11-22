@@ -35,6 +35,8 @@
 #include "mixerdlg.h"
 #include "timer.h"
 
+#include "../mac/activity.h"
+
 HpsJamConnectIcon :: HpsJamConnectIcon() : gl(this)
 {
 	selection = 0;
@@ -241,6 +243,10 @@ HpsJamConnect :: handle_connect()
 	hpsjam_client->w_mixer->self_strip.w_icon.update();
 	hpsjam_client->setWindowTitle(
 	    QString(HPSJAM_WINDOW_TITLE " Client " HPSJAM_VERSION_STRING) + QString(" - ") + nick);
+
+#if defined(Q_OS_MACX)
+	HpsJamBeginActivity();
+#endif
 }
 
 void
@@ -252,13 +258,15 @@ HpsJamConnect :: handle_disconnect()
 
 	activate(true);
 
-	if (1) {
-		QMutexLocker locker(&hpsjam_client_peer->lock);
-		hpsjam_client_peer->init();
-	}
+	QMutexLocker locker(&hpsjam_client_peer->lock);
+	hpsjam_client_peer->init();
+	locker.unlock();
 
 	hpsjam_client->w_mixer->init();
 
+#if defined(Q_OS_MACX)
+	HpsJamEndActivity();
+#endif
 	if (!isVisible()) {
 		QMessageBox::information(this, tr("DISCONNECTED"),
 		    tr("You were disconnected from the server!"));
