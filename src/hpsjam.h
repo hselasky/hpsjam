@@ -39,6 +39,7 @@
 #define	HPSJAM_PEERS_MAX 256
 #define	HPSJAM_SEQ_MAX 16
 #define	HPSJAM_NUM_ICONS 14
+#define	HPSJAM_AUDIO_FORMAT_MAX 9
 #define	HPSJAM_ICON_SIZE 64 /* 64x64 px SVG */
 #define	HPSJAM_MAX_UDP 1416 /* bytes */
 #define	HPSJAM_DEFAULT_IPV4_PORT 22124
@@ -86,5 +87,7 @@ extern void hpsjam_socket_init(unsigned short ipv4_port,
 /* sound APIs */
 extern bool hpsjam_sound_init(const char *, bool);
 extern void hpsjam_sound_uninit();
+extern int hpsjam_sound_toggle_input(int);
+extern int hpsjam_sound_toggle_output(int);
 
 #endif		/* _HPSJAM_H_ */

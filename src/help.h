@@ -81,7 +81,9 @@ public:
         "    24-bit mono: 5\n"
         "    24-bit stereo: 6\n"
         "    32-bit mono: 7\n"
-        "    32-bit stereo: 8\n"));
+        "    32-bit stereo: 8\n"
+	"    Toggle audio input device: I\n"
+	"    Toggle audio output device: O\n"));
     };
 };
 

@@ -27,6 +27,7 @@
 #include "peer.h"
 #include "clientdlg.h"
 #include "connectdlg.h"
+#include "configdlg.h"
 #include "timer.h"
 
 #include <QApplication>
@@ -65,6 +66,10 @@ static const struct option hpsjam_opts[] = {
 	{ "nickname", required_argument, NULL, 'N'},
 	{ "icon", required_argument, NULL, 'i'},
 	{ "connect", required_argument, NULL, 'c'},
+	{ "audio-uplink-format", required_argument, NULL, 'U'},
+	{ "audio-downlink-format", required_argument, NULL, 'D'},
+	{ "audio-input-device", required_argument, NULL, 'I'},
+	{ "audio-output-device", required_argument, NULL, 'O'},
 #ifdef HAVE_JACK_AUDIO
 	{ "jacknoconnect", no_argument, NULL, 'J' },
 	{ "jackname", required_argument, NULL, 'n' },
@@ -80,18 +85,31 @@ usage(void)
 #ifdef HAVE_JACK_AUDIO
 		"	[--jacknoconnect] [--jackname <name>] \\\n"
 #endif
-		"	[--nickname <nickname> ] [--icon <nr 0..%u>] [--connect <servername:port>] \\n"
+		"	[--nickname <nickname>] \\\n"
+		"	[--icon <0..%u>] \\\n"
+		"	[--connect <servername:port>] \\\n"
+		"	[--audio-uplink-format <0..%u>] \\\n"
+		"	[--audio-downlink-format <0..%u>] \\\n"
+
+		"	[--audio-input-device <0,1,2,3 ... , Default is 0>] \\\n"
+		"	[--audio-output-device <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--ipv4-port " HPSJAM_DEFAULT_IPV4_PORT_STR "] \\\n"
 		"	[--ipv6-port " HPSJAM_DEFAULT_IPV6_PORT_STR "] \\\n"
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
 		"	[--welcome-msg-file <filename> \\\n"
-		"	[--cli-port <portnumber>]\n", HPSJAM_NUM_ICONS - 1);
+		"	[--cli-port <portnumber>]\n",
+		HPSJAM_NUM_ICONS - 1,
+		HPSJAM_AUDIO_FORMAT_MAX - 1,
+		HPSJAM_AUDIO_FORMAT_MAX - 1);
         exit(1);
 }
 
 Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
+	static const char hpsjam_short_opts[] = {
+	    "M:q:p:sP:hBJ:n:K:t:u:w:N:i:c:U:D:I:O:"
+	};
 	int c;
 	int ipv4_port = HPSJAM_DEFAULT_IPV4_PORT;
 	int ipv6_port = HPSJAM_DEFAULT_IPV6_PORT;
@@ -103,8 +121,12 @@ main(int argc, char **argv)
 	const char *passwd = 0;
 	const char *connect_to = 0;
 	int icon_nr = -1;
+	int uplink_format = -1;
+	int downlink_format = -1;
+	int input_device = -1;
+	int output_device = -1;
 
-	while ((c = getopt_long_only(argc, argv, "M:q:p:sP:hBJ:n:K:t:u:w:N:i:c:", hpsjam_opts, NULL)) != -1) {
+	while ((c = getopt_long_only(argc, argv, hpsjam_short_opts, hpsjam_opts, NULL)) != -1) {
 		switch (c) {
 		case 'w':
 			hpsjam_welcome_message_file = optarg;
@@ -140,6 +162,26 @@ main(int argc, char **argv)
 			if (hpsjam_num_server_peers == 0 || hpsjam_num_server_peers > HPSJAM_PEERS_MAX)
 				usage();
 			break;
+		case 'U':
+			uplink_format = atoi(optarg);
+			if (uplink_format < 0 || uplink_format > HPSJAM_AUDIO_FORMAT_MAX - 1)
+				usage();
+			break;
+		case 'D':
+			downlink_format = atoi(optarg);
+			if (downlink_format < 0 || downlink_format > HPSJAM_AUDIO_FORMAT_MAX - 1)
+				usage();
+			break;
+		case 'I':
+			input_device = atoi(optarg);
+			if (input_device < 0)
+				usage();
+			break;
+		case 'O':
+			output_device = atoi(optarg);
+			if (output_device < 0)
+				usage();
+			break;
 		case 'B':
 			do_fork = 1;
 			break;
@@ -164,10 +206,8 @@ main(int argc, char **argv)
 			break;
 		case 'i':
 			icon_nr = atoi(optarg);
-			if (icon_nr < 0)
-				icon_nr = 0;
-			else if (icon_nr > HPSJAM_NUM_ICONS - 1)
-				icon_nr = HPSJAM_NUM_ICONS - 1;
+			if (icon_nr < 0 || icon_nr > HPSJAM_NUM_ICONS - 1)
+				usage();
 			break;
 		case 'c':
 			connect_to = optarg;
@@ -202,16 +242,30 @@ main(int argc, char **argv)
 					    "sample rate is different from %1Hz or \n"
 					    "latency is too high").arg(HPSJAM_SAMPLE_RATE));
 		}
+		/* register exit hook for audio */
+		atexit(&hpsjam_sound_uninit);
 #endif
 
 #ifdef HAVE_MAC_AUDIO
-		if (hpsjam_sound_init(jackname, jackconnect)) {
+		if (hpsjam_sound_init(0, 0)) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot connect to audio subsystem.\n"
 					    "Check that you have a audio device connected and\n"
 					    "that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
 		}
+		if (input_device > -1 && hpsjam_sound_toggle_input(input_device) < 0) {
+			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+				QObject::tr("Cannot find the specified audio input device"));
+		}
+
+		if (output_device > -1 && hpsjam_sound_toggle_output(output_device) < 0) {
+			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+				QObject::tr("Cannot find the specified audio output device"));
+		}
+		/* register exit hook for audio */
+		atexit(&hpsjam_sound_uninit);
 #endif
+
 		/* check for presets */
 		if (nickname != 0)
 			hpsjam_client->w_connect->name.edit.setText(QString::fromUtf8(nickname));
@@ -221,6 +275,10 @@ main(int argc, char **argv)
 			hpsjam_client->w_connect->password.edit.setText(QString::fromUtf8(passwd));
 		if (connect_to != 0)
 			hpsjam_client->w_connect->server.edit.setText(QString::fromUtf8(connect_to));
+		if (uplink_format > -1)
+			hpsjam_client->w_config->up_fmt.setIndex(uplink_format);
+		if (downlink_format > -1)
+			hpsjam_client->w_config->down_fmt.setIndex(downlink_format);
 
 		/* set a valid UDP buffer size */
 		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX;

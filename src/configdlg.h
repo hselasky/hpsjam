@@ -26,12 +26,13 @@
 #ifndef _HPSJAM_CONFIGDLG_H_
 #define	_HPSJAM_CONFIGDLG_H_
 
+#include "hpsjam.h"
+
 #include <QWidget>
+#include <QLabel>
 #include <QPushButton>
 #include <QGridLayout>
 #include <QGroupBox>
-
-#define	HPSJAM_AUDIO_FORMAT_MAX 9
 
 struct hpsjam_audio_format {
 	uint8_t format;
@@ -40,6 +41,34 @@ struct hpsjam_audio_format {
 };
 
 extern const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX];
+
+class HpsJamDeviceSelection : public QGroupBox {
+	Q_OBJECT;
+public:
+	HpsJamDeviceSelection() : gl(this),
+	    b_toggle_input(tr("Toggle audio input device")),
+	    b_toggle_output(tr("Toggle audio output device")) {
+
+		setTitle("Audio device configuration");
+		gl.addWidget(&b_toggle_input, 0,0);
+		gl.addWidget(&l_input, 0,1);
+		gl.addWidget(&b_toggle_output, 1,0);
+		gl.addWidget(&l_output, 1,1);
+		gl.setColumnStretch(1,1);
+
+		connect(&b_toggle_input, SIGNAL(released()), this, SLOT(handle_toggle_input()));
+		connect(&b_toggle_output, SIGNAL(released()), this, SLOT(handle_toggle_output()));
+	};
+	QGridLayout gl;
+	QPushButton b_toggle_input;
+	QPushButton b_toggle_output;
+	QLabel l_input;
+	QLabel l_output;
+
+public slots:
+	void handle_toggle_input();
+	void handle_toggle_output();
+};
 
 class HpsJamConfigFormat : public QGroupBox {
 	Q_OBJECT;
@@ -96,8 +125,9 @@ public:
 
 		gl.addWidget(&up_fmt, 0,0);
 		gl.addWidget(&down_fmt, 1,0);
-		gl.addWidget(&lyrics_fmt, 2,0);
-		gl.setRowStretch(3,1);
+		gl.addWidget(&audio_dev, 2,0);
+		gl.addWidget(&lyrics_fmt, 3,0);
+		gl.setRowStretch(4,1);
 
 		connect(&up_fmt, SIGNAL(valueChanged()), this, SLOT(handle_up_config()));
 		connect(&down_fmt, SIGNAL(valueChanged()), this, SLOT(handle_down_config()));
@@ -106,6 +136,7 @@ public:
 	QGridLayout gl;
 	HpsJamConfigFormat up_fmt;
 	HpsJamConfigFormat down_fmt;
+	HpsJamDeviceSelection audio_dev;
 	HpsJamLyricsFormat lyrics_fmt;
 public slots:
 	void handle_up_config();

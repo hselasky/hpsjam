@@ -26,7 +26,6 @@
 #include <QMutexLocker>
 #include <QKeyEvent>
 
-#include "hpsjam.h"
 #include "protocol.h"
 #include "peer.h"
 #include "configdlg.h"
@@ -42,6 +41,28 @@ const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = 
 	{ HPSJAM_TYPE_AUDIO_24_BIT_2CH, "2CH@24Bit", Qt::Key_6 },
 	{ HPSJAM_TYPE_AUDIO_32_BIT_2CH, "2CH@32Bit", Qt::Key_8 },
 };
+
+void
+HpsJamDeviceSelection :: handle_toggle_input()
+{
+	int input = hpsjam_sound_toggle_input(-1);
+
+	if (input == -1)
+		l_input.setText(tr("Selecting audio input device failed"));
+	else
+		l_input.setText(tr("Selected audio input device is %1").arg(input));
+}
+
+void
+HpsJamDeviceSelection :: handle_toggle_output()
+{
+	int output = hpsjam_sound_toggle_output(-1);
+
+	if (output == -1)
+		l_output.setText(tr("Selecting audio output device failed"));
+	else
+		l_output.setText(tr("Selected audio output device is %1").arg(output));
+}
 
 void
 HpsJamConfigFormat :: handle_selection()
@@ -81,6 +102,18 @@ HpsJamConfig :: keyPressEvent(QKeyEvent *event)
 		if (event->key() == hpsjam_audio_format[x].key) {
 			up_fmt.b[x].animateClick();
 			down_fmt.b[x].animateClick();
+			return;
 		}
+	}
+
+	switch (event->key()) {
+	case Qt::Key_I:
+		audio_dev.b_toggle_input.animateClick();
+		break;
+	case Qt::Key_O:
+		audio_dev.b_toggle_output.animateClick();
+		break;
+	default:
+		break;
 	}
 }
