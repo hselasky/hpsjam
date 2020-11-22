@@ -290,10 +290,9 @@ hpsjam_server_peer :: handle_pending_timeout()
 {
 	struct hpsjam_packet_entry *pkt;
 
-	if (1) {
-		QMutexLocker locker(&lock);
-		init();
-	}
+	QMutexLocker locker(&lock);
+	init();
+	locker.unlock();
 
 	/* tell other clients about disconnect */
 	pkt = new struct hpsjam_packet_entry;
