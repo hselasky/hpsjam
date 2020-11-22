@@ -40,7 +40,7 @@ public:
 	HpsJamChatLyrics() : gl(this),
 	    b_send(tr("Send a line of l&yrics")) {
 		setTitle(tr("Send lyrics"));
-#if defined (Q_OS_MACX)
+#if defined(Q_OS_MACX)
 		b_send.setShortcut(QKeySequence(Qt::ALT + Qt::Key_Y));
 #endif
 		gl.addWidget(&edit, 0,0,1,2);
@@ -63,7 +63,7 @@ class HpsJamChatBox : public QGroupBox {
 public:
 	HpsJamChatBox() : gl(this),
 	    b_send(tr("SEND")), b_clear(tr("CLEA&R")) {
-#if defined (Q_OS_MACX)
+#if defined(Q_OS_MACX)
 		b_clear.setShortcut(QKeySequence(Qt::ALT + Qt::Key_R));
 #endif
 		setTitle(tr("Chat box"));

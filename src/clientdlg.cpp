@@ -45,7 +45,7 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 	setWindowTitle(HPSJAM_WINDOW_TITLE " Client " HPSJAM_VERSION_STRING);
 	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
 
-#if defined (Q_OS_MACX)
+#if defined(Q_OS_MACX)
 	b_connect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_E));
 	b_mixer.setShortcut(QKeySequence(Qt::ALT + Qt::Key_M));
 	b_lyrics.setShortcut(QKeySequence(Qt::ALT + Qt::Key_L));

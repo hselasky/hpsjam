@@ -83,7 +83,7 @@ hpsjam_timer_loop(void *arg)
 #endif
 
 	while (1) {
-#if defined(__APPLE__) || defined (__MACOSX)
+#if defined(__APPLE__) || defined(__MACOSX)
 		if (hpsjam_timer_adjust < 0)
 			next += delay[0];
 		else if (hpsjam_timer_adjust > 0)

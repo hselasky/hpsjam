@@ -133,7 +133,7 @@ struct hpsjam_socket_address {
 		assert(valid());
 #ifdef _WIN32
 		closesocket(fd);
-#elif defined(__APPLE__) || defined (__MACOSX)
+#elif defined(__APPLE__) || defined(__MACOSX)
 		::close(fd);
 #else
 		shutdown(fd, SHUT_RDWR);

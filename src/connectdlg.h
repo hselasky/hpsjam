@@ -109,7 +109,7 @@ public:
 	    b_connect(tr("&Connect")),
 	    b_disconnect(tr("&Disconnect")) {
 
-#if defined (Q_OS_MACX)
+#if defined(Q_OS_MACX)
 		b_refresh.setShortcut(QKeySequence(Qt::ALT + Qt::Key_R));
 		b_connect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_C));
 		b_disconnect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_D));
