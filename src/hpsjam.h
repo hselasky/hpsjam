@@ -38,6 +38,7 @@
 #define	HPSJAM_ICON_FILE ":/HpsJam.png"
 #define	HPSJAM_PEERS_MAX 256
 #define	HPSJAM_SEQ_MAX 16
+#define	HPSJAM_NUM_ICONS 14
 #define	HPSJAM_ICON_SIZE 64 /* 64x64 px SVG */
 #define	HPSJAM_MAX_UDP 1416 /* bytes */
 #define	HPSJAM_DEFAULT_IPV4_PORT 22124

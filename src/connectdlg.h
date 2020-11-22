@@ -48,7 +48,7 @@ class HpsJamIcon;
 class HpsJamConnectIcon : public QGroupBox {
 	Q_OBJECT;
 public:
-	enum { numIcons = 14 };
+	enum { numIcons = HPSJAM_NUM_ICONS };
 
 	QGridLayout gl;
 	HpsJamIcon *icon[numIcons];

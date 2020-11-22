@@ -26,6 +26,7 @@
 #include "hpsjam.h"
 #include "peer.h"
 #include "clientdlg.h"
+#include "connectdlg.h"
 #include "timer.h"
 
 #include <QApplication>
@@ -61,6 +62,9 @@ static const struct option hpsjam_opts[] = {
 	{ "password", required_argument, NULL, 'K' },
 	{ "mixer-password", required_argument, NULL, 'M' },
 	{ "daemon", no_argument, NULL, 'B' },
+	{ "nickname", required_argument, NULL, 'N'},
+	{ "icon", required_argument, NULL, 'i'},
+	{ "connect", required_argument, NULL, 'c'},
 #ifdef HAVE_JACK_AUDIO
 	{ "jacknoconnect", no_argument, NULL, 'J' },
 	{ "jackname", required_argument, NULL, 'n' },
@@ -76,11 +80,12 @@ usage(void)
 #ifdef HAVE_JACK_AUDIO
 		"	[--jacknoconnect] [--jackname <name>] \\\n"
 #endif
+		"	[--nickname <nickname> ] [--icon <nr 0..%u>] [--connect <servername:port>] \\n"
 		"	[--ipv4-port " HPSJAM_DEFAULT_IPV4_PORT_STR "] \\\n"
 		"	[--ipv6-port " HPSJAM_DEFAULT_IPV6_PORT_STR "] \\\n"
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
 		"	[--welcome-msg-file <filename> \\\n"
-		"	[--cli-port <portnumber>]\n");
+		"	[--cli-port <portnumber>]\n", HPSJAM_NUM_ICONS - 1);
         exit(1);
 }
 
@@ -94,8 +99,12 @@ main(int argc, char **argv)
 	int do_fork = 0;
 	bool jackconnect = true;
 	const char *jackname = "hpsjam";
+	const char *nickname = 0;
+	const char *passwd = 0;
+	const char *connect_to = 0;
+	int icon_nr = -1;
 
-	while ((c = getopt_long_only(argc, argv, "M:q:p:sP:hBJ:n:K:t:u:w:", hpsjam_opts, NULL)) != -1) {
+	while ((c = getopt_long_only(argc, argv, "M:q:p:sP:hBJ:n:K:t:u:w:N:i:c:", hpsjam_opts, NULL)) != -1) {
 		switch (c) {
 		case 'w':
 			hpsjam_welcome_message_file = optarg;
@@ -141,12 +150,27 @@ main(int argc, char **argv)
 			jackname = optarg;
 			break;
 		case 'K':
+			passwd = optarg;
+
 			if (sscanf(optarg, "%llx", (long long *)&hpsjam_server_passwd) != 1)
 				usage();
 			break;
 		case 'M':
 			if (sscanf(optarg, "%llx", (long long *)&hpsjam_mixer_passwd) != 1)
 				usage();
+			break;
+		case 'N':
+			nickname = optarg;
+			break;
+		case 'i':
+			icon_nr = atoi(optarg);
+			if (icon_nr < 0)
+				icon_nr = 0;
+			else if (icon_nr > HPSJAM_NUM_ICONS - 1)
+				icon_nr = HPSJAM_NUM_ICONS - 1;
+			break;
+		case 'c':
+			connect_to = optarg;
 			break;
 		case ' ':
 			/* ignore */
@@ -188,7 +212,15 @@ main(int argc, char **argv)
 					    "that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
 		}
 #endif
-		hpsjam_client->show();
+		/* check for presets */
+		if (nickname != 0)
+			hpsjam_client->w_connect->name.edit.setText(QString::fromUtf8(nickname));
+		if (icon_nr > -1)
+			hpsjam_client->w_connect->icon.selection = icon_nr;
+		if (passwd != 0)
+			hpsjam_client->w_connect->password.edit.setText(QString::fromUtf8(passwd));
+		if (connect_to != 0)
+			hpsjam_client->w_connect->server.edit.setText(QString::fromUtf8(connect_to));
 
 		/* set a valid UDP buffer size */
 		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX;
@@ -198,6 +230,15 @@ main(int argc, char **argv)
 
 		/* create timer, if any */
 		hpsjam_timer_init();
+
+		if (connect_to != 0) {
+			/* wait a bit for sockets and timer to be created */
+			usleep(250000);
+			hpsjam_client->w_connect->handle_connect();
+		}
+
+		/* show window */
+		hpsjam_client->show();
 
 		return (app.exec());
 	} else {
