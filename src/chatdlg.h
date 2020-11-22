@@ -70,6 +70,7 @@ public:
 		line.setMaxLength(128);
 		edit.setReadOnly(true);
 		edit.setMaximumBlockCount(1000);
+		edit.setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
 
 		gl.addWidget(&edit, 0,0,1,3);
 		gl.addWidget(&line, 1,0,1,1);
