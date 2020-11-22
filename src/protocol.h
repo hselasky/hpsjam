@@ -305,7 +305,6 @@ public:
 	uint16_t start_time; /* start time for message */
 	uint16_t ping_time; /* response time in ticks */
 	uint16_t pend_count; /* pending timeout counter */
-	uint16_t append_fail; /* appending data failed */
 	uint8_t pend_seqno; /* pending sequence number */
 	uint8_t peer_seqno; /* peer sequence number */
 	uint8_t d_cur;	/* current distance between XOR frames */
@@ -341,7 +340,6 @@ public:
 		start_time = 0;
 		ping_time = 0;
 		pend_count = 65535;
-		append_fail = 0;
 		pend_seqno = 0;
 		peer_seqno = 0;
 		seqno = 0;
@@ -367,16 +365,7 @@ public:
 		if (len <= remainder) {
 			memcpy(current.raw + sizeof(current.hdr) + offset, entry.raw, len);
 			offset += len;
-			if (&entry == pending)
-				append_fail = 0;
 			return (true);
-		} else if (&entry == pending) {
-			/* if the packet is too big to be transmitted silently drop it */
-			if (++append_fail > 10) {
-				delete pending;
-				pending = 0;
-				append_fail = 0;
-			}
 		}
 		return (false);
 	};
@@ -428,22 +417,18 @@ public:
 					pending->packet.setPeerSeqNo(peer_seqno);
 					start_time = hpsjam_ticks;
 					pend_seqno++;
-					if (append_pkt(*pending)) {
+					if (append_pkt(*pending))
 						send_ack = false;
-						pend_count = 1;
-					} else {
-						pend_count = 0;
-					}
+					pend_count = 1;
 				} else if (pend_count != 65535) {
 					pend_count++;
 				}
 			} else {
 				if ((pend_count % 64) == 0) {
 					pending->packet.setPeerSeqNo(peer_seqno);
-					if (append_pkt(*pending)) {
+					if (append_pkt(*pending))
 						send_ack = false;
-						pend_count++;
-					}
+					pend_count++;
 				} else if (pend_count != 65535) {
 					pend_count++;
 				}
