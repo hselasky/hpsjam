@@ -91,16 +91,27 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 		for (unsigned x = hpsjam_num_server_peers; x--; ) {
 			class hpsjam_server_peer &peer = hpsjam_server_peers[x];
 
-			QMutexLocker locker(&peer.lock);
+			if (1) {
+				QMutexLocker locker(&peer.lock);
 
-			if (peer.valid == true)
-				continue;
+				if (peer.valid == true)
+					continue;
 
-			peer.allow_mixer_access = (hpsjam_mixer_passwd == 0 || hpsjam_mixer_passwd == passwd);
-			peer.valid = true;
-			peer.address = src;
-			peer.input_pkt.receive(frame);
-			peer.send_welcome_message();
+				peer.allow_mixer_access =
+				    (hpsjam_mixer_passwd == 0 || hpsjam_mixer_passwd == passwd);
+				peer.valid = true;
+				peer.address = src;
+				peer.input_pkt.receive(frame);
+				peer.send_welcome_message();
+
+			}
+
+			/* reset bits for this client */
+			for (unsigned y = hpsjam_num_server_peers; y--; ) {
+				class hpsjam_server_peer &other = hpsjam_server_peers[y];
+				QMutexLocker locker(&other.lock);
+				other.bits[x] = 0;
+			}
 			return;
 		}
 	}
