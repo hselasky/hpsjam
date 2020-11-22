@@ -359,7 +359,7 @@ void HpsJamSendPacket(T &s)
 		s.output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_32_BIT_1CH:
-		entry.packet.put8Bit1ChSample(temp[0], HPSJAM_NOM_SAMPLES);
+		entry.packet.put32Bit1ChSample(temp[0], HPSJAM_NOM_SAMPLES);
 		s.output_pkt.append_pkt(entry);
 		break;
 	case HPSJAM_TYPE_AUDIO_8_BIT_2CH:
