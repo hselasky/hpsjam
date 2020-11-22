@@ -331,20 +331,6 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 		break;
 	}
 
-	address.mSelector = kAudioDevicePropertyDeviceHasChanged;
-
-	AudioObjectAddPropertyListener(audioInputDevice,
-	    &address, hpsjam_device_notification, 0);
-
-	AudioObjectAddPropertyListener(audioOutputDevice,
-	    &address, hpsjam_device_notification, 0);
-
-	AudioDeviceCreateIOProcID(audioInputDevice,
-	    hpsjam_audio_callback, 0, &audioInputProcID);
-
-	AudioDeviceCreateIOProcID(audioOutputDevice,
-	    hpsjam_audio_callback, 0, &audioOutputProcID);
-
 	frameSize = hpsjam_set_buffer_size(audioInputDevice,
 	    kAudioDevicePropertyScopeInput, 2 * (HPSJAM_SAMPLE_RATE / 1000));
 
@@ -360,6 +346,22 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	audioInputBuffer[0] = new float [audioBufferSamples];
 	audioInputBuffer[1] = new float [audioBufferSamples];
 
+	/* install callbacks */
+	address.mSelector = kAudioDevicePropertyDeviceHasChanged;
+
+	AudioObjectAddPropertyListener(audioInputDevice,
+	    &address, hpsjam_device_notification, 0);
+
+	AudioObjectAddPropertyListener(audioOutputDevice,
+	    &address, hpsjam_device_notification, 0);
+
+	AudioDeviceCreateIOProcID(audioInputDevice,
+	    hpsjam_audio_callback, 0, &audioInputProcID);
+
+	AudioDeviceCreateIOProcID(audioOutputDevice,
+	    hpsjam_audio_callback, 0, &audioOutputProcID);
+
+	/* start audio */
 	AudioDeviceStart(audioInputDevice, audioInputProcID);
 	AudioDeviceStart(audioOutputDevice, audioOutputProcID);
 
