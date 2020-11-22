@@ -89,27 +89,26 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 
 		/* create new connection, if any */
 		for (unsigned x = hpsjam_num_server_peers; x--; ) {
+			class hpsjam_server_peer &peer = hpsjam_server_peers[x];
+			QMutexLocker peer_locker(&peer.lock);
 
-			if (1) {
-				class hpsjam_server_peer &peer = hpsjam_server_peers[x];
-				QMutexLocker locker(&peer.lock);
+			if (peer.valid == true)
+				continue;
 
-				if (peer.valid == true)
-					continue;
+			peer.allow_mixer_access =
+			    (hpsjam_mixer_passwd == 0 || hpsjam_mixer_passwd == passwd);
+			peer.valid = true;
+			peer.address = src;
+			peer.input_pkt.receive(frame);
+			peer.send_welcome_message();
 
-				peer.allow_mixer_access =
-				    (hpsjam_mixer_passwd == 0 || hpsjam_mixer_passwd == passwd);
-				peer.valid = true;
-				peer.address = src;
-				peer.input_pkt.receive(frame);
-				peer.send_welcome_message();
-
-			}
+			/* drop lock */
+			peer_locker.unlock();
 
 			/* reset bits for this client */
 			for (unsigned y = hpsjam_num_server_peers; y--; ) {
 				class hpsjam_server_peer &other = hpsjam_server_peers[y];
-				QMutexLocker locker(&other.lock);
+				QMutexLocker other_locker(&other.lock);
 				other.bits[x] = 0;
 			}
 			return;
