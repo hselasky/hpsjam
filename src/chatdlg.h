@@ -43,6 +43,8 @@ public:
 #if defined(Q_OS_MACX)
 		b_send.setShortcut(QKeySequence(Qt::ALT + Qt::Key_Y));
 #endif
+		edit.setTabChangesFocus(true);
+
 		gl.addWidget(&edit, 0,0,1,2);
 		gl.addWidget(&b_send, 1,1,1,1);
 		gl.setRowStretch(0,1);
