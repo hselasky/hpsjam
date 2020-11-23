@@ -32,7 +32,6 @@
 #include <Foundation/Foundation.h>
 
 static id<NSObject> hpsjam_activity_id = nil;
-static bool hpsjam_activity;
 
 Q_DECL_EXPORT void
 HpsJamBeginActivity()
@@ -40,23 +39,22 @@ HpsJamBeginActivity()
 	const NSActivityOptions options =
 	    NSActivityBackground | NSActivityIdleSystemSleepDisabled | NSActivityLatencyCritical;
 
-	if (hpsjam_activity)
+	if (hpsjam_activity_id != nil)
 	    return;
 
 	hpsjam_activity_id = [[NSProcessInfo processInfo]
 	    beginActivityWithOptions: options
 	    reason:@"HPSJAM needs low latency audio and UDP processing and should not be throttled."];
-
-	hpsjam_activity = true;
+	[hpsjam_activity_id retain];
 }
 
 Q_DECL_EXPORT void
 HpsJamEndActivity()
 {
-	if (!hpsjam_activity)
+	if (hpsjam_activity_id == nil)
 	    return;
 
 	[[NSProcessInfo processInfo] endActivity: hpsjam_activity_id];
-
-	hpsjam_activity = false;
+	[hpsjam_activity_id release];
+	hpsjam_activity_id = nil;
 }
