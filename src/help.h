@@ -88,6 +88,8 @@ public:
         "    32-bit stereo: 8\n"
 	"    Toggle audio input device: I\n"
 	"    Toggle audio output device: O\n"));
+
+	setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
     };
 };
 
