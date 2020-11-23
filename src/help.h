@@ -51,7 +51,7 @@ public:
         "    Refresh: ALT+R\n"
         "\n"
 	"## INSIDE CHAT TAB ##\n"
-	"    Send a line of lyrics: ALT+E\n"
+	"    Send a line of lyrics: ALT+Y\n"
 	"    Clear chat window: ALT+R\n"
 	"\n"
 	"## INSIDE MIXER TAB ##\n"
