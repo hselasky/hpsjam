@@ -333,7 +333,7 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	}
 
 	frameSize = hpsjam_set_buffer_size(audioInputDevice,
-	    kAudioDevicePropertyScopeInput, 2 * (HPSJAM_SAMPLE_RATE / 1000));
+	    kAudioDevicePropertyScopeInput, 2 * HPSJAM_DEF_SAMPLES);
 
 	if (hpsjam_set_buffer_size(audioOutputDevice,
 	    kAudioDevicePropertyScopeOutput, frameSize) != frameSize)
