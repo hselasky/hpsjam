@@ -26,8 +26,6 @@
 #ifndef _PTHREAD_H_
 #define	_PTHREAD_H_
 
-#include <windows.h>
-
 typedef HANDLE pthread_t;
 typedef void *pthread_attr_t;
 
