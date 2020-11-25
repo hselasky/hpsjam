@@ -39,7 +39,6 @@ static QElapsedTImer hpsjam_timer;
 #else
 #include <sys/time.h>
 #endif
-#endif
 
 #include "hpsjam.h"
 #include "timer.h"
@@ -92,7 +91,6 @@ hpsjam_timer_loop(void *arg)
 	struct timespec next;
 
 	clock_gettime(CLOCK_MONOTONIC, &next);
-#endif
 #endif
 
 	while (1) {
