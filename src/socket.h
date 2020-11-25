@@ -66,6 +66,7 @@ struct hpsjam_socket_address {
 			break;
 		default:
 			assert(0);
+			break;
 		}
 	};
 	bool resolve(const char *, const char *, struct hpsjam_socket_address &);
@@ -80,6 +81,7 @@ struct hpsjam_socket_address {
 			break;
 		default:
 			assert(0);
+			break;
 		}
 		if (fd > -1) {
 #ifdef _WIN32
@@ -100,6 +102,7 @@ struct hpsjam_socket_address {
 			return (::bind(fd, (const struct sockaddr *)&v6, sizeof(v6)));
 		default:
 			assert(0);
+			return (-1);
 		}
 	};
 	ssize_t recvfrom(char *buffer, size_t bytes) {
@@ -118,6 +121,7 @@ struct hpsjam_socket_address {
 			return (::recvfrom(fd, buffer, bytes, 0, (struct sockaddr *)&v6, &addr_size));
 		default:
 			assert(0);
+			return (-1);
 		}
 	};
 	ssize_t sendto(const char *buffer, size_t bytes) const {
@@ -130,6 +134,7 @@ struct hpsjam_socket_address {
 			return (::sendto(fd, buffer, bytes, 0, (struct sockaddr *)&v6, sizeof(v6)));
 		default:
 			assert(0);
+			return (-1);
 		}
 	};
 	void close() {
@@ -165,6 +170,7 @@ struct hpsjam_socket_address {
 			break;
 		default:
 			assert(0);
+			break;
 		}
 	};
 	int compare(const struct hpsjam_socket_address &other) const {
@@ -201,6 +207,7 @@ struct hpsjam_socket_address {
 				return (0);
 		default:
 			assert(0);
+			return (0);
 		}
 	};
 	bool operator >(const struct hpsjam_socket_address &other) const {
