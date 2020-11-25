@@ -98,7 +98,9 @@ LIBS            += \
         -ladvapi32 \
         -lwinmm \
         -lws2_32
-RC_FILE         = windows/mainicon.rc
+INCLUDEPATH	+= windows/include
+LIBS		+= windows/lib/libfftw3.a
+RC_FILE		= windows/mainicon.rc
 }
 
 macx {
@@ -107,7 +109,7 @@ INCLUDEPATH 	+= /opt/local/include
 LIBS		+= /opt/local/lib/libfftw3.a
 }
 
-!macx {
+!macx:!win32 {
 INCLUDEPATH     += $${PREFIX}/include
 LIBS		+= -L$${PREFIX}/lib -lfftw3
 }

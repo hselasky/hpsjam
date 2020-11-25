@@ -30,8 +30,15 @@
 #include <mach/mach.h>
 #include <mach/mach_error.h>
 #include <mach/mach_time.h>
+#elif defined(_WIN32)
+#include <QThread>
+#include <QElapsedTimer>
+static int16_t hpsjam_timer_remainder;
+static int16_t hpsjam_timer_next;
+static QElapsedTImer hpsjam_timer;
 #else
 #include <sys/time.h>
+#endif
 #endif
 
 #include "hpsjam.h"
@@ -44,6 +51,7 @@ int hpsjam_timer_adjust;
 static void
 hpsjam_timer_set_priority()
 {
+#ifndef _WIN32
 	pthread_t pt = pthread_self();
 	struct sched_param param;
 	int policy;
@@ -51,6 +59,7 @@ hpsjam_timer_set_priority()
 	pthread_getschedparam(pt, &policy, &param);
 	param.sched_priority = sched_get_priority_max(policy);
 	pthread_setschedparam(pt, policy, &param);
+#endif
 }
 
 static void *
@@ -71,6 +80,9 @@ hpsjam_timer_loop(void *arg)
 	};
 
 	next = mach_absolute_time();
+#elif defined(_WIN32)
+	hpsjam_timer.start();
+	hpsjam_timer.restart();
 #else
 	static const long delay[3] = {
 	     999000L,
@@ -80,6 +92,7 @@ hpsjam_timer_loop(void *arg)
 	struct timespec next;
 
 	clock_gettime(CLOCK_MONOTONIC, &next);
+#endif
 #endif
 
 	while (1) {
@@ -92,6 +105,23 @@ hpsjam_timer_loop(void *arg)
 			next += delay[1];
 
 		mach_wait_until(next);
+#elif defined(_WIN32)
+		hpsjam_timer_remainder += hpsjam_timer_adjust;
+
+		if (hpsjam_timer_remainder <= -1000) {
+			hpsjam_timer_remainder += 1000;
+		} else if (hpsjam_timer_remainder >= 1000) {
+			hpsjam_timer_remainder -= 1000;
+			hpsjam_timer_next += 2;
+		} else {
+			hpsjam_timer_next += 1;
+		}
+		while (1) {
+			int16_t delta = hpsjam_timer_next - hpsjam_timer.elapsed();
+			if (delta <= 0)
+				break;
+			QThread::msleep(1);
+		}
 #else
 		if (hpsjam_timer_adjust < 0)
 			next.tv_nsec += delay[0];
