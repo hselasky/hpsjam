@@ -91,19 +91,21 @@ RESOURCES	+= HpsJam.qrc
 TARGET		= HpsJam
 
 win32 {
-LIBS            += \
-        -lole32 \
-        -luser32 \
-        -ladvapi32 \
-        -lwinmm \
-        -lws2_32
+CONFIG		+= staticlib
+LIBS		+= \
+	-lole32 \
+	-luser32 \
+	-ladvapi32 \
+	-lwinmm \
+	-lws2_32 \
+	-L$${_PRO_FILE_PWD_}/windows/lib -lfftw3-3
+
 QMAKE_CXXFLAGS	+= -include winsock2.h
 QMAKE_CXXFLAGS	+= -include windows.h
 QMAKE_CXXFLAGS	+= -include ws2ipdef.h
 QMAKE_CXXFLAGS	+= -include ws2tcpip.h
 QMAKE_CXXFLAGS	+= -include winsock.h
 INCLUDEPATH	+= windows/include
-LIBS		+= $${_PRO_FILE_PWD_}/windows/lib/libfftw3.a
 RC_FILE		= windows/mainicon.rc
 }
 
