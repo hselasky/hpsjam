@@ -34,7 +34,7 @@ public:
 	HpsJamHelp() {
 	  setReadOnly(true);
 	  setPlainText(tr(
-        "### SHORTCUTS / HOTKEYS for hpsjam ###"
+	"### SHORTCUTS / HOTKEYS for hpsjam ###\n"
 	"\n"
 	"On the Mac the ALT key equals the option key.\n"
 	"\n"
