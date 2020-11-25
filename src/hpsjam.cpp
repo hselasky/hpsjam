@@ -64,7 +64,9 @@ static const struct option hpsjam_opts[] = {
 	{ "peers", required_argument, NULL, 'P' },
 	{ "password", required_argument, NULL, 'K' },
 	{ "mixer-password", required_argument, NULL, 'M' },
+#ifndef _WIN32
 	{ "daemon", no_argument, NULL, 'B' },
+#endif
 	{ "nickname", required_argument, NULL, 'N'},
 	{ "icon", required_argument, NULL, 'i'},
 	{ "connect", required_argument, NULL, 'c'},
@@ -83,7 +85,9 @@ static void
 usage(void)
 {
         fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_IPV4_PORT_STR "] "
+#ifndef _WIN32
 		"[--daemon] \\\n"
+#endif
 		"	[--password <64_bit_hexadecimal_password>] \\\n"
 #ifdef HAVE_JACK_AUDIO
 		"	[--jacknoconnect] [--jackname <name>] \\\n"
@@ -117,7 +121,9 @@ main(int argc, char **argv)
 	int ipv4_port = HPSJAM_DEFAULT_IPV4_PORT;
 	int ipv6_port = HPSJAM_DEFAULT_IPV6_PORT;
 	int cliport = 0;
+#ifndef _WIN32
 	int do_fork = 0;
+#endif
 	bool jackconnect = true;
 	const char *jackname = "hpsjam";
 	const char *nickname = 0;
@@ -185,9 +191,11 @@ main(int argc, char **argv)
 			if (output_device < 0)
 				usage();
 			break;
+#ifndef _WIN32
 		case 'B':
 			do_fork = 1;
 			break;
+#endif
 		case 'J':
 			jackconnect = false;
 			break;
@@ -224,8 +232,10 @@ main(int argc, char **argv)
 		}
 	}
 
+#ifndef _WIN32
 	if (do_fork && daemon(0, 0) != 0)
 		errx(1, "Cannot daemonize");
+#endif
 
 	qRegisterMetaType<uint8_t>("uint8_t");
 
