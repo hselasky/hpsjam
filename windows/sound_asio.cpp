@@ -169,8 +169,8 @@ struct sample24MSB {
 	}
 };
 
-static constexpr float FACTOR24 = 2147483647 - 127;
-static constexpr float FACTOR24_INV = 1.0f / (2147483647 - 127);
+static constexpr float FACTOR32 = 2147483647 - 127;
+static constexpr float FACTOR32_INV = 1.0f / (2147483647 - 127);
 
 struct sample32LSB {
 	int32_t	data[1];
