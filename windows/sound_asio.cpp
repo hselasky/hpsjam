@@ -280,12 +280,12 @@ static void
 hpsjam_asio_buffer_switch(long index, ASIOBool)
 {
 	QMutexLocker locker(&audioMutex);
-	unsigned index = 0;
+	unsigned i = 0;
 
-	for (unsigned x = 0; x != audioInputChannels; x++, index++) {
-		const ASIOBufferInfo &bi = bufferInfo[index];
+	for (unsigned x = 0; x != audioInputChannels; x++, i++) {
+		const ASIOBufferInfo &bi = bufferInfo[i];
 
-		switch (channelInfo[index].type) {
+		switch (channelInfo[i].type) {
 		case ASIOSTInt16LSB:
 			hpsjam_audio_import <sample16LSB> (bi, 1, index, x);
 			break;
@@ -375,10 +375,10 @@ hpsjam_asio_buffer_switch(long index, ASIOBool)
 			audioInputBuffer[0][x] = (audioInputBuffer[0][x] + audioInputBuffer[1][x]) / 2.0f;
 	}
 
-	for (unsigned x = 0; x != audioOutputChannels; x++, index++) {
-		const ASIOBufferInfo &bi = bufferInfo[index];
+	for (unsigned x = 0; x != audioOutputChannels; x++, i++) {
+		const ASIOBufferInfo &bi = bufferInfo[i];
 
-		switch (channelInfo[index].type) {
+		switch (channelInfo[i].type) {
 		case ASIOSTInt16LSB:
 			hpsjam_audio_export<sample16LSB> (bi, 1, index, x);
 			break;
