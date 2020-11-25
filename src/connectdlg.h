@@ -106,12 +106,12 @@ public:
 	HpsJamConnectButtons() :
             gl(this),
 	    b_refresh(tr("&Refresh")),
-	    b_connect(tr("&Connect")),
+	    b_connect(tr("C&onnect")),
 	    b_disconnect(tr("&Disconnect")) {
 
 #if defined(Q_OS_MACX)
 		b_refresh.setShortcut(QKeySequence(Qt::ALT + Qt::Key_R));
-		b_connect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_C));
+		b_connect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_O));
 		b_disconnect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_D));
 #endif
 		gl.addWidget(&b_refresh, 0,0);

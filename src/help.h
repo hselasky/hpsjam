@@ -36,6 +36,7 @@ public:
 	  setPlainText(tr(
         "### SHORTCUTS / HOTKEYS for hpsjam ###"
 	"\n"
+	"On the Mac the ALT key equals the option key.\n"
 	"\n"
 	"### SELECT GLOBAL TABS ###\n"
         "    CONNECT: ALT+E\n"
@@ -46,7 +47,7 @@ public:
         "    STATS: ALT+S\n"
         "\n"
         "## INSIDE CONNECT TAB ##\n"
-        "    Connect: ALT+C\n"
+        "    Connect: ALT+O\n"
         "    Disconnect: ALT+D\n"
         "    Refresh: ALT+R\n"
         "\n"
