@@ -282,7 +282,7 @@ hpsjam_asio_buffer_switch(long index, ASIOBool)
 	QMutexLocker locker(&audioMutex);
 	unsigned i = 0;
 
-	for (unsigned x = 0; x != audioInputChannels; x++, i++) {
+	for (long x = 0; x != audioInputChannels; x++, i++) {
 		const ASIOBufferInfo &bi = bufferInfo[i];
 
 		switch (channelInfo[i].type) {
@@ -375,7 +375,7 @@ hpsjam_asio_buffer_switch(long index, ASIOBool)
 			audioInputBuffer[0][x] = (audioInputBuffer[0][x] + audioInputBuffer[1][x]) / 2.0f;
 	}
 
-	for (unsigned x = 0; x != audioOutputChannels; x++, i++) {
+	for (long x = 0; x != audioOutputChannels; x++, i++) {
 		const ASIOBufferInfo &bi = bufferInfo[i];
 
 		switch (channelInfo[i].type) {
