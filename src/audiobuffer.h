@@ -162,7 +162,7 @@ public:
 		}
 
 		/* keep track of low water mark */
-		const uint8_t index = (total - num) / (HPSJAM_SAMPLE_RATE / 1000);
+		const uint8_t index = (total - num) / HPSJAM_DEF_SAMPLES;
 
 		stats[index] += 1.0f;
 
@@ -176,7 +176,7 @@ public:
 			 * Shrink the buffer depending on the amount
 			 * of supplied data:
 			 */
-			if (total > num && high > 1)
+			if (total >= num + HPSJAM_DEF_SAMPLES && high > 1)
 				shrink();
 		}
 
@@ -288,12 +288,22 @@ public:
 
 	/* shrink ring-buffer */
 	void shrink() {
-		const size_t p[2] =
-		  { (consumer + total + HPSJAM_MAX_SAMPLES - 1) % HPSJAM_MAX_SAMPLES,
-		    (consumer + total + HPSJAM_MAX_SAMPLES - 2) % HPSJAM_MAX_SAMPLES };
-		if (total > 1) {
-			samples[p[1]] = (samples[p[0]] + samples[p[1]]) / 2.0f;
+		if (total < HPSJAM_DEF_SAMPLES)
+			return;
+		/* merge two millisecond buffers */
+		for (size_t x = 0; x != HPSJAM_DEF_SAMPLES; x++) {
+			const float factor = x * (1.0f / HPSJAM_DEF_SAMPLES);
+			const size_t p[2] = {
+			    consumer,
+			    (consumer + HPSJAM_DEF_SAMPLES) % HPSJAM_MAX_SAMPLES,
+			};
+			samples[p[1]] = samples[p[0]] * (1.0f - factor) +
+			  samples[p[1]] * factor;
+			/* reduce one sample */
+			consumer++;
 			total--;
+			if (consumer == HPSJAM_MAX_SAMPLES)
+				consumer = 0;
 		}
 	};
 };
