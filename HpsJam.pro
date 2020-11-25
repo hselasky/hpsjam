@@ -56,7 +56,6 @@ isEmpty(WITHOUT_AUDIO) {
 
 # ASIO audio backend
 win32 {
-SOURCES         += windows/sound_asio.cpp
 DEFINES         -= UNICODE
 SOURCES         += \
         windows/sound_asio.cpp \
