@@ -52,18 +52,19 @@ public:
 	    b_toggle_input(tr("Toggle input device")),
 #endif
 	    b_toggle_output(tr("Toggle output device")) {
-#if defined(HAVE_ASIO_AUDIO)
-		b_toggle_output.setEnabled(false);
-#endif
 		setTitle("Audio device configuration");
 		gl.addWidget(&b_toggle_input, 0,0);
 		gl.addWidget(&l_input, 0,1);
+#if !defined(HAVE_ASIO_AUDIO)
 		gl.addWidget(&b_toggle_output, 1,0);
 		gl.addWidget(&l_output, 1,1);
+#endif
 		gl.setColumnStretch(1,1);
 
 		connect(&b_toggle_input, SIGNAL(released()), this, SLOT(handle_toggle_input()));
+#if !defined(HAVE_ASIO_AUDIO)
 		connect(&b_toggle_output, SIGNAL(released()), this, SLOT(handle_toggle_output()));
+#endif
 	};
 	QGridLayout gl;
 	QPushButton b_toggle_input;
