@@ -68,4 +68,5 @@ HPS JAM does not collect any information from its users.
   <li>FreeBSD <A HREF="https://www.freshports.org/audio/hpsjam">hpsjam port</A></li>
   <li>Linux</li>
   <li>MacOSX <A HREF="http://home.selasky.org/privat/HpsJam.dmg">Binary build here</A></li>
+  <li>Windows (64-bit) <A HREF="http://home.selasky.org/privat/hpsjam-binary-win64.zip">Binary build here</A></li>
 </ul>
