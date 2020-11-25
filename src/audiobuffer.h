@@ -176,8 +176,11 @@ public:
 			 * Shrink the buffer depending on the amount
 			 * of supplied data:
 			 */
-			if (total >= num + HPSJAM_DEF_SAMPLES && high > 1)
+			if (total >= num + HPSJAM_DEF_SAMPLES && high > 1) {
 				shrink();
+				/* need to update FWD now consumer is changed */
+				fwd = HPSJAM_MAX_SAMPLES - consumer;
+			}
 		}
 
 		/* copy samples from ring-buffer */
