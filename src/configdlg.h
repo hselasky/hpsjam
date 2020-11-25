@@ -48,7 +48,9 @@ public:
 	HpsJamDeviceSelection() : gl(this),
 	    b_toggle_input(tr("Toggle input device")),
 	    b_toggle_output(tr("Toggle output device")) {
-
+#if defined(HAVE_ASIO_AUDIO)
+		b_toggle_output.setEnabled(false);
+#endif
 		setTitle("Audio device configuration");
 		gl.addWidget(&b_toggle_input, 0,0);
 		gl.addWidget(&l_input, 0,1);

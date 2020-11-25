@@ -54,6 +54,22 @@ SOURCES		+= mac/activity.mm
 
 isEmpty(WITHOUT_AUDIO) {
 
+# ASIO audio backend
+win32 {
+SOURCES         += windows/sound_asio.cpp
+DEFINES         -= UNICODE
+SOURCES         += \
+        windows/sound_asio.cpp \
+        windows/ASIOSDK2/common/asio.cpp \
+        windows/ASIOSDK2/host/asiodrivers.cpp \
+        windows/ASIOSDK2/host/pc/asiolist.cpp
+INCLUDEPATH     += \
+        windows/ASIOSDK2/common \
+        windows/ASIOSDK2/host \
+        windows/ASIOSDK2/host/pc
+DEFINES         += HAVE_ASIO_AUDIO
+}
+
 # MacOS audio backend
 macx {
 SOURCES		+= mac/sound_mac.cpp
@@ -63,7 +79,7 @@ DEFINES		+= HAVE_MAC_AUDIO
 }
 
 # JACK audio backend
-!macx {
+!macx:!win32 {
 SOURCES		+= linux/sound_jack.cpp
 LIBS		+= -L$${PREFIX}/lib -ljack
 DEFINES		+= HAVE_JACK_AUDIO
@@ -74,6 +90,16 @@ DEFINES		+= HAVE_JACK_AUDIO
 RESOURCES	+= HpsJam.qrc
 
 TARGET		= HpsJam
+
+win32 {
+LIBS            += \
+        -lole32 \
+        -luser32 \
+        -ladvapi32 \
+        -lwinmm \
+        -lws2_32
+RC_FILE         = windows/mainicon.rc
+}
 
 macx {
 QMAKE_INFO_PLIST += HpsJamMacOSX.plist

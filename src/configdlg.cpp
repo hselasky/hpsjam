@@ -45,7 +45,7 @@ const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = 
 void
 HpsJamDeviceSelection :: handle_toggle_input()
 {
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_JACK_AUDIO)
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_JACK_AUDIO) || defined(HAVE_ASIO_AUDIO)
 	const int input = hpsjam_sound_toggle_input(-1);
 #else
 	const int input = 0;

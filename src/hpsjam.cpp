@@ -269,6 +269,16 @@ main(int argc, char **argv)
 		atexit(&hpsjam_sound_uninit);
 #endif
 
+#ifdef HAVE_ASIO_AUDIO
+		if (hpsjam_sound_init(jackname, jackconnect)) {
+			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+				QObject::tr("Cannot connect to default ASIO subsystem or \n"
+					    "sample rate is different from %1Hz or \n"
+					    "latency is too high").arg(HPSJAM_SAMPLE_RATE));
+		}
+		/* register exit hook for audio */
+		atexit(&hpsjam_sound_uninit);
+#endif
 		/* check for presets */
 		if (nickname != 0)
 			hpsjam_client->w_connect->name.edit.setText(QString::fromUtf8(nickname));
