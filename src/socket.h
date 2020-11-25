@@ -82,8 +82,13 @@ struct hpsjam_socket_address {
 			assert(0);
 		}
 		if (fd > -1) {
-			setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (void *)&buffer, sizeof(buffer));
-			setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (void *)&buffer, sizeof(buffer));
+#ifdef _WIN32
+			setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *)&buffer, sizeof(buffer));
+			setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *)&buffer, sizeof(buffer));
+#else
+			setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer, sizeof(buffer));
+			setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer, sizeof(buffer));
+#endif
 		}
 		return (fd);
 	};
