@@ -50,12 +50,22 @@ HpsJamDeviceSelection :: handle_toggle_input()
 #else
 	const int input = 0;
 #endif
+
+#if defined(HAVE_ASIO_AUDIO)
+	if (input == -1)
+		l_input.setText(tr("Selecting audio device failed"));
+	else if (input == 0)
+		l_input.setText(tr("Selected audio device is system default"));
+	else
+		l_input.setText(tr("Selected audio device is %1").arg(input));
+#else
 	if (input == -1)
 		l_input.setText(tr("Selecting audio input device failed"));
 	else if (input == 0)
 		l_input.setText(tr("Selected audio input device is system default"));
 	else
 		l_input.setText(tr("Selected audio input device is %1").arg(input));
+#endif
 }
 
 void

@@ -46,7 +46,11 @@ class HpsJamDeviceSelection : public QGroupBox {
 	Q_OBJECT;
 public:
 	HpsJamDeviceSelection() : gl(this),
+#if defined(HAVE_ASIO_AUDIO)
+	    b_toggle_input(tr("Toggle device")),
+#else
 	    b_toggle_input(tr("Toggle input device")),
+#endif
 	    b_toggle_output(tr("Toggle output device")) {
 #if defined(HAVE_ASIO_AUDIO)
 		b_toggle_output.setEnabled(false);
