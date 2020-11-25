@@ -97,7 +97,10 @@ LIBS            += \
         -ladvapi32 \
         -lwinmm \
         -lws2_32
-QMAKE_CXXFLAGS	+= -include winsock2.h -include windows.h
+QMAKE_CXXFLAGS	+= -include winsock2.h
+QMAKE_CXXFLAGS	+= -include windows.h
+QMAKE_CXXFLAGS	+= -include ws2ipdef.h
+QMAKE_CXXFLAGS	+= -include winsock.h
 INCLUDEPATH	+= windows/include
 LIBS		+= windows/lib/libfftw3.a
 RC_FILE		= windows/mainicon.rc
