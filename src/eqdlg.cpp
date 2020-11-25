@@ -51,6 +51,8 @@ HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
 	b_apply.setText(tr("&Apply"));
 	b_close.setText(tr("&Close"));
 
+	edit.setTabChangesFocus(true);
+
 	gl_spec.addWidget(&edit, 0,0);
 
 	gl_control.addWidget(&b_defaults, 0,0);
