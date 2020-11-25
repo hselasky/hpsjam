@@ -27,7 +27,7 @@
 #define	_ERR_H_
 
 #define	errx(eval, fmt, ...) do {
-	fprintf(stderr, fmt "\n",## __VA_ARGS__);
+	fprintf(stderr, fmt "\n", ## __VA_ARGS__);
 	exit(eval);
 } while (0)
 
