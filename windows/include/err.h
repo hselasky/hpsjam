@@ -31,4 +31,8 @@
 	exit(eval);					\
 } while (0)
 
+#define	warn(fmt, ...) do {				\
+	fprintf(stderr, fmt "\n", ## __VA_ARGS__);	\
+} while (0)
+
 #endif	/* _ERR_H_ */
