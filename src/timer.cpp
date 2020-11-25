@@ -35,7 +35,7 @@
 #include <QElapsedTimer>
 static int16_t hpsjam_timer_remainder;
 static int16_t hpsjam_timer_next;
-static QElapsedTImer hpsjam_timer;
+static QElapsedTimer hpsjam_timer;
 #else
 #include <sys/time.h>
 #endif

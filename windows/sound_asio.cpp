@@ -53,7 +53,7 @@ static float *audioInputBuffer[2];
 static QMutex audioMutex;
 static uint32_t audioDeviceSelection;
 static uint32_t audioMaxSelection;
-static const char *audioDeviceNames[MAX_DRIVERS];
+static char *audioDeviceNames[MAX_DRIVERS];
 
 template <typename T> void
 hpsjam_audio_import(const ASIOBufferInfo &bi, const int gain, const unsigned index, const unsigned ch)
@@ -279,7 +279,7 @@ struct sampleFloat64MSB {
 static void
 hpsjam_asio_buffer_switch(long index, ASIOBool)
 {
-	QMutexLocker locker(&audioLock);
+	QMutexLocker locker(&audioMutex);
 	unsigned index = 0;
 
 	for (unsigned x = 0; x != audioInputChannels; x++, index++) {
@@ -530,7 +530,7 @@ hpsjam_asio_get_buffer_size()
 	long lGranularity;
 	long lBufSize;
 
-	ASIOGetBufferSize(&MinSize, &lMaxSize, &lPreferredSize, &lGranularity);
+	ASIOGetBufferSize(&lMinSize, &lMaxSize, &lPreferredSize, &lGranularity);
 
 	if (lGranularity <= 0)
 		lGranularity = 1;
@@ -540,7 +540,7 @@ hpsjam_asio_get_buffer_size()
 		lMinSize = 0;
 
 	/* compute nearest buffer size */
-	for (lBufSize = lMinSize; lBufSize + lGranularity <= MaxSize; lBufSize += lGranularity)
+	for (lBufSize = lMinSize; lBufSize + lGranularity <= lMaxSize; lBufSize += lGranularity)
 		;
 
 	return (lBufSize);
@@ -592,7 +592,7 @@ hpsjam_sound_init(const char *, bool)
 	ASIODisposeBuffers();
 
 	for (long i = 0; i != audioInputChannels; i++, index++) {
-		const ASIOBufferInfo &bi = bufferInfo[index];
+		ASIOBufferInfo &bi = bufferInfo[index];
 
 		bi.isInput = ASIOTrue;
 		bi.channelNum = i;
@@ -601,7 +601,7 @@ hpsjam_sound_init(const char *, bool)
 	}
 
 	for (long i = 0; i != audioOutputChannels; i++, index++) {
-		const ASIOBufferInfo &bi = bufferInfo[index];
+		ASIOBufferInfo &bi = bufferInfo[index];
 
 		bi.isInput = ASIOFalse;
 		bi.channelNum = i;
