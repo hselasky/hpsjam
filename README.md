@@ -30,8 +30,9 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
   <li> QT GUI</li>
   <li> QT widgets</li>
   <li> QT SVG renderer</li>
-  <li> FFTW3 </li>
-  <li> JACK </li>
+  <li> <A HREF="http://www.fftw.org">FFTW3</A> </li>
+  <li> <A HREF="https://jackaudio.org">JACK</A> </li>
+  <li> <A HREF="http://www.asio4all.org">ASIO</A> </li>
 </ul>
 
 <b>NOTE:</b> for those on Linux that have Jamulus already installed, you need to install additionally:
