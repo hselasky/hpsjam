@@ -42,7 +42,7 @@ const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = 
 	{ HPSJAM_TYPE_AUDIO_32_BIT_2CH, "2CH@32Bit", Qt::Key_8 },
 };
 
-void
+int
 HpsJamDeviceSelection :: handle_toggle_input(int value)
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_JACK_AUDIO) || defined(HAVE_ASIO_AUDIO)
@@ -67,9 +67,11 @@ HpsJamDeviceSelection :: handle_toggle_input(int value)
 		l_input.setText(tr("Selected audio input device is %1").arg(input));
 #endif
 	index_input = input;
+
+	return (input);
 }
 
-void
+int
 HpsJamDeviceSelection :: handle_toggle_output(int value)
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_JACK_AUDIO)
@@ -85,6 +87,8 @@ HpsJamDeviceSelection :: handle_toggle_output(int value)
 		l_output.setText(tr("Selected audio output device is %1").arg(output));
 
 	index_output = output;
+
+	return (output);
 }
 
 void

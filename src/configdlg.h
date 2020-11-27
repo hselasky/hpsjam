@@ -77,8 +77,8 @@ public:
 	int index_output;
 
 public slots:
-	void handle_toggle_input(int = -1);
-	void handle_toggle_output(int = -1);
+	int handle_toggle_input(int = -1);
+	int handle_toggle_output(int = -1);
 };
 
 class HpsJamConfigFormat : public QGroupBox {
