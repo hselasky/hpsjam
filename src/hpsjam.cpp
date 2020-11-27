@@ -271,11 +271,11 @@ main(int argc, char **argv)
 					    "Check that you have a audio device connected and\n"
 					    "that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
 		}
-		if (input_device > -1 && hpsjam_client->w_config.handle_toggle_input(input_device) < 0) {
+		if (input_device > -1 && hpsjam_client->w_config->handle_toggle_input(input_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio input device"));
 		}
-		if (output_device > -1 && hpsjam_client->w_config.handle_toggle_output(output_device) < 0) {
+		if (output_device > -1 && hpsjam_client->w_config->handle_toggle_output(output_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio output device"));
 		}
@@ -290,7 +290,7 @@ main(int argc, char **argv)
 					    "sample rate is different from %1Hz or \n"
 					    "latency is too high").arg(HPSJAM_SAMPLE_RATE));
 		}
-		if (input_device > -1 && hpsjam_client->w_config.handle_toggle_input(input_device) < 0) {
+		if (input_device > -1 && hpsjam_client->w_config->handle_toggle_input(input_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio device"));
 		}
