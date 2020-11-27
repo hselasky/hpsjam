@@ -91,6 +91,14 @@ public:
 	HpsJamEqualizer *eq_copy;
 	HpsJamHelp *w_help;
 
+	/* settings */
+	int input_device;
+	int output_device;
+	int input_left;
+	int output_left;
+	int input_right;
+	int output_right;
+
 	void loadSettings();
 	void saveSettings();
 

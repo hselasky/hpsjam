@@ -47,38 +47,65 @@ class HpsJamDeviceSelection : public QGroupBox {
 public:
 	HpsJamDeviceSelection() : gl(this),
 #if defined(HAVE_ASIO_AUDIO)
-	    b_toggle_input(tr("Toggle device")),
+	    b_toggle_input_device(tr("Toggle device")),
 #else
-	    b_toggle_input(tr("Toggle input device")),
+	    b_toggle_input_device(tr("Toggle input device")),
 #endif
-	    b_toggle_output(tr("Toggle output device")) {
+	    b_toggle_input_left(tr("L-IN")),
+	    b_toggle_input_right(tr("R-IN")),
+	    b_toggle_output_device(tr("Toggle output device")),
+	    b_toggle_output_left(tr("L-OUT")),
+	    b_toggle_output_right(tr("R-OUT")) {
 		setTitle("Audio device configuration");
-		gl.addWidget(&b_toggle_input, 0,0);
-		gl.addWidget(&l_input, 0,1);
-#if !defined(HAVE_ASIO_AUDIO)
-		gl.addWidget(&b_toggle_output, 1,0);
-		gl.addWidget(&l_output, 1,1);
-#endif
-		gl.setColumnStretch(1,1);
+#if defined(HAVE_MAC_AUDIO)
+		gl.addWidget(&b_toggle_input_device, 0,0);
+		gl.addWidget(&b_toggle_input_left, 0,1);
+		gl.addWidget(&b_toggle_input_right, 0,2);
+		gl.addWidget(&l_input, 0,3);
 
-		connect(&b_toggle_input, SIGNAL(released()), this, SLOT(handle_toggle_input()));
-#if !defined(HAVE_ASIO_AUDIO)
-		connect(&b_toggle_output, SIGNAL(released()), this, SLOT(handle_toggle_output()));
+		gl.addWidget(&b_toggle_output_device, 1,0);
+		gl.addWidget(&b_toggle_output_left, 1,1);
+		gl.addWidget(&b_toggle_output_right, 1,2);
+		gl.addWidget(&l_output, 1,3);
 #endif
-		index_input = -1;
-		index_output = -1;
+
+#if defined(HAVE_ASIO_AUDIO)
+		gl.addWidget(&b_toggle_input_device, 0,0);
+		gl.addWidget(&b_toggle_input_left, 0,1);
+		gl.addWidget(&b_toggle_input_right, 0,2);
+		gl.addWidget(&l_input, 0,3);
+
+		gl.addWidget(&b_toggle_output_left, 1,1);
+		gl.addWidget(&b_toggle_output_right, 1,2);
+#endif
+		gl.setColumnStretch(3,1);
+
+		connect(&b_toggle_input_device, SIGNAL(released()), this, SLOT(handle_toggle_input_device()));
+		connect(&b_toggle_output_device, SIGNAL(released()), this, SLOT(handle_toggle_output_device()));
+
+		connect(&b_toggle_input_left, SIGNAL(released()), this, SLOT(handle_toggle_input_left()));
+		connect(&b_toggle_output_left, SIGNAL(released()), this, SLOT(handle_toggle_output_left()));
+
+		connect(&b_toggle_input_right, SIGNAL(released()), this, SLOT(handle_toggle_input_right()));
+		connect(&b_toggle_output_right, SIGNAL(released()), this, SLOT(handle_toggle_output_right()));
 	};
 	QGridLayout gl;
-	QPushButton b_toggle_input;
-	QPushButton b_toggle_output;
+	QPushButton b_toggle_input_device;
+	QPushButton b_toggle_input_left;
+	QPushButton b_toggle_input_right;
+	QPushButton b_toggle_output_device;
+	QPushButton b_toggle_output_left;
+	QPushButton b_toggle_output_right;
 	QLabel l_input;
 	QLabel l_output;
-	int index_input;
-	int index_output;
 
 public slots:
-	int handle_toggle_input(int = -1);
-	int handle_toggle_output(int = -1);
+	int handle_toggle_input_device(int = -1);
+	int handle_toggle_output_device(int = -1);
+	int handle_toggle_input_left(int = -1);
+	int handle_toggle_output_left(int = -1);
+	int handle_toggle_input_right(int = -1);
+	int handle_toggle_output_right(int = -1);
 };
 
 class HpsJamConfigFormat : public QGroupBox {

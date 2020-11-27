@@ -43,52 +43,87 @@ const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = 
 };
 
 int
-HpsJamDeviceSelection :: handle_toggle_input(int value)
+HpsJamDeviceSelection :: handle_toggle_input_device(int value)
 {
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_JACK_AUDIO) || defined(HAVE_ASIO_AUDIO)
-	const int input = hpsjam_sound_toggle_input(value);
-#else
-	const int input = 0;
-#endif
-
-#if defined(HAVE_ASIO_AUDIO)
-	if (input == -1)
-		l_input.setText(tr("Selecting audio device failed"));
-	else if (input == 0)
-		l_input.setText(tr("Selected audio device is system default"));
-	else
-		l_input.setText(tr("Selected audio device is %1").arg(input));
-#else
-	if (input == -1)
-		l_input.setText(tr("Selecting audio input device failed"));
-	else if (input == 0)
-		l_input.setText(tr("Selected audio input device is system default"));
-	else
-		l_input.setText(tr("Selected audio input device is %1").arg(input));
-#endif
-	index_input = input;
-
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
+	const int input = hpsjam_sound_toggle_input_device(value);
+	QString status;
+	hpsjam_sound_get_input_status(status);
+	l_input.setText(status);
 	return (input);
+#else
+	return (-1);
+#endif
 }
 
 int
-HpsJamDeviceSelection :: handle_toggle_output(int value)
+HpsJamDeviceSelection :: handle_toggle_input_left(int value)
 {
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_JACK_AUDIO)
-	const int output = hpsjam_sound_toggle_output(value);
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
+	const int input = hpsjam_sound_toggle_input_channel(0, value);
+	QString status;
+	hpsjam_sound_get_input_status(status);
+	l_input.setText(status);
+	return (input);
 #else
-	const int output = 0;
+	return (-1);
 #endif
-	if (output == -1)
-		l_output.setText(tr("Selecting audio output device failed"));
-	else if (output == 0)
-		l_output.setText(tr("Selected audio output device is system default"));
-	else
-		l_output.setText(tr("Selected audio output device is %1").arg(output));
+}
 
-	index_output = output;
+int
+HpsJamDeviceSelection :: handle_toggle_input_right(int value)
+{
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
+	const int input = hpsjam_sound_toggle_input_channel(1, value);
+	QString status;
+	hpsjam_sound_get_input_status(status);
+	l_input.setText(status);
+	return (input);
+#else
+	return (-1);
+#endif
+}
 
+int
+HpsJamDeviceSelection :: handle_toggle_output_device(int value)
+{
+#if defined(HAVE_MAC_AUDIO)
+	const int output = hpsjam_sound_toggle_output(value);
+	QString status;
+	hpsjam_sound_get_output_status(status);
+	l_output.setText(status);
 	return (output);
+#else
+	return (-1);
+#endif
+}
+
+int
+HpsJamDeviceSelection :: handle_toggle_output_left(int value)
+{
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
+	const int output = hpsjam_sound_toggle_output_channel(0, value);
+	QString status;
+	hpsjam_sound_get_output_status(status);
+	l_output.setText(status);
+	return (output);
+#else
+	return (-1);
+#endif
+}
+
+int
+HpsJamDeviceSelection :: handle_toggle_output_right(int value)
+{
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
+	const int output = hpsjam_sound_toggle_output_channel(1, value);
+	QString status;
+	hpsjam_sound_get_output_status(status);
+	l_output.setText(status);
+	return (output);
+#else
+	return (-1);
+#endif
 }
 
 void
@@ -135,10 +170,10 @@ HpsJamConfig :: keyPressEvent(QKeyEvent *event)
 
 	switch (event->key()) {
 	case Qt::Key_I:
-		audio_dev.b_toggle_input.animateClick();
+		audio_dev.b_toggle_input_device.animateClick();
 		break;
 	case Qt::Key_O:
-		audio_dev.b_toggle_output.animateClick();
+		audio_dev.b_toggle_output_device.animateClick();
 		break;
 	default:
 		break;

@@ -87,7 +87,13 @@ extern void hpsjam_socket_init(unsigned short ipv4_port,
 /* sound APIs */
 extern bool hpsjam_sound_init(const char *, bool);
 extern void hpsjam_sound_uninit();
-extern int hpsjam_sound_toggle_input(int);
-extern int hpsjam_sound_toggle_output(int);
+extern int hpsjam_sound_toggle_input_device(int);
+extern int hpsjam_sound_toggle_output_device(int);
+extern int hpsjam_sound_toggle_input_channel(int, int);
+extern int hpsjam_sound_toggle_output_channel(int, int);
+
+class QString;
+extern void hpsjam_sound_get_input_status(QString &);
+extern void hpsjam_sound_get_output_status(QString &);
 
 #endif		/* _HPSJAM_H_ */

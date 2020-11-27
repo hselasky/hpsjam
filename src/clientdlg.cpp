@@ -219,8 +219,12 @@ HpsJamClient :: saveSettings()
 	settings.beginGroup("config");
 	settings.setValue("uplink_format", w_config->up_fmt.selection);
 	settings.setValue("downlink_format", w_config->down_fmt.selection);
-	settings.setValue("input_device", w_config->audio_dev.index_input);
-	settings.setValue("output_device", w_config->audio_dev.index_output);
+	settings.setValue("input_device", w_config->audio_dev.handle_toggle_input_device(-2));
+	settings.setValue("output_device", w_config->audio_dev.handle_toggle_output_device(-2));
+	settings.setValue("input_left", w_config->audio_dev.handle_toggle_input_left(-2));
+	settings.setValue("output_left", w_config->audio_dev.handle_toggle_output_left(-2));
+	settings.setValue("input_right", w_config->audio_dev.handle_toggle_input_right(-2));
+	settings.setValue("output_right", w_config->audio_dev.handle_toggle_output_right(-2));
 	settings.endGroup();
 }
 
@@ -238,8 +242,13 @@ HpsJamClient :: loadSettings()
 
 	w_config->up_fmt.setIndex(settings.value("config/uplink_format", QString("1")).toInt());
 	w_config->down_fmt.setIndex(settings.value("config/downlink_format", QString("1")).toInt());
-	w_config->audio_dev.index_input = settings.value("config/input_device", QString("-1")).toInt();
-	w_config->audio_dev.index_output = settings.value("config/output_device", QString("-1")).toInt();
+
+	input_device = settings.value("config/input_device", QString("-1")).toInt();
+	output_device = settings.value("config/output_device", QString("-1")).toInt();
+	input_left = settings.value("config/input_left", QString("-1")).toInt();
+	output_left = settings.value("config/output_left", QString("-1")).toInt();
+	input_right = settings.value("config/input_right", QString("-1")).toInt();
+	output_right = settings.value("config/output_right", QString("-1")).toInt();
 }
 
 void

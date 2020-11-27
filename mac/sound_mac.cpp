@@ -26,6 +26,7 @@
 #include <QObject>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QString>
 
 #include "../src/peer.h"
 
@@ -40,11 +41,15 @@ static bool audioInit;
 static uint32_t audioBufferSamples;
 static uint32_t audioInputChannels;
 static uint32_t audioOutputChannels;
-static float *audioInputBuffer[2];
+static float *audioInputBuffer[3];
 static QMutex audioMutex;
-static uint32_t audioInputSelection;
-static uint32_t audioOutputSelection;
-static uint32_t audioMaxSelection;
+static uint32_t audioInputDeviceSelection;
+static uint32_t audioOutputDeviceSelection;
+static uint32_t audioMaxDeviceSelection;
+static unsigned audioInputSelection[2];
+static unsigned audioOutputSelection[2];
+static QString audioInputDeviceName;
+static QString audioOutputDeviceName;
 
 static OSStatus
 hpsjam_device_notification(AudioDeviceID,
@@ -91,7 +96,8 @@ hpsjam_audio_callback(AudioDeviceID inDevice,
 	}
 
 	if (n_in > 1 || n_out > 1 || (n_in == 0 && n_out == 0) ||
-	    audioInputBuffer[0] == 0 || audioInputBuffer[1] == 0) {
+	    audioInputBuffer[0] == 0 || audioInputBuffer[1] == 0 ||
+	    audioInputBuffer[2] == 0) {
 error:
 		/* fill silence in all outputs */
 		for (size_t x = 0; x != n_out; x++) {
@@ -103,15 +109,10 @@ error:
 
 	/* copy input to buffer */
 	if (n_in == 1) {
-		if (audioInputChannels == 1) {
+		for (unsigned ch = 0; ch != 2; ch++) {
 			for (uint32_t x = 0; x != audioBufferSamples; x++) {
-				audioInputBuffer[0][x] = ((float *)inData->mBuffers[0].mData)[x];
-				audioInputBuffer[1][x] = ((float *)inData->mBuffers[0].mData)[x];
-			}
-		} else if (audioInputChannels >= 2) {
-			for (uint32_t x = 0; x != audioBufferSamples; x++) {
-				audioInputBuffer[0][x] = ((float *)inData->mBuffers[0].mData)[x * audioInputChannels + 0];
-				audioInputBuffer[1][x] = ((float *)inData->mBuffers[0].mData)[x * audioInputChannels + 1];
+				audioInputBuffer[ch][x] = ((float *)inData->mBuffers[0].mData)
+				    [x * audioInputChannels + audioInputSelection[ch]];
 			}
 		}
 	}
@@ -121,23 +122,22 @@ error:
 		hpsjam_client_peer->sound_process(audioInputBuffer[0],
 		    audioInputBuffer[1], audioBufferSamples);
 
-		/* copy input to output */
-		if (audioOutputChannels == 1) {
+		/* check for mono output */
+		if (audioInputSelection[0] == audioInputSelection[1]) {
 			for (uint32_t x = 0; x != audioBufferSamples; x++) {
-				((float *)outData->mBuffers[0].mData)[x] =
+				audioInputBuffer[0][x] =
 				    (audioInputBuffer[0][x] + audioInputBuffer[1][x]) / 2.0f;
 			}
-		} else if (audioOutputChannels >= 2) {
-			/* zero output buffer, if more than two channels */
-			if (audioOutputChannels > 2) {
-				memset(outData->mBuffers[0].mData, 0,
-				       outData->mBuffers[0].mDataByteSize);
-			}
-			/* copy samples */
-			for (uint32_t x = 0; x != audioBufferSamples; x++) {
-				((float *)outData->mBuffers[0].mData)[x * audioOutputChannels + 0] = audioInputBuffer[0][x];
-				((float *)outData->mBuffers[0].mData)[x * audioOutputChannels + 1] = audioInputBuffer[1][x];
-			}
+		}
+
+		/* fill in audio output data */
+		for (uint32_t ch = 0; ch != audioOutputChannels; ch++) {
+			const float *src = audioInputBuffer[
+			    (ch == audioOutputSelection[0]) ? 0 :
+			   ((ch == audioOutputSelection[1]) ? 1 : 2)];
+
+			for (uint32_t x = 0; x != audioBufferSamples; x++)
+				((float *)outData->mBuffers[0].mData)[x * audioOutputChannels + ch] = src[x];
 		}
 
 		/* clear old buffer, just in case there is no input */
@@ -274,6 +274,7 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 		kAudioObjectPropertyElementMaster
 	};
 	AudioObjectPropertyAddress address = {};
+	CFStringRef cfstring;
 	uint32_t size = 0;
 	uint32_t frameSize;
 
@@ -287,20 +288,20 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	AudioObjectGetPropertyDataSize(kAudioObjectSystemObject,
 	    &address, 0, 0, &size);
 
-	audioMaxSelection = size / sizeof(AudioDeviceID);
+	audioMaxDeviceSelection = size / sizeof(AudioDeviceID);
 
-	if (audioMaxSelection == 0)
+	if (audioMaxDeviceSelection == 0)
 		return (true);
 
 	/* get list of audio device IDs */
-	AudioDeviceID audioDevices[audioMaxSelection];
+	AudioDeviceID audioDevices[audioMaxDeviceSelection];
 	AudioObjectGetPropertyData(kAudioObjectSystemObject,
 	    &address, 0, 0, &size, audioDevices);
 
 	/* account for default audio device */
-	audioMaxSelection++;
+	audioMaxDeviceSelection++;
 
-	switch (audioInputSelection) {
+	switch (audioInputDeviceSelection) {
 	case 0:
 		size = sizeof(audioInputDevice);
 		address.mSelector = kAudioHardwarePropertyDefaultInputDevice;
@@ -310,13 +311,20 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 			return (true);
 		break;
 	default:
-		if (audioInputSelection >= audioMaxSelection)
+		if (audioInputDeviceSelection >= audioMaxDeviceSelection)
 			return (true);
-		audioInputDevice = audioDevices[audioInputSelection - 1];
+		audioInputDevice = audioDevices[audioInputDeviceSelection - 1];
 		break;
 	}
 
-	switch (audioOutputSelection) {
+	/* get input device name */
+	cfstring = 0;
+	address.mSelector = kAudioObjectPropertyName;
+	size = sizeof(CFStringRef);
+	AudioObjectGetPropertyData(audioInputDevice, &address, 0, 0, &size, &cfstring);
+	audioInputDeviceName = QString::fromCFString(cfstring);
+
+	switch (audioOutputDeviceSelection) {
 	case 0:
 		size = sizeof(AudioDeviceID);
 		address.mSelector = kAudioHardwarePropertyDefaultOutputDevice;
@@ -326,11 +334,18 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 			return (true);
 		break;
 	default:
-		if (audioOutputSelection >= audioMaxSelection)
+		if (audioOutputDeviceSelection >= audioMaxDeviceSelection)
 			return (true);
-		audioOutputDevice = audioDevices[audioOutputSelection - 1];
+		audioOutputDevice = audioDevices[audioOutputDeviceSelection - 1];
 		break;
 	}
+
+	/* get output device name */
+	cfstring = 0;
+	address.mSelector = kAudioObjectPropertyName;
+	size = sizeof(CFStringRef);
+	AudioObjectGetPropertyData(audioOutputDevice, &address, 0, 0, &size, &cfstring);
+	audioOutputDeviceName = QString::fromCFString(cfstring);
 
 	frameSize = hpsjam_set_buffer_size(audioInputDevice,
 	    kAudioDevicePropertyScopeInput, 2 * HPSJAM_DEF_SAMPLES);
@@ -346,6 +361,14 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 
 	audioInputBuffer[0] = new float [audioBufferSamples];
 	audioInputBuffer[1] = new float [audioBufferSamples];
+	audioInputBuffer[2] = new float [audioBufferSamples];
+
+	memset(audioInputBuffer[2], 0, sizeof(float) * audioBufferSamples);
+
+	hpsjam_sound_toggle_input_channel(0, 0);
+	hpsjam_sound_toggle_input_channel(1, 1);
+	hpsjam_sound_toggle_output_channel(0, 0);
+	hpsjam_sound_toggle_output_channel(1, 1);
 
 	/* install callbacks */
 	address.mSelector = kAudioDevicePropertyDeviceHasChanged;
@@ -405,35 +428,117 @@ hpsjam_sound_uninit()
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_input(int value)
+hpsjam_sound_toggle_input_device(int value)
 {
+	if (value < -1)
+		return (audioInputDeviceSelection);
+
 	hpsjam_sound_uninit();
 
-	for (uint32_t x = 0; x < audioMaxSelection; x++) {
-		audioInputSelection++;
-		if (audioInputSelection >= audioMaxSelection)
-			audioInputSelection = 0;
-		if (value > -1 && (uint32_t)value != audioInputSelection)
+	for (uint32_t x = 0; x < audioMaxDeviceSelection; x++) {
+		audioInputDeviceSelection++;
+		if (audioInputDeviceSelection >= audioMaxDeviceSelection)
+			audioInputDeviceSelection = 0;
+		if (value > -1 && (uint32_t)value != audioInputDeviceSelection)
 			continue;
 		if (hpsjam_sound_init(0,0) == false)
-			return (audioInputSelection);
+			return (audioInputDeviceSelection);
 	}
 	return (-1);
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_output(int value)
+hpsjam_sound_toggle_output_device(int value)
 {
+	if (value < -1)
+		return (audioOutputDeviceSelection);
+
 	hpsjam_sound_uninit();
 
-	for (uint32_t x = 0; x < audioMaxSelection; x++) {
-		audioOutputSelection++;
-		if (audioOutputSelection >= audioMaxSelection)
-			audioOutputSelection = 0;
-		if (value > -1 && (uint32_t)value != audioOutputSelection)
+	for (uint32_t x = 0; x < audioMaxDeviceSelection; x++) {
+		audioOutputDeviceSelection++;
+		if (audioOutputDeviceSelection >= audioMaxDeviceSelection)
+			audioOutputDeviceSelection = 0;
+		if (value > -1 && (uint32_t)value != audioOutputDeviceSelection)
 			continue;
 		if (hpsjam_sound_init(0,0) == false)
-			return (audioOutputSelection);
+			return (audioOutputDeviceSelection);
 	}
 	return (-1);
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_input_channel(int ch, int which)
+{
+	if (which < -1)
+		;
+	else if (which == -1)
+		audioInputSelection[ch] += 1;
+	else
+		audioInputSelection[ch] = which;
+
+	if (audioInputChannels != 0)
+		audioInputSelection[ch] %= audioInputChannels;
+	else
+		audioInputSelection[ch] = 0;
+
+	return (audioInputSelection[ch]);
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_output_channel(int ch, int which)
+{
+	if (which < -1)
+		;
+	else if (which == -1)
+		audioOutputSelection[ch] += 1;
+	else
+		audioOutputSelection[ch] = which;
+
+	if (audioOutputChannels != 0)
+		audioOutputSelection[ch] %= audioOutputChannels;
+	else
+		audioOutputSelection[ch] = 0;
+
+	return (audioOutputSelection[ch]);
+}
+
+Q_DECL_EXPORT void
+hpsjam_sound_get_input_status(QString &status)
+{
+	if (audioInit == false) {
+		status = "Selection audio input device failed";
+		return;
+	}
+	const int adev = hpsjam_sound_toggle_input_device(-2);
+	const int aich[2] = {
+		hpsjam_sound_toggle_input_channel(0, -2),
+		hpsjam_sound_toggle_input_channel(1, -2)
+	};
+	status = QString("Selected input audio device is %1:%2\n"
+			 "and channel %3,%4")
+	    .arg(adev).
+	    .arg(audioInputDeviceName).
+	    .arg(aich[0]).
+	    .arg(aich[1]);
+}
+
+Q_DECL_EXPORT void
+hpsjam_sound_get_output_status(QString &status)
+{
+	if (audioInit == false) {
+		status = "Selection audio output device failed";
+		return;
+	}
+	const int adev = hpsjam_sound_toggle_output_device(-2);
+	const int aoch[2] = {
+		hpsjam_sound_toggle_output_channel(0, -2),
+		hpsjam_sound_toggle_output_channel(1, -2)
+	};
+	status = QString("Selected output audio device is %1:%2\n"
+			 "and channel %3,%4")
+	    .arg(adev).
+	    .arg(audioOutputDeviceName).
+	    .arg(aoch[0]).
+	    .arg(aoch[1]);
 }

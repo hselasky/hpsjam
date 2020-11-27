@@ -26,6 +26,7 @@
 #include <QObject>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QString>
 
 #include "../src/peer.h"
 
@@ -47,6 +48,8 @@ static ASIOCallbacks audioCallbacks;
 static bool audioPostOutput;
 static bool audioInit;
 static uint32_t audioBufferSamples;
+static unsigned audioInputSelection[2];
+static unsigned audioOutputSelection[2];
 static long audioInputChannels;
 static long audioOutputChannels;
 static float *audioInputBuffer[3];
@@ -56,26 +59,21 @@ static uint32_t audioMaxSelection;
 static char *audioDeviceNames[MAX_DRIVERS];
 
 template <typename T> void
-hpsjam_audio_import(const ASIOBufferInfo &bi, const int gain, const unsigned index, unsigned ch)
+hpsjam_audio_import(const ASIOBufferInfo &bi, const int gain, const unsigned index, float *dst)
 {
-	if (ch < 2) {
-		const T *buf = static_cast <const T *>(bi.buffers[index]);
+	const T *buf = static_cast <const T *>(bi.buffers[index]);
 
-		for (uint32_t x = 0; x != audioBufferSamples; x++)
-			audioInputBuffer[ch][x] = buf[x].get() * gain;
-	}
+	for (uint32_t x = 0; x != audioBufferSamples; x++)
+		dst[x] = buf[x].get() * gain;
 }
 
 template <typename T> void
-hpsjam_audio_export(const ASIOBufferInfo &bi, const int gain, const unsigned index, unsigned ch)
+hpsjam_audio_export(const ASIOBufferInfo &bi, const int gain, const unsigned index, const float *src)
 {
 	T *buf = static_cast <T *>(bi.buffers[index]);
 
-	if (ch > 2)
-		ch = 2;		/* fill output with silence */
-
 	for (uint32_t x = 0; x != audioBufferSamples; x++)
-		buf[x].put(audioInputBuffer[ch][x] / gain);
+		buf[x].put(src[x] / gain);
 }
 
 static bool
@@ -285,175 +283,178 @@ static void
 hpsjam_asio_buffer_switch(long index, ASIOBool)
 {
 	QMutexLocker locker(&audioMutex);
-	unsigned i = 0;
 
-	for (long x = 0; x != audioInputChannels; x++, i++) {
-		const ASIOBufferInfo &bi = bufferInfo[i];
+	for (unsigned ch = 0; ch != 2; ch++) {
+		const ASIOBufferInfo &bi = bufferInfo[audioInputSelection[ch]];
+		float *dst = audioInputBuffer[ch];
 
 		switch (channelInfo[i].type) {
 		case ASIOSTInt16LSB:
-			hpsjam_audio_import <sample16LSB> (bi, 1, index, x);
+			hpsjam_audio_import <sample16LSB> (bi, 1, index, dst);
 			break;
 
 		case ASIOSTInt16MSB:
-			hpsjam_audio_import <sample16MSB> (bi, 1, index, x);
+			hpsjam_audio_import <sample16MSB> (bi, 1, index, dst);
 			break;
 
 		case ASIOSTInt24LSB:
-			hpsjam_audio_import <sample24LSB> (bi, 1, index, x);
+			hpsjam_audio_import <sample24LSB> (bi, 1, index, dst);
 			break;
 
 		case ASIOSTInt24MSB:
-			hpsjam_audio_import <sample24MSB> (bi, 1, index, x);
+			hpsjam_audio_import <sample24MSB> (bi, 1, index, dst);
 			break;
 
 		case ASIOSTInt32LSB:
-			hpsjam_audio_import <sample32LSB> (bi, 1, index, x);
+			hpsjam_audio_import <sample32LSB> (bi, 1, index, dst);
 			break;
 
 		case ASIOSTInt32MSB:
-			hpsjam_audio_import <sample32MSB> (bi, 1, index, x);
+			hpsjam_audio_import <sample32MSB> (bi, 1, index, dst);
 			break;
 
 		case ASIOSTFloat32LSB:
-			hpsjam_audio_import <sampleFloat32LSB> (bi, 1, index, x);
+			hpsjam_audio_import <sampleFloat32LSB> (bi, 1, index, dst);
 			break;
 
 		case ASIOSTFloat32MSB:
-			hpsjam_audio_import <sampleFloat32MSB> (bi, 1, index, x);
+			hpsjam_audio_import <sampleFloat32MSB> (bi, 1, index, dst);
 			break;
 
 		case ASIOSTFloat64LSB:
-			hpsjam_audio_import <sampleFloat64LSB> (bi, 1, index, x);
+			hpsjam_audio_import <sampleFloat64LSB> (bi, 1, index, dst);
 			break;
 
 		case ASIOSTFloat64MSB:
-			hpsjam_audio_import <sampleFloat64MSB> (bi, 1, index, x);
+			hpsjam_audio_import <sampleFloat64MSB> (bi, 1, index, dst);
 			break;
 
 		case ASIOSTInt32LSB16:
-			hpsjam_audio_import <sample32LSB> (bi, 1 << 16, index, x);
+			hpsjam_audio_import <sample32LSB> (bi, 1 << 16, index, dst);
 			break;
 
 		case ASIOSTInt32MSB16:
-			hpsjam_audio_import <sample32MSB> (bi, 1 << 16, index, x);
+			hpsjam_audio_import <sample32MSB> (bi, 1 << 16, index, dst);
 			break;
 
 		case ASIOSTInt32LSB18:
-			hpsjam_audio_import <sample32LSB> (bi, 1 << 14, index, x);
+			hpsjam_audio_import <sample32LSB> (bi, 1 << 14, index, dst);
 			break;
 
 		case ASIOSTInt32MSB18:
-			hpsjam_audio_import <sample32MSB> (bi, 1 << 14, index, x);
+			hpsjam_audio_import <sample32MSB> (bi, 1 << 14, index, dst);
 			break;
 
 		case ASIOSTInt32LSB20:
-			hpsjam_audio_import <sample32LSB> (bi, 1 << 12, index, x);
+			hpsjam_audio_import <sample32LSB> (bi, 1 << 12, index, dst);
 			break;
 
 		case ASIOSTInt32MSB20:
-			hpsjam_audio_import <sample32MSB> (bi, 1 << 12, index, x);
+			hpsjam_audio_import <sample32MSB> (bi, 1 << 12, index, dst);
 			break;
 
 		case ASIOSTInt32LSB24:
-			hpsjam_audio_import <sample32LSB> (bi, 1 << 8, index, x);
+			hpsjam_audio_import <sample32LSB> (bi, 1 << 8, index, dst);
 			break;
 
 		case ASIOSTInt32MSB24:
-			hpsjam_audio_import <sample32MSB> (bi, 1 << 8, index, x);
+			hpsjam_audio_import <sample32MSB> (bi, 1 << 8, index, dst);
 			break;
+
 		default:
 			assert(0);
 		}
 	}
 
-	/* check for mono input */
-	if (audioInputChannels == 1)
-		memcpy(audioInputBuffer[1], audioInputBuffer[0], sizeof(float) * audioBufferSamples);
-
 	/* process audio on output */
-	hpsjam_client_peer->sound_process(audioInputBuffer[0], audioInputBuffer[1], audioBufferSamples);
+	hpsjam_client_peer->sound_process(
+	    audioInputBuffer[0], audioInputBuffer[1], audioBufferSamples);
 
 	/* check for mono output */
-	if (audioOutputChannels == 1) {
-		for (uint32_t x = 0; x != audioBufferSamples; x++)
-			audioInputBuffer[0][x] = (audioInputBuffer[0][x] + audioInputBuffer[1][x]) / 2.0f;
+	if (audioInputSelection[0] == audioInputSelection[1]) {
+		for (uint32_t x = 0; x != audioBufferSamples; x++) {
+			audioInputBuffer[0][x] =
+			    (audioInputBuffer[0][x] + audioInputBuffer[1][x]) / 2.0f;
+		}
 	}
 
-	for (long x = 0; x != audioOutputChannels; x++, i++) {
-		const ASIOBufferInfo &bi = bufferInfo[i];
+	for (long x = 0; x != audioOutputChannels; x++) {
+		const ASIOBufferInfo &bi = bufferInfo[audioInputChannels + x];
+		const float *src = audioInputBuffer[
+		     (x == audioOutputSelection[0]) ? 0 :
+		    ((x == audioOutputSelection[1]) ? 1 : 2)];
 
 		switch (channelInfo[i].type) {
 		case ASIOSTInt16LSB:
-			hpsjam_audio_export<sample16LSB> (bi, 1, index, x);
+			hpsjam_audio_export<sample16LSB> (bi, 1, index, src);
 			break;
 
 		case ASIOSTInt16MSB:
-			hpsjam_audio_export<sample16MSB> (bi, 1, index, x);
+			hpsjam_audio_export<sample16MSB> (bi, 1, index, src);
 			break;
 
 		case ASIOSTInt24LSB:
-			hpsjam_audio_export<sample24LSB> (bi, 1, index, x);
+			hpsjam_audio_export<sample24LSB> (bi, 1, index, src);
 			break;
 
 		case ASIOSTInt24MSB:
-			hpsjam_audio_export<sample24MSB> (bi, 1, index, x);
+			hpsjam_audio_export<sample24MSB> (bi, 1, index, src);
 			break;
 
 		case ASIOSTInt32LSB:
-			hpsjam_audio_export<sample32LSB> (bi, 1, index, x);
+			hpsjam_audio_export<sample32LSB> (bi, 1, index, src);
 			break;
 
 		case ASIOSTInt32MSB:
-			hpsjam_audio_export<sample32MSB> (bi, 1, index, x);
+			hpsjam_audio_export<sample32MSB> (bi, 1, index, src);
 			break;
 
 		case ASIOSTFloat32LSB:
-			hpsjam_audio_export<sampleFloat32LSB> (bi, 1, index, x);
+			hpsjam_audio_export<sampleFloat32LSB> (bi, 1, index, src);
 			break;
 
 		case ASIOSTFloat32MSB:
-			hpsjam_audio_export<sampleFloat32MSB> (bi, 1, index, x);
+			hpsjam_audio_export<sampleFloat32MSB> (bi, 1, index, src);
 			break;
 
 		case ASIOSTFloat64LSB:
-			hpsjam_audio_export<sampleFloat64LSB> (bi, 1, index, x);
+			hpsjam_audio_export<sampleFloat64LSB> (bi, 1, index, src);
 			break;
 
 		case ASIOSTFloat64MSB:
-			hpsjam_audio_export<sampleFloat64MSB> (bi, 1, index, x);
+			hpsjam_audio_export<sampleFloat64MSB> (bi, 1, index, src);
 			break;
 
 		case ASIOSTInt32LSB16:
-			hpsjam_audio_export<sample32LSB> (bi, 1 << 16, index, x);
+			hpsjam_audio_export<sample32LSB> (bi, 1 << 16, index, src);
 			break;
 
 		case ASIOSTInt32MSB16:
-			hpsjam_audio_export<sample32MSB> (bi, 1 << 16, index, x);
+			hpsjam_audio_export<sample32MSB> (bi, 1 << 16, index, src);
 			break;
 
 		case ASIOSTInt32LSB18:
-			hpsjam_audio_export<sample32LSB> (bi, 1 << 14, index, x);
+			hpsjam_audio_export<sample32LSB> (bi, 1 << 14, index, src);
 			break;
 
 		case ASIOSTInt32MSB18:
-			hpsjam_audio_export<sample32MSB> (bi, 1 << 14, index, x);
+			hpsjam_audio_export<sample32MSB> (bi, 1 << 14, index, src);
 			break;
 
 		case ASIOSTInt32LSB20:
-			hpsjam_audio_export<sample32LSB> (bi, 1 << 12, index, x);
+			hpsjam_audio_export<sample32LSB> (bi, 1 << 12, index, src);
 			break;
 
 		case ASIOSTInt32MSB20:
-			hpsjam_audio_export<sample32MSB> (bi, 1 << 12, index, x);
+			hpsjam_audio_export<sample32MSB> (bi, 1 << 12, index, src);
 			break;
 
 		case ASIOSTInt32LSB24:
-			hpsjam_audio_export<sample32LSB> (bi, 1 << 8, index, x);
+			hpsjam_audio_export<sample32LSB> (bi, 1 << 8, index, src);
 			break;
 
 		case ASIOSTInt32MSB24:
-			hpsjam_audio_export<sample32MSB> (bi, 1 << 8, index, x);
+			hpsjam_audio_export<sample32MSB> (bi, 1 << 8, index, src);
 			break;
 		default:
 			assert(0);
@@ -496,6 +497,7 @@ hpsjam_asio_check_dev_caps()
 
 	if (audioInputChannels == 0 || audioInputChannels > MAX_CHANNELS)
 		return (true);
+
 	if (audioOutputChannels == 0 || audioOutputChannels > MAX_CHANNELS)
 		return (true);
 
@@ -557,10 +559,12 @@ hpsjam_sound_init(const char *, bool)
 	unsigned index = 0;
 
 	if (audioMaxSelection == 0) {
+		static char dummy[] = { "dummy" };
+
 		for (unsigned x = 0; x != MAX_DRIVERS; x++)
 			audioDeviceNames[x] = new char[32];
 
-		loadAsioDriver("dummy");
+		loadAsioDriver(dummy);
 		audioMaxSelection = asioDrivers->getDriverNames(audioDeviceNames, MAX_DRIVERS);
 
 		asioDrivers->removeCurrentDriver();
@@ -623,6 +627,11 @@ hpsjam_sound_init(const char *, bool)
 
 	memset(audioInputBuffer[2], 0, sizeof(float) * audioBufferSamples);
 
+	hpsjam_sound_toggle_input_channel(0, 0);
+	hpsjam_sound_toggle_input_channel(1, 1);
+	hpsjam_sound_toggle_output_channel(0, 0);
+	hpsjam_sound_toggle_output_channel(1, 1);
+
 	ASIOStart();
 
 	audioInit = true;
@@ -655,8 +664,11 @@ hpsjam_sound_uninit()
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_input(int value)
+hpsjam_sound_toggle_input_device(int value)
 {
+	if (value < -1)
+		return (audioDeviceSelection);
+
 	hpsjam_sound_uninit();
 
 	for (uint32_t x = 0; x < audioMaxSelection; x++) {
@@ -672,8 +684,76 @@ hpsjam_sound_toggle_input(int value)
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_output(int value)
+hpsjam_sound_toggle_output_device(int value)
 {
 	/* output follows input */
 	return (-1);
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_input_channel(int ch, int which)
+{
+	if (which < -1)
+		;
+	else if (which == -1)
+		audioInputSelection[ch] += 1;
+	else
+		audioInputSelection[ch] = which;
+
+	if (audioInputChannels != 0)
+		audioInputSelection[ch] %= audioInputChannels;
+	else
+		audioInputSelection[ch] = 0;
+
+	return (audioInputSelection[ch]);
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_output_channel(int ch, int which)
+{
+	if (which < -1)
+		;
+	else if (which == -1)
+		audioOutputSelection[ch] += 1;
+	else
+		audioOutputSelection[ch] = which;
+
+	if (audioOutputChannels != 0)
+		audioOutputSelection[ch] %= audioOutputChannels;
+	else
+		audioOutputSelection[ch] = 0;
+
+	return (audioOutputSelection[ch]);
+}
+
+Q_DECL_EXPORT void
+hpsjam_sound_get_input_status(QString &status)
+{
+	if (audioInit == false) {
+		status = "Selection audio device failed";
+		return;
+	}
+	const int adev = hpsjam_sound_toggle_input_device(-2);
+	const int aich[2] = {
+		hpsjam_sound_toggle_input_channel(0, -2),
+		hpsjam_sound_toggle_input_channel(1, -2)
+	};
+	const int aoch[2] = {
+		hpsjam_sound_toggle_output_channel(0, -2),
+		hpsjam_sound_toggle_output_channel(1, -2)
+	};
+	status = QString("Selected audio device is %1:%2\n"
+	    "input channel %3,%4 and output channel %5,%6")
+	    .arg(adev).
+	    .arg(audioDeviceNames[adev] ? audioDeviceNames[adev] : "").
+	    .arg(aich[0]).
+	    .arg(aich[1]).
+	    .arg(aoch[0]).
+	    .arg(aoch[1]);
+}
+
+Q_DECL_EXPORT void
+hpsjam_sound_get_output_status(QString &status)
+{
+	status = "";
 }

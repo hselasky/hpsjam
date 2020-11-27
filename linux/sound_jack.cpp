@@ -24,6 +24,7 @@
  */
 
 #include <QObject>
+#include <QString>
 
 #include "../src/peer.h"
 
@@ -175,13 +176,37 @@ hpsjam_sound_uninit()
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_input(int)
+hpsjam_sound_toggle_input_device(int)
 {
 	return (0);
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_output(int)
+hpsjam_sound_toggle_output_device(int)
 {
 	return (0);
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_input_channel(int ch, int)
+{
+	return (ch);
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_output_channel(int ch, int)
+{
+	return (ch);
+}
+
+Q_DECL_EXPORT void
+hpsjam_sound_get_input_status(QString &status)
+{
+	status = "Input channel is 0,1";
+}
+
+Q_DECL_EXPORT void
+hpsjam_sound_get_output_status(QString &status)
+{
+	status = "Output channel is 0,1";
 }

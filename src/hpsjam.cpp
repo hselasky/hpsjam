@@ -74,6 +74,10 @@ static const struct option hpsjam_opts[] = {
 	{ "audio-downlink-format", required_argument, NULL, 'D'},
 	{ "audio-input-device", required_argument, NULL, 'I'},
 	{ "audio-output-device", required_argument, NULL, 'O'},
+	{ "audio-input-left", required_argument, NULL, 'l'},
+	{ "audio-output-left", required_argument, NULL, 'L'},
+	{ "audio-input-right", required_argument, NULL, 'r'},
+	{ "audio-output-right", required_argument, NULL, 'R'},
 #ifdef HAVE_JACK_AUDIO
 	{ "jacknoconnect", no_argument, NULL, 'J' },
 	{ "jackname", required_argument, NULL, 'n' },
@@ -98,8 +102,12 @@ usage(void)
 		"	[--audio-uplink-format <0..%u>] \\\n"
 		"	[--audio-downlink-format <0..%u>] \\\n"
 
-		"	[--audio-input-device <0,1,2,3 ... , System default is 0>] \\\n"
-		"	[--audio-output-device <0,1,2,3 ... , System default is 0>] \\\n"
+		"	[--audio-input-device <0,1,2,3 ... , Default is 0>] \\\n"
+		"	[--audio-output-device <0,1,2,3 ... , Default is 0>] \\\n"
+		"	[--audio-input-left <0,1,2,3 ... , Default is 0>] \\\n"
+		"	[--audio-output-left <0,1,2,3 ... , Default is 0>] \\\n"
+		"	[--audio-input-right <0,1,2,3 ... , Default is 1>] \\\n"
+		"	[--audio-output-right <0,1,2,3 ... , Default is 1>] \\\n"
 		"	[--ipv4-port " HPSJAM_DEFAULT_IPV4_PORT_STR "] \\\n"
 		"	[--ipv6-port " HPSJAM_DEFAULT_IPV6_PORT_STR "] \\\n"
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
@@ -115,7 +123,7 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	static const char hpsjam_short_opts[] = {
-	    "M:q:p:sP:hBJ:n:K:t:u:w:N:i:c:U:D:I:O:"
+	    "M:q:p:sP:hBJ:n:K:t:u:w:N:i:c:U:D:I:O:l:L:r:R:"
 	};
 	int c;
 	int ipv4_port = HPSJAM_DEFAULT_IPV4_PORT;
@@ -134,6 +142,10 @@ main(int argc, char **argv)
 	int downlink_format = -1;
 	int input_device = -1;
 	int output_device = -1;
+	int input_left = -1;
+	int output_left = -1;
+	int input_right = -1;
+	int output_right = -1;
 
 	while ((c = getopt_long_only(argc, argv, hpsjam_short_opts, hpsjam_opts, NULL)) != -1) {
 		switch (c) {
@@ -189,6 +201,26 @@ main(int argc, char **argv)
 		case 'O':
 			output_device = atoi(optarg);
 			if (output_device < 0)
+				usage();
+			break;
+		case 'l':
+			input_left = atoi(optarg);
+			if (input_left < 0)
+				usage();
+			break;
+		case 'L':
+			output_left = atoi(optarg);
+			if (output_left < 0)
+				usage();
+			break;
+		case 'r':
+			input_right = atoi(optarg);
+			if (input_right < 0)
+				usage();
+			break;
+		case 'R':
+			output_right = atoi(optarg);
+			if (output_right < 0)
 				usage();
 			break;
 #ifndef _WIN32
@@ -249,9 +281,17 @@ main(int argc, char **argv)
 		hpsjam_client = new HpsJamClient();
 
 		if (input_device < 0)
-			input_device = hpsjam_client->w_config->audio_dev.index_input;
+			input_device = hpsjam_client->input_device;
 		if (output_device < 0)
-			output_device = hpsjam_client->w_config->audio_dev.index_output;
+			output_device = hpsjam_client->output_device;
+		if (input_left < 0)
+			input_left = hpsjam_client->input_left;
+		if (output_left < 0)
+			output_left = hpsjam_client->output_left;
+		if (input_right < 0)
+			input_right = hpsjam_client->input_right;
+		if (output_right < 0)
+			output_right = hpsjam_client->output_right;
 
 #ifdef HAVE_JACK_AUDIO
 		if (hpsjam_sound_init(jackname, jackconnect)) {
@@ -265,35 +305,53 @@ main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_MAC_AUDIO
-		if (hpsjam_sound_init(0, 0)) {
+		if (input_device == -1 && output_device == -1 && hpsjam_sound_init(0, 0)) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot connect to audio subsystem.\n"
-					    "Check that you have a audio device connected and\n"
+					    "Check that you have an audio device connected and\n"
 					    "that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
 		}
-		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_input(input_device) < 0) {
+		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_input_device(input_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio input device"));
 		}
-		if (output_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_output(output_device) < 0) {
+		if (output_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_output_device(output_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio output device"));
 		}
+		if (output_left > -1)
+			hpsjam_client->w_config->audio_dev.handle_toggle_output_left(output_left);
+		if (output_right > -1)
+			hpsjam_client->w_config->audio_dev.handle_toggle_output_right(output_right);
+		if (input_left > -1)
+			hpsjam_client->w_config->audio_dev.handle_toggle_input_left(input_left);
+		if (input_right > -1)
+			hpsjam_client->w_config->audio_dev.handle_toggle_input_right(input_right);
+
 		/* register exit hook for audio */
 		atexit(&hpsjam_sound_uninit);
 #endif
 
 #ifdef HAVE_ASIO_AUDIO
-		if (hpsjam_sound_init(jackname, jackconnect)) {
+		if (input_device == -1 && hpsjam_sound_init(jackname, jackconnect)) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
-				QObject::tr("Cannot connect to default ASIO subsystem or \n"
+				QObject::tr("Cannot connect to ASIO subsystem or \n"
 					    "sample rate is different from %1Hz or \n"
-					    "latency is too high").arg(HPSJAM_SAMPLE_RATE));
+					    "buffer size is different from 96 samples.").arg(HPSJAM_SAMPLE_RATE));
 		}
 		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_input(input_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio device"));
 		}
+		if (output_left > -1)
+			hpsjam_client->w_config->audio_dev.handle_toggle_output_left(output_left);
+		if (output_right > -1)
+			hpsjam_client->w_config->audio_dev.handle_toggle_output_right(output_right);
+		if (input_left > -1)
+			hpsjam_client->w_config->audio_dev.handle_toggle_input_left(input_left);
+		if (input_right > -1)
+			hpsjam_client->w_config->audio_dev.handle_toggle_input_right(input_right);
+
 		/* register exit hook for audio */
 		atexit(&hpsjam_sound_uninit);
 #endif
