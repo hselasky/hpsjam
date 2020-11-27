@@ -305,19 +305,18 @@ main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_MAC_AUDIO
-		if (input_device == -1 && output_device == -1) {
-			if (hpsjam_sound_init(0, 0)) {
-				QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
-				    QObject::tr("Cannot connect to audio subsystem.\n"
-						"Check that you have an audio device connected and\n"
-						"that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
-			}
-			QString status;
-			hpsjam_sound_get_input_status(status);
-			hpsjam_client->w_config->audio_dev.l_input.setText(status);
-			hpsjam_sound_get_output_status(status);
-			hpsjam_client->w_config->audio_dev.l_output.setText(status);
+		if (hpsjam_sound_init(0, 0)) {
+			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+				QObject::tr("Cannot connect to audio subsystem.\n"
+					    "Check that you have an audio device connected and\n"
+					    "that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
 		}
+		QString status;
+		hpsjam_sound_get_input_status(status);
+		hpsjam_client->w_config->audio_dev.l_input.setText(status);
+		hpsjam_sound_get_output_status(status);
+		hpsjam_client->w_config->audio_dev.l_output.setText(status);
+
 		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_input_device(input_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio input device"));
@@ -340,19 +339,18 @@ main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_ASIO_AUDIO
-		if (input_device == -1) {
-			if (hpsjam_sound_init(jackname, jackconnect)) {
-				QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+		if (hpsjam_sound_init(0, 0)) {
+			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				    QObject::tr("Cannot connect to ASIO subsystem or \n"
 						"sample rate is different from %1Hz or \n"
 						"buffer size is different from 96 samples.").arg(HPSJAM_SAMPLE_RATE));
-			}
-			QString status;
-			hpsjam_sound_get_input_status(status);
-			hpsjam_client->w_config->audio_dev.l_input.setText(status);
-			hpsjam_sound_get_output_status(status);
-			hpsjam_client->w_config->audio_dev.l_output.setText(status);
 		}
+		QString status;
+		hpsjam_sound_get_input_status(status);
+		hpsjam_client->w_config->audio_dev.l_input.setText(status);
+		hpsjam_sound_get_output_status(status);
+		hpsjam_client->w_config->audio_dev.l_output.setText(status);
+
 		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_input_device(input_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio device"));
