@@ -88,7 +88,7 @@ int
 HpsJamDeviceSelection :: handle_toggle_output_device(int value)
 {
 #if defined(HAVE_MAC_AUDIO)
-	const int output = hpsjam_sound_toggle_output(value);
+	const int output = hpsjam_sound_toggle_output_device(value);
 	QString status;
 	hpsjam_sound_get_output_status(status);
 	l_output.setText(status);
