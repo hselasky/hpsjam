@@ -91,6 +91,9 @@ public:
 	HpsJamEqualizer *eq_copy;
 	HpsJamHelp *w_help;
 
+	void loadSettings();
+	void saveSettings();
+
 	void closeEvent(QCloseEvent *event);
 
 public slots:

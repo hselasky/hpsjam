@@ -25,6 +25,7 @@
 
 #include <QPainter>
 #include <QKeySequence>
+#include <QSettings>
 
 #include "hpsjam.h"
 
@@ -113,6 +114,8 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
 	connect(hpsjam_client_peer, SIGNAL(receivedFaderSelf(uint8_t,uint8_t)),
 		w_mixer, SLOT(handle_fader_self(uint8_t,uint8_t)));
 
+	loadSettings();
+
 	connect(&watchdog, SIGNAL(timeout()), this, SLOT(handle_watchdog()));
 	watchdog.start(250);
 }
@@ -196,7 +199,47 @@ HpsJamClient :: closeEvent(QCloseEvent *event)
 	handle_connect();
 	w_connect->handle_disconnect();
 
+	saveSettings();
+
 	QCoreApplication::exit(0);
+}
+
+void
+HpsJamClient :: saveSettings()
+{
+	QSettings settings("HpsJam");
+
+	settings.beginGroup("connect");
+	settings.setValue("username", w_connect->name.edit.text());
+	settings.setValue("icon", w_connect->icon.selection);
+	settings.setValue("password", w_connect->password.edit.text());
+	settings.setValue("server", w_connect->server.edit.text());
+	settings.endGroup();
+
+	settings.beginGroup("config");
+	settings.setValue("uplink_format", w_config->up_fmt.selection);
+	settings.setValue("downlink_format", w_config->down_fmt.selection);
+	settings.setValue("input_device", w_config->audio_dev.index_input);
+	settings.setValue("output_device", w_config->audio_dev.index_output);
+	settings.endGroup();
+}
+
+void
+HpsJamClient :: loadSettings()
+{
+	QSettings settings("HpsJam");
+
+	w_connect->name.edit.setText(settings.value("connect/username").toString());
+	w_connect->icon.selection = settings.value("connect/icon", QString("0")).toInt();
+	if (w_connect->icon.selection < 0 || w_connect->icon.selection >= HPSJAM_NUM_ICONS)
+		w_connect->icon.selection = 0;
+	w_connect->password.edit.setText(settings.value("connect/password", QString()).toString());
+	w_connect->server.edit.setText(settings.value("connect/server", QString("127.0.0.1:" HPSJAM_DEFAULT_IPV4_PORT_STR)).toString());
+
+	w_config->up_fmt.setIndex(settings.value("config/uplink_format", QString("1")).toInt());
+	w_config->down_fmt.setIndex(settings.value("config/downlink_format", QString("1")).toInt());
+	w_config->audio_dev.index_input = settings.value("config/input_device", QString("-1")).toInt();
+	w_config->audio_dev.index_output = settings.value("config/output_device", QString("-1")).toInt();
 }
 
 void

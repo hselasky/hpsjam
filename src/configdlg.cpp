@@ -43,10 +43,10 @@ const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = 
 };
 
 void
-HpsJamDeviceSelection :: handle_toggle_input()
+HpsJamDeviceSelection :: handle_toggle_input(int value)
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_JACK_AUDIO) || defined(HAVE_ASIO_AUDIO)
-	const int input = hpsjam_sound_toggle_input(-1);
+	const int input = hpsjam_sound_toggle_input(value);
 #else
 	const int input = 0;
 #endif
@@ -66,13 +66,14 @@ HpsJamDeviceSelection :: handle_toggle_input()
 	else
 		l_input.setText(tr("Selected audio input device is %1").arg(input));
 #endif
+	index_input = input;
 }
 
 void
-HpsJamDeviceSelection :: handle_toggle_output()
+HpsJamDeviceSelection :: handle_toggle_output(int value)
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_JACK_AUDIO)
-	const int output = hpsjam_sound_toggle_output(-1);
+	const int output = hpsjam_sound_toggle_output(value);
 #else
 	const int output = 0;
 #endif
@@ -82,6 +83,8 @@ HpsJamDeviceSelection :: handle_toggle_output()
 		l_output.setText(tr("Selected audio output device is system default"));
 	else
 		l_output.setText(tr("Selected audio output device is %1").arg(output));
+
+	index_output = output;
 }
 
 void

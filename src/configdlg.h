@@ -65,16 +65,20 @@ public:
 #if !defined(HAVE_ASIO_AUDIO)
 		connect(&b_toggle_output, SIGNAL(released()), this, SLOT(handle_toggle_output()));
 #endif
+		index_input = -1;
+		index_output = -1;
 	};
 	QGridLayout gl;
 	QPushButton b_toggle_input;
 	QPushButton b_toggle_output;
 	QLabel l_input;
 	QLabel l_output;
+	int index_input;
+	int index_output;
 
 public slots:
-	void handle_toggle_input();
-	void handle_toggle_output();
+	void handle_toggle_input(int = -1);
+	void handle_toggle_output(int = -1);
 };
 
 class HpsJamConfigFormat : public QGroupBox {
@@ -91,20 +95,21 @@ public:
 				gl.addWidget(b + x, 1 + ((x - 1) / 4), (x - 1) % 4);
 		}
 		format = hpsjam_audio_format[1].format;
+		selection = 1;
 	};
 	uint8_t format;
+	uint8_t selection;
 	QPushButton b[HPSJAM_AUDIO_FORMAT_MAX];
 	QGridLayout gl;
 
 	void setIndex(unsigned index) {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_FORMAT_MAX; x++) {
 			b[x].setFlat(x != index);
-			if (x == index) {
-				if (hpsjam_audio_format[x].format != format) {
-					format = hpsjam_audio_format[x].format;
-					valueChanged();
-				}
-			}
+			if (x != index || hpsjam_audio_format[x].format == format)
+				continue;
+			format = hpsjam_audio_format[x].format;
+			selection = index;
+			valueChanged();
 		}
 	};
 public slots:
