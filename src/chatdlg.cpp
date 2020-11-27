@@ -90,6 +90,7 @@ void
 HpsJamChat :: append(const QString &str)
 {
 	chat.edit.appendPlainText(str);
+	chat.edit.moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
 
 	if (!isVisible())
 		hpsjam_client->b_chat.setFlashing();
