@@ -33,7 +33,7 @@
 #include <asio.h>
 #include <asiodrivers.h>
 
-#define	MAX_CHANNELS 2
+#define	MAX_CHANNELS 128
 #define	MAX_DRIVERS 16
 #define	MAX_SAMPLES (2 * HPSJAM_DEF_SAMPLES)
 
@@ -49,25 +49,30 @@ static bool audioInit;
 static uint32_t audioBufferSamples;
 static long audioInputChannels;
 static long audioOutputChannels;
-static float *audioInputBuffer[2];
+static float *audioInputBuffer[3];
 static QMutex audioMutex;
 static uint32_t audioDeviceSelection;
 static uint32_t audioMaxSelection;
 static char *audioDeviceNames[MAX_DRIVERS];
 
 template <typename T> void
-hpsjam_audio_import(const ASIOBufferInfo &bi, const int gain, const unsigned index, const unsigned ch)
+hpsjam_audio_import(const ASIOBufferInfo &bi, const int gain, const unsigned index, unsigned ch)
 {
-	const T *buf = static_cast <const T *>(bi.buffers[index]);
+	if (ch < 2) {
+		const T *buf = static_cast <const T *>(bi.buffers[index]);
 
-	for (uint32_t x = 0; x != audioBufferSamples; x++)
-		audioInputBuffer[ch][x] = buf[x].get() * gain;
+		for (uint32_t x = 0; x != audioBufferSamples; x++)
+			audioInputBuffer[ch][x] = buf[x].get() * gain;
+	}
 }
 
 template <typename T> void
-hpsjam_audio_export(const ASIOBufferInfo &bi, const int gain, const unsigned index, const unsigned ch)
+hpsjam_audio_export(const ASIOBufferInfo &bi, const int gain, const unsigned index, unsigned ch)
 {
 	T *buf = static_cast <T *>(bi.buffers[index]);
+
+	if (ch > 2)
+		ch = 2;		/* fill output with silence */
 
 	for (uint32_t x = 0; x != audioBufferSamples; x++)
 		buf[x].put(audioInputBuffer[ch][x] / gain);
@@ -489,11 +494,10 @@ hpsjam_asio_check_dev_caps()
 
 	ASIOGetChannels(&audioInputChannels, &audioOutputChannels);
 
-	if (audioInputChannels > MAX_CHANNELS)
-		audioInputChannels = MAX_CHANNELS;
-
-	if (audioOutputChannels > MAX_CHANNELS)
-		audioOutputChannels = MAX_CHANNELS;
+	if (audioInputChannels == 0 || audioInputChannels > MAX_CHANNELS)
+		return (true);
+	if (audioOutputChannels == 0 || audioOutputChannels > MAX_CHANNELS)
+		return (true);
 
 	for (long i = 0; i != audioInputChannels; i++, index++)
 	{
@@ -615,6 +619,9 @@ hpsjam_sound_init(const char *, bool)
 
 	audioInputBuffer[0] = new float[audioBufferSamples];
 	audioInputBuffer[1] = new float[audioBufferSamples];
+	audioInputBuffer[2] = new float[audioBufferSamples];
+
+	memset(audioInputBuffer[2], 0, sizeof(float) * audioBufferSamples);
 
 	ASIOStart();
 
@@ -640,9 +647,11 @@ hpsjam_sound_uninit()
 
 	delete[] audioInputBuffer[0];
 	delete[] audioInputBuffer[1];
+	delete[] audioInputBuffer[2];
 
 	audioInputBuffer[0] = 0;
 	audioInputBuffer[1] = 0;
+	audioInputBuffer[2] = 0;
 }
 
 Q_DECL_EXPORT int
