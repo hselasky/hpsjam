@@ -529,8 +529,7 @@ hpsjam_sound_get_input_status(QString &status)
 		hpsjam_sound_toggle_input_channel(0, -2),
 		hpsjam_sound_toggle_input_channel(1, -2)
 	};
-	status = QString("Selected input audio device is %1:%2 "
-			 "and channel %3,%4")
+	status = QString("Input is %1:%2 and channel %3,%4")
 	    .arg(adev)
 	    .arg(audioInputDeviceName)
 	    .arg(aich[0])
@@ -549,8 +548,7 @@ hpsjam_sound_get_output_status(QString &status)
 		hpsjam_sound_toggle_output_channel(0, -2),
 		hpsjam_sound_toggle_output_channel(1, -2)
 	};
-	status = QString("Selected output audio device is %1:%2 "
-			 "and channel %3,%4")
+	status = QString("Output is %1:%2 and channel %3,%4")
 	    .arg(adev)
 	    .arg(audioOutputDeviceName)
 	    .arg(aoch[0])
