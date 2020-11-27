@@ -430,8 +430,12 @@ hpsjam_sound_uninit()
 Q_DECL_EXPORT int
 hpsjam_sound_toggle_input_device(int value)
 {
-	if (value < -1)
-		return (audioInputDeviceSelection);
+	if (value < -1) {
+		if (audioInit == false)
+			return (-1);
+		else
+			return (audioInputDeviceSelection);
+	}
 
 	hpsjam_sound_uninit();
 
@@ -450,8 +454,12 @@ hpsjam_sound_toggle_input_device(int value)
 Q_DECL_EXPORT int
 hpsjam_sound_toggle_output_device(int value)
 {
-	if (value < -1)
-		return (audioOutputDeviceSelection);
+	if (value < -1) {
+		if (audioInit == false)
+			return (-1);
+		else
+			return (audioOutputDeviceSelection);
+	}
 
 	hpsjam_sound_uninit();
 
