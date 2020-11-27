@@ -629,14 +629,14 @@ hpsjam_sound_init(const char *, bool)
 
 	memset(audioInputBuffer[2], 0, sizeof(float) * audioBufferSamples);
 
+	audioInit = true;
+
 	hpsjam_sound_toggle_input_channel(0, 0);
 	hpsjam_sound_toggle_input_channel(1, 1);
 	hpsjam_sound_toggle_output_channel(0, 0);
 	hpsjam_sound_toggle_output_channel(1, 1);
 
 	ASIOStart();
-
-	audioInit = true;
 
 	return (false);
 }
@@ -695,6 +695,9 @@ hpsjam_sound_toggle_output_device(int value)
 Q_DECL_EXPORT int
 hpsjam_sound_toggle_input_channel(int ch, int which)
 {
+	if (audioInit == false)
+		return (-1);
+
 	if (which < -1)
 		;
 	else if (which == -1)
@@ -713,6 +716,9 @@ hpsjam_sound_toggle_input_channel(int ch, int which)
 Q_DECL_EXPORT int
 hpsjam_sound_toggle_output_channel(int ch, int which)
 {
+	if (audioInit == false)
+		return (-1);
+
 	if (which < -1)
 		;
 	else if (which == -1)
@@ -732,7 +738,7 @@ Q_DECL_EXPORT void
 hpsjam_sound_get_input_status(QString &status)
 {
 	if (audioInit == false) {
-		status = "Selection audio device failed";
+		status = "Selection of audio device failed";
 		return;
 	}
 	const int adev = hpsjam_sound_toggle_input_device(-2);

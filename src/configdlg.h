@@ -73,7 +73,7 @@ public:
 		gl.addWidget(&b_toggle_input_device, 0,0);
 		gl.addWidget(&b_toggle_input_left, 0,1);
 		gl.addWidget(&b_toggle_input_right, 0,2);
-		gl.addWidget(&l_input, 0,3);
+		gl.addWidget(&l_input, 0,3,2,1);
 
 		gl.addWidget(&b_toggle_output_left, 1,1);
 		gl.addWidget(&b_toggle_output_right, 1,2);
