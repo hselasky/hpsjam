@@ -339,7 +339,7 @@ main(int argc, char **argv)
 					    "sample rate is different from %1Hz or \n"
 					    "buffer size is different from 96 samples.").arg(HPSJAM_SAMPLE_RATE));
 		}
-		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_input(input_device) < 0) {
+		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_input_device(input_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio device"));
 		}
