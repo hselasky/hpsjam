@@ -35,20 +35,22 @@ void
 HpsJamChatLyrics :: handle_send_lyrics()
 {
 	QTextCursor cursor(edit.textCursor());
+	struct hpsjam_packet_entry *pkt;
 
-	cursor.beginEditBlock();
-	cursor.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor, 1);
 	cursor.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor, 1);
 	cursor.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor, 1);
 	cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, 1);
 	QString str = cursor.selectedText();
 	str.truncate(128);
 	QByteArray temp = str.toUtf8();
-	cursor.removeSelectedText();
-	cursor.endEditBlock();
+
+	edit.setTextCursor(cursor);
 
 	QMutexLocker locker(&hpsjam_client_peer->lock);
-	struct hpsjam_packet_entry *pkt;
+
+	/* check if we are not connected */
+	if (hpsjam_client_peer->address.valid() == false)
+		return;
 
 	/* send text */
 	pkt = new struct hpsjam_packet_entry;
@@ -66,6 +68,10 @@ HpsJamChatBox :: handle_send_chat()
 	line.setText(QString());
 
 	QMutexLocker locker(&hpsjam_client_peer->lock);
+
+	/* check if we are not connected */
+	if (hpsjam_client_peer->address.valid() == false)
+		return;
 
 	/* send text */
 	pkt = new struct hpsjam_packet_entry;
