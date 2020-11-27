@@ -285,7 +285,8 @@ hpsjam_asio_buffer_switch(long index, ASIOBool)
 	QMutexLocker locker(&audioMutex);
 
 	for (unsigned ch = 0; ch != 2; ch++) {
-		const ASIOBufferInfo &bi = bufferInfo[audioInputSelection[ch]];
+		const unsigned i = audioInputSelection[ch];
+		const ASIOBufferInfo &bi = bufferInfo[i];
 		float *dst = audioInputBuffer[ch];
 
 		switch (channelInfo[i].type) {
@@ -379,7 +380,8 @@ hpsjam_asio_buffer_switch(long index, ASIOBool)
 	}
 
 	for (long x = 0; x != audioOutputChannels; x++) {
-		const ASIOBufferInfo &bi = bufferInfo[audioInputChannels + x];
+		const unsigned i = audioInputChannels + x;
+		const ASIOBufferInfo &bi = bufferInfo[i];
 		const float *src = audioInputBuffer[
 		     (x == audioOutputSelection[0]) ? 0 :
 		    ((x == audioOutputSelection[1]) ? 1 : 2)];
@@ -744,11 +746,11 @@ hpsjam_sound_get_input_status(QString &status)
 	};
 	status = QString("Selected audio device is %1:%2\n"
 	    "input channel %3,%4 and output channel %5,%6")
-	    .arg(adev).
-	    .arg(audioDeviceNames[adev] ? audioDeviceNames[adev] : "").
-	    .arg(aich[0]).
-	    .arg(aich[1]).
-	    .arg(aoch[0]).
+	    .arg(adev)
+	    .arg(audioDeviceNames[adev] ? audioDeviceNames[adev] : "")
+	    .arg(aich[0])
+	    .arg(aich[1])
+	    .arg(aoch[0])
 	    .arg(aoch[1]);
 }
 
