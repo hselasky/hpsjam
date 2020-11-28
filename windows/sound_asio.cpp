@@ -540,15 +540,17 @@ hpsjam_asio_get_buffer_size()
 
 	ASIOGetBufferSize(&lMinSize, &lMaxSize, &lPreferredSize, &lGranularity);
 
+	/* range check arguments */
 	if (lGranularity <= 0)
 		lGranularity = 1;
 	if (lMaxSize > MAX_SAMPLES)
 		lMaxSize = MAX_SAMPLES;
-	if (lMinSize < 0)
-		lMinSize = 0;
+	if (lMinSize < 1)
+		lMinSize = 1;
 
-	/* compute nearest buffer size */
-	for (lBufSize = lMinSize; lBufSize + lGranularity <= lMaxSize; lBufSize += lGranularity)
+	/* compute nearest buffer size or use the preferred size */
+	for (lBufSize = lMinSize; lBufSize + lGranularity <= lMaxSize &&
+	       lBufSize != lPreferredSize; lBufSize += lGranularity)
 		;
 
 	return (lBufSize);
