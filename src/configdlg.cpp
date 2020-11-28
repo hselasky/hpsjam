@@ -110,7 +110,7 @@ HpsJamDeviceSelection :: handle_toggle_output_right(int value)
 #endif
 }
 
-int
+void
 HpsJamDeviceSelection :: refreshStatus()
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
@@ -118,36 +118,36 @@ HpsJamDeviceSelection :: refreshStatus()
 	int ch;
 
 	hpsjam_sound_get_input_status(status);
-	audio_dev.l_input.setText(status);
+	l_input.setText(status);
 
 	hpsjam_sound_get_output_status(status);
-	audio_dev.l_output.setText(status);
+	l_output.setText(status);
 
-	audio_dev.s_input_left.setRange(0, hpsjam_sound_max_input_channel() - 1);
-	audio_dev.s_input_right.setRange(0, hpsjam_sound_max_input_channel() - 1);
+	s_input_left.setRange(0, hpsjam_sound_max_input_channel() - 1);
+	s_input_right.setRange(0, hpsjam_sound_max_input_channel() - 1);
 
-	audio_dev.s_output_left.setRange(0, hpsjam_sound_max_output_channel() - 1);
-	audio_dev.s_output_right.setRange(0, hpsjam_sound_max_output_channel() - 1);
+	s_output_left.setRange(0, hpsjam_sound_max_output_channel() - 1);
+	s_output_right.setRange(0, hpsjam_sound_max_output_channel() - 1);
 
 	ch = hpsjam_sound_toggle_input_channel(0, -2);
 	if (ch < 0)
 		ch = 0;
-	HPSJAM_NO_SIGNAL(audio_dev.s_input_left,setValue(ch));
+	HPSJAM_NO_SIGNAL(s_input_left,setValue(ch));
 
 	ch = hpsjam_sound_toggle_input_channel(1, -2);
 	if (ch < 0)
 		ch = 0;
-	HPSJAM_NO_SIGNAL(audio_dev.s_input_right,setValue(ch));
+	HPSJAM_NO_SIGNAL(s_input_right,setValue(ch));
 
 	ch = hpsjam_sound_toggle_output_channel(0, -2);
 	if (ch < 0)
 		ch = 0;
-	HPSJAM_NO_SIGNAL(audio_dev.s_output_left,setValue(ch));
+	HPSJAM_NO_SIGNAL(s_output_left,setValue(ch));
 
 	ch = hpsjam_sound_toggle_output_channel(1, -2);
 	if (ch < 0)
 		ch = 0;
-	HPSJAM_NO_SIGNAL(audio_dev.s_output_right,setValue(ch));
+	HPSJAM_NO_SIGNAL(s_output_right,setValue(ch));
 #endif
 }
 
