@@ -222,6 +222,9 @@ hpsjam_set_sample_rate_and_format()
 	AudioObjectGetPropertyDataSize(audioInputDevice,
 	    &address, 0, 0, &size);
 
+	if (size == 0)
+		return (true);
+
 	AudioStreamID vInputStreamIDList[size];
 
 	AudioObjectGetPropertyData(audioInputDevice,
@@ -235,6 +238,9 @@ hpsjam_set_sample_rate_and_format()
 
 	AudioObjectGetPropertyDataSize(audioOutputDevice,
 	    &address, 0, 0, &size);
+
+	if (size == 0)
+		return (true);
 
 	AudioStreamID vOutputStreamIDList[size];
 
@@ -317,14 +323,6 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 		break;
 	}
 
-	/* check that we have input streams */
-	address.mElement = kAudioDevicePropertyStreamConfiguration;
-	address.mScope = kAudioDevicePropertyScopeInput;
-	address.mSelector = 0;
-	AudioObjectGetPropertyDataSize(audioInputDevice, &address, 0, 0, &size);
-	if (size == 0)
-		return (true);
-
 	/* get input device name */
 	cfstring = 0;
 	address.mScope = kAudioObjectPropertyScopeGlobal;
@@ -349,14 +347,6 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 		audioOutputDevice = audioDevices[audioOutputDeviceSelection - 1];
 		break;
 	}
-
-	/* check that we have output streams */
-	address.mElement = kAudioDevicePropertyStreamConfiguration;
-	address.mScope = kAudioDevicePropertyScopeOutput;
-	address.mSelector = 0;
-	AudioObjectGetPropertyDataSize(audioOutputDevice, &address, 0, 0, &size);
-	if (size == 0)
-		return (true);
 
 	/* get output device name */
 	cfstring = 0;
