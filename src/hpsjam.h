@@ -91,6 +91,8 @@ extern int hpsjam_sound_toggle_input_device(int);
 extern int hpsjam_sound_toggle_output_device(int);
 extern int hpsjam_sound_toggle_input_channel(int, int);
 extern int hpsjam_sound_toggle_output_channel(int, int);
+extern int hpsjam_sound_max_input_channel();
+extern int hpsjam_sound_max_output_channel();
 
 class QString;
 extern void hpsjam_sound_get_input_status(QString &);

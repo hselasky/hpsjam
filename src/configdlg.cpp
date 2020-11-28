@@ -47,9 +47,7 @@ HpsJamDeviceSelection :: handle_toggle_input_device(int value)
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 	const int input = hpsjam_sound_toggle_input_device(value);
-	QString status;
-	hpsjam_sound_get_input_status(status);
-	l_input.setText(status);
+	refreshStatus();
 	return (input);
 #else
 	return (-1);
@@ -61,9 +59,6 @@ HpsJamDeviceSelection :: handle_toggle_input_left(int value)
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 	const int input = hpsjam_sound_toggle_input_channel(0, value);
-	QString status;
-	hpsjam_sound_get_input_status(status);
-	l_input.setText(status);
 	return (input);
 #else
 	return (-1);
@@ -75,9 +70,6 @@ HpsJamDeviceSelection :: handle_toggle_input_right(int value)
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 	const int input = hpsjam_sound_toggle_input_channel(1, value);
-	QString status;
-	hpsjam_sound_get_input_status(status);
-	l_input.setText(status);
 	return (input);
 #else
 	return (-1);
@@ -89,9 +81,7 @@ HpsJamDeviceSelection :: handle_toggle_output_device(int value)
 {
 #if defined(HAVE_MAC_AUDIO)
 	const int output = hpsjam_sound_toggle_output_device(value);
-	QString status;
-	hpsjam_sound_get_output_status(status);
-	l_output.setText(status);
+	refreshStatus();
 	return (output);
 #else
 	return (-1);
@@ -103,9 +93,6 @@ HpsJamDeviceSelection :: handle_toggle_output_left(int value)
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 	const int output = hpsjam_sound_toggle_output_channel(0, value);
-	QString status;
-	hpsjam_sound_get_output_status(status);
-	l_output.setText(status);
 	return (output);
 #else
 	return (-1);
@@ -117,12 +104,50 @@ HpsJamDeviceSelection :: handle_toggle_output_right(int value)
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 	const int output = hpsjam_sound_toggle_output_channel(1, value);
-	QString status;
-	hpsjam_sound_get_output_status(status);
-	l_output.setText(status);
 	return (output);
 #else
 	return (-1);
+#endif
+}
+
+int
+HpsJamDeviceSelection :: refreshStatus()
+{
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
+	QString status;
+	int ch;
+
+	hpsjam_sound_get_input_status(status);
+	audio_dev.l_input.setText(status);
+
+	hpsjam_sound_get_output_status(status);
+	audio_dev.l_output.setText(status);
+
+	audio_dev.s_input_left.setRange(0, hpsjam_sound_max_input_channel() - 1);
+	audio_dev.s_input_right.setRange(0, hpsjam_sound_max_input_channel() - 1);
+
+	audio_dev.s_output_left.setRange(0, hpsjam_sound_max_output_channel() - 1);
+	audio_dev.s_output_right.setRange(0, hpsjam_sound_max_output_channel() - 1);
+
+	ch = hpsjam_sound_toggle_input_channel(0, -2);
+	if (ch < 0)
+		ch = 0;
+	HPSJAM_NO_SIGNAL(audio_dev.s_input_left,setValue(ch));
+
+	ch = hpsjam_sound_toggle_input_channel(1, -2);
+	if (ch < 0)
+		ch = 0;
+	HPSJAM_NO_SIGNAL(audio_dev.s_input_right,setValue(ch));
+
+	ch = hpsjam_sound_toggle_output_channel(0, -2);
+	if (ch < 0)
+		ch = 0;
+	HPSJAM_NO_SIGNAL(audio_dev.s_output_left,setValue(ch));
+
+	ch = hpsjam_sound_toggle_output_channel(1, -2);
+	if (ch < 0)
+		ch = 0;
+	HPSJAM_NO_SIGNAL(audio_dev.s_output_right,setValue(ch));
 #endif
 }
 

@@ -517,40 +517,46 @@ hpsjam_sound_toggle_output_channel(int ch, int which)
 	return (audioOutputSelection[ch]);
 }
 
+Q_DECL_EXPORT int
+hpsjam_sound_max_input_channel()
+{
+	if (audioInputChannels == 0)
+		return (1);
+	else
+		return (audioInputChannels);
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_max_output_channel()
+{
+	if (audioOutputChannels == 0)
+		return (1);
+	else
+		return (audioOutputChannels);
+}
+
 Q_DECL_EXPORT void
 hpsjam_sound_get_input_status(QString &status)
 {
-	if (audioInit == false) {
-		status = "Selection of audio input device failed";
-		return;
-	}
 	const int adev = hpsjam_sound_toggle_input_device(-2);
-	const int aich[2] = {
-		hpsjam_sound_toggle_input_channel(0, -2),
-		hpsjam_sound_toggle_input_channel(1, -2)
-	};
-	status = QString("Input is %1:%2 and channel %3,%4")
-	    .arg(adev)
-	    .arg(audioInputDeviceName)
-	    .arg(aich[0])
-	    .arg(aich[1]);
+	if (adev < 0) {
+		status = "Selection of audio input device failed";
+	} else {
+		status = QString("Input is %1:%2")
+		    .arg(adev)
+		    .arg(audioInputDeviceName);
+	}
 }
 
 Q_DECL_EXPORT void
 hpsjam_sound_get_output_status(QString &status)
 {
-	if (audioInit == false) {
-		status = "Selection of audio output device failed";
-		return;
-	}
 	const int adev = hpsjam_sound_toggle_output_device(-2);
-	const int aoch[2] = {
-		hpsjam_sound_toggle_output_channel(0, -2),
-		hpsjam_sound_toggle_output_channel(1, -2)
-	};
-	status = QString("Output is %1:%2 and channel %3,%4")
-	    .arg(adev)
-	    .arg(audioOutputDeviceName)
-	    .arg(aoch[0])
-	    .arg(aoch[1]);
+	if (adev < 0) {
+		status = "Selection of audio output device failed";
+	} else {
+		status = QString("Output is %1:%2")
+		    .arg(adev)
+		    .arg(audioOutputDeviceName);
+	}
 }

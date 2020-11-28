@@ -199,14 +199,26 @@ hpsjam_sound_toggle_output_channel(int ch, int)
 	return (ch);
 }
 
+Q_DECL_EXPORT int
+hpsjam_sound_max_input_channel()
+{
+	return (2);
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_max_output_channel()
+{
+	return (2);
+}
+
 Q_DECL_EXPORT void
 hpsjam_sound_get_input_status(QString &status)
 {
-	status = "Input channel is 0,1";
+	status = "Default audio input device";
 }
 
 Q_DECL_EXPORT void
 hpsjam_sound_get_output_status(QString &status)
 {
-	status = "Output channel is 0,1";
+	status = "Default audio output device";
 }

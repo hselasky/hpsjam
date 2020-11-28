@@ -311,12 +311,6 @@ main(int argc, char **argv)
 					    "Check that you have an audio device connected and\n"
 					    "that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
 		}
-		QString status;
-		hpsjam_sound_get_input_status(status);
-		hpsjam_client->w_config->audio_dev.l_input.setText(status);
-		hpsjam_sound_get_output_status(status);
-		hpsjam_client->w_config->audio_dev.l_output.setText(status);
-
 		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_input_device(input_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio input device"));
@@ -334,6 +328,8 @@ main(int argc, char **argv)
 		if (input_right > -1)
 			hpsjam_client->w_config->audio_dev.handle_toggle_input_right(input_right);
 
+		hpsjam_client->w_config->audio_dev.refreshStatus();
+
 		/* register exit hook for audio */
 		atexit(&hpsjam_sound_uninit);
 #endif
@@ -345,11 +341,6 @@ main(int argc, char **argv)
 						"sample rate is different from %1Hz or \n"
 						"buffer size is different from 96 samples.").arg(HPSJAM_SAMPLE_RATE));
 		}
-		QString status;
-		hpsjam_sound_get_input_status(status);
-		hpsjam_client->w_config->audio_dev.l_input.setText(status);
-		hpsjam_sound_get_output_status(status);
-		hpsjam_client->w_config->audio_dev.l_output.setText(status);
 
 		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_toggle_input_device(input_device) < 0) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
@@ -363,6 +354,8 @@ main(int argc, char **argv)
 			hpsjam_client->w_config->audio_dev.handle_toggle_input_left(input_left);
 		if (input_right > -1)
 			hpsjam_client->w_config->audio_dev.handle_toggle_input_right(input_right);
+
+		hpsjam_client->w_config->audio_dev.refreshStatus();
 
 		/* register exit hook for audio */
 		atexit(&hpsjam_sound_uninit);
