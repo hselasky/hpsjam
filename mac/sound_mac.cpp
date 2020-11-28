@@ -317,9 +317,19 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 		break;
 	}
 
+	/* check that we have input streams */
+	address.mElement = kAudioDevicePropertyStreamConfiguration;
+	address.mScope = kAudioDevicePropertyScopeInput;
+	address.mSelector = 0;
+	AudioObjectGetPropertyDataSize(audioInputDevice, &address, 0, 0, &size);
+	if (size == 0)
+		return (true);
+
 	/* get input device name */
 	cfstring = 0;
+	address.mScope = kAudioObjectPropertyScopeGlobal;
 	address.mSelector = kAudioObjectPropertyName;
+	address.mElement = kAudioObjectPropertyElementMaster;
 	size = sizeof(CFStringRef);
 	AudioObjectGetPropertyData(audioInputDevice, &address, 0, 0, &size, &cfstring);
 	audioInputDeviceName = QString::fromCFString(cfstring);
@@ -340,9 +350,19 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 		break;
 	}
 
+	/* check that we have output streams */
+	address.mElement = kAudioDevicePropertyStreamConfiguration;
+	address.mScope = kAudioDevicePropertyScopeOutput;
+	address.mSelector = 0;
+	AudioObjectGetPropertyDataSize(audioOutputDevice, &address, 0, 0, &size);
+	if (size == 0)
+		return (true);
+
 	/* get output device name */
 	cfstring = 0;
+	address.mScope = kAudioObjectPropertyScopeGlobal;
 	address.mSelector = kAudioObjectPropertyName;
+	address.mElement = kAudioObjectPropertyElementMaster;
 	size = sizeof(CFStringRef);
 	AudioObjectGetPropertyData(audioOutputDevice, &address, 0, 0, &size, &cfstring);
 	audioOutputDeviceName = QString::fromCFString(cfstring);
