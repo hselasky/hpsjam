@@ -23,6 +23,6 @@
  * SUCH DAMAGE.
  */
 
-#include "help.h"
+#include "helpdlg.h"
 
 

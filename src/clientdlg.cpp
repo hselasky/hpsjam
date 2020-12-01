@@ -36,7 +36,7 @@
 #include "chatdlg.h"
 #include "connectdlg.h"
 #include "statsdlg.h"
-#include "help.h"
+#include "helpdlg.h"
 #include "peer.h"
 
 HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("S&ERVER")),
