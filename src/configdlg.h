@@ -55,10 +55,17 @@ public:
 	    b_toggle_output_device(tr("Toggle output device")) {
 		setTitle("Audio device configuration");
 
-	    s_input_left.setPrefix(QString("L-IN "));
-	    s_input_right.setPrefix(QString("R-IN "));
-	    s_output_left.setPrefix(QString("L-OUT "));
-	    s_output_right.setPrefix(QString("R-OUT "));
+		s_input_left.setAccessibleDescription("Set left input channel index");
+		s_input_left.setPrefix(QString("L-IN "));
+
+		s_input_right.setAccessibleDescription("Set right input channel index");
+		s_input_right.setPrefix(QString("R-IN "));
+
+		s_output_left.setAccessibleDescription("Set left output channel index");
+		s_output_left.setPrefix(QString("L-OUT "));
+
+		s_output_right.setAccessibleDescription("Set right output channel index");
+		s_output_right.setPrefix(QString("R-OUT "));
 
 #if defined(HAVE_MAC_AUDIO)
 		gl.addWidget(&b_toggle_input_device, 0,0);

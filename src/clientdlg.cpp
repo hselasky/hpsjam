@@ -39,7 +39,7 @@
 #include "help.h"
 #include "peer.h"
 
-HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("CONN&ECT")),
+HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("S&ERVER")),
     b_mixer(tr("&MIXER")), b_lyrics(tr("&LYRICS")), b_chat(tr("CH&AT")),
     b_config(tr("CON&FIG")), b_stats(tr("&STATS")), b_help(tr("&HELP"))
 {
