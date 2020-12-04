@@ -152,8 +152,8 @@ public:
 			if (x != index || hpsjam_audio_format[x].format == format)
 				continue;
 			format = hpsjam_audio_format[x].format;
-			titleRegen();
 			selection = index;
+			titleRegen();
 			valueChanged();
 		}
 	};
