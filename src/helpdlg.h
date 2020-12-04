@@ -88,7 +88,7 @@ public:
         "        -1 to -15: Negative local gain, else no gain\n"
         "    # Status characters used after Balance\n"
         "        I: Local audio is inverted else normal\n"
-        "        M: Local audio is muted else unmuted\n"
+        "        M: Your audio is muted else normal\n"
         "        E: Local audio equalizer is active else disabled\n"
         "        L: Local audio is panned to left else in center\n"
         "        R: Local audio is panned to right else in center\n"
