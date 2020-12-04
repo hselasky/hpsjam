@@ -367,12 +367,16 @@ HpsJamStrip :: handleEQShow()
 void
 HpsJamStrip :: handleEQApply()
 {
+	titleRegen();
+
 	emit eqChanged(id);
 }
 
 void
 HpsJamStrip :: handleSlider()
 {
+	titleRegen();
+
 	emit gainChanged(id);
 }
 
@@ -380,6 +384,8 @@ void
 HpsJamStrip :: handlePan(int delta)
 {
 	w_slider.adjustPan(delta / 16.0f);
+
+	titleRegen();
 
 	emit panChanged(id);
 }
@@ -389,6 +395,8 @@ HpsJamStrip :: handleGain(int delta)
 {
 	w_slider.adjustGain(delta);
 	w_gain.setValue(w_slider.gain);
+
+	titleRegen();
 
 	emit bitsChanged(id);
 }
@@ -401,6 +409,8 @@ HpsJamStrip :: handleInv()
 	else
 		b_inv.setFlat(true);
 
+	titleRegen();
+
 	emit bitsChanged(id);
 }
 
@@ -412,6 +422,8 @@ HpsJamStrip :: handleSolo()
 	else
 		b_solo.setFlat(true);
 
+	titleRegen();
+
 	emit bitsChanged(id);
 }
 
@@ -422,6 +434,8 @@ HpsJamStrip :: handleMute()
 		b_mute.setFlat(false);
 	else
 		b_mute.setFlat(true);
+
+	titleRegen();
 
 	emit bitsChanged(id);
 }

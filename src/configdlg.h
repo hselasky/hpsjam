@@ -140,6 +140,11 @@ public:
 	uint8_t selection;
 	QPushButton b[HPSJAM_AUDIO_FORMAT_MAX];
 	QGridLayout gl;
+	QString description;
+
+	void titleRegen() {
+		setTitle(description + QString(" :: %1").arg(hpsjam_audio_format[selection].descr));
+	};
 
 	void setIndex(unsigned index) {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_FORMAT_MAX; x++) {
@@ -147,6 +152,7 @@ public:
 			if (x != index || hpsjam_audio_format[x].format == format)
 				continue;
 			format = hpsjam_audio_format[x].format;
+			titleRegen();
 			selection = index;
 			valueChanged();
 		}
@@ -171,8 +177,11 @@ class HpsJamConfig : public QWidget {
 	Q_OBJECT;
 public:
 	HpsJamConfig() : gl(this) {
-		up_fmt.setTitle(tr("Uplink audio format"));
-		down_fmt.setTitle(tr("Downlink audio format"));
+		up_fmt.description = tr("Uplink audio format");
+		up_fmt.titleRegen();
+
+		down_fmt.description = tr("Downlink audio format");
+		down_fmt.titleRegen();
 
 		gl.addWidget(&up_fmt, 0,0);
 		gl.addWidget(&down_fmt, 1,0);

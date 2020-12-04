@@ -163,6 +163,7 @@ public:
 	QPushButton b_inv;
 	QPushButton b_mute;
 	QPushButton b_solo;
+	QString description;
 
 	void init() {
 		w_name.setText(QString());
@@ -177,6 +178,41 @@ public:
 		HPSJAM_NO_SIGNAL(b_mute,setFlat(false));
 		HPSJAM_NO_SIGNAL(b_solo,setFlat(false));
 		HPSJAM_NO_SIGNAL(w_gain,setValue(0));
+		titleRegen();
+	};
+
+	void titleRegen() {
+		QString bits;
+
+		if (b_inv.isFlat())
+			bits += "I";
+		if (b_mute.isFlat())
+			bits += "M";
+		if (b_solo.isFlat())
+			bits += "S";
+		if (w_eq.edit.toPlainText().trimmed() != QString("filtersize 0.0ms 0.0ms"))
+			bits += "E";
+		if (w_slider.pan < 0.0f)
+			bits += "L";
+		else if (w_slider.pan > 0.0f)
+			bits += "R";
+		if (description == "Balance") {
+			if (w_slider.value > 0.0f)
+				bits += "G";
+		} else {
+			if (w_slider.value < 1.0f)
+				bits += "G";
+		}
+		if (w_slider.gain != 0) {
+			bits += QString("%1%2")
+			  .arg(w_slider.gain > 0 ? "+" : "-")
+			  .arg(w_slider.gain < 0 ? -w_slider.gain : w_slider.gain);
+		}
+
+		if (bits.isEmpty())
+			setTitle(description);
+		else
+			setTitle(description + QString(" ") + bits);
 	};
 
 	uint8_t getBits() {
@@ -214,7 +250,8 @@ public:
 		my_peer = 0;
 		setWidgetResizable(true);
 
-		self_strip.setTitle(QString("Local Balance"));
+		self_strip.description = tr("Balance");
+		self_strip.titleRegen();
 		self_strip.b_solo.setEnabled(false);
 		self_strip.w_gain.b[0].setEnabled(false);
 		self_strip.w_gain.b[1].setEnabled(false);
@@ -223,7 +260,8 @@ public:
 		self_strip.id = 0;
 		gl.addWidget(&self_strip, 0, 0);
 		for (unsigned x = 0; x != HPSJAM_PEERS_MAX; x++) {
-			peer_strip[x].setTitle(QString("Mix%1").arg(1 + x));
+			peer_strip[x].description = QString("Mix%1").arg(1 + x);
+			peer_strip[x].titleRegen();
 			peer_strip[x].id = x;
 			peer_strip[x].hide();
 			peer_strip[x].w_slider.setValue(1);
