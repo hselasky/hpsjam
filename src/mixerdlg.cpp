@@ -566,9 +566,11 @@ HpsJamMixer :: handle_fader_gain(uint8_t mix, uint8_t index, float gain)
 	switch (mix) {
 	case 0:
 		HPSJAM_NO_SIGNAL(peer_strip[index].w_slider,setValue(gain));
+		peer_strip[index].titleRegen();
 		break;
 	case 255:
 		HPSJAM_NO_SIGNAL(self_strip.w_slider,setValue(gain));
+		self_strip.titleRegen();
 		break;
 	default:
 		break;
@@ -581,9 +583,11 @@ HpsJamMixer :: handle_fader_pan(uint8_t mix, uint8_t index, float pan)
 	switch (mix) {
 	case 0:
 		HPSJAM_NO_SIGNAL(peer_strip[index].w_slider,setPan(pan));
+		peer_strip[index].titleRegen();
 		break;
 	case 255:
 		HPSJAM_NO_SIGNAL(self_strip.w_slider,setPan(pan));
+		self_strip.titleRegen();
 		break;
 	default:
 		break;
@@ -596,9 +600,11 @@ HpsJamMixer :: handle_fader_eq(uint8_t mix, uint8_t index, QString *str)
 	switch (mix) {
 	case 0:
 		HPSJAM_NO_SIGNAL(peer_strip[index].w_eq.edit,setText(*str));
+		peer_strip[index].titleRegen();
 		break;
 	case 255:
 		HPSJAM_NO_SIGNAL(self_strip.w_eq.edit,setText(*str));
+		self_strip.titleRegen();
 		break;
 	default:
 		break;
