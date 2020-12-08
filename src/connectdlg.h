@@ -58,6 +58,7 @@ public:
 	HpsJamConnectIcon();
 	void loadSelection(QByteArray &);
 	void setEnabled(bool);
+	void setSelection(unsigned);
 
 public slots:
 	void handle_selection();

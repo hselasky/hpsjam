@@ -234,9 +234,7 @@ HpsJamClient :: loadSettings()
 	QSettings settings("HpsJam");
 
 	w_connect->name.edit.setText(settings.value("connect/username").toString());
-	w_connect->icon.selection = settings.value("connect/icon", QString("0")).toInt();
-	if (w_connect->icon.selection < 0 || w_connect->icon.selection >= HPSJAM_NUM_ICONS)
-		w_connect->icon.selection = 0;
+	w_connect->icon.setSelection(settings.value("connect/icon", QString("0")).toInt());
 	w_connect->password.edit.setText(settings.value("connect/password", QString()).toString());
 	w_connect->server.edit.setText(settings.value("connect/server", QString("127.0.0.1:" HPSJAM_DEFAULT_IPV4_PORT_STR)).toString());
 

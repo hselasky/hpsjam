@@ -57,12 +57,25 @@ HpsJamConnectIcon :: HpsJamConnectIcon() : gl(this)
 	icon[13] = new HpsJamIcon(QString(":/icons/note.svg"));
 
 	for (unsigned x = 0; x != numIcons; x++) {
-		icon[x]->setSelection(x == selection);
+		HPSJAM_NO_SIGNAL(icon[x][0],setSelection(x == selection));
 		gl.addWidget(icon[x], x / 7, x % 7);
 		connect(icon[x], SIGNAL(selected()), this, SLOT(handle_selection()));
 	}
 
 	setTitle(tr("Select icon"));
+}
+
+void
+HpsJamConnectIcon :: setSelection(unsigned _selection)
+{
+	if (_selection == selection || _selection >= HPSJAM_NUM_ICONS)
+		return;
+	selection = _selection;
+
+	for (unsigned x = 0; x != numIcons; x++)
+		HPSJAM_NO_SIGNAL(icon[x][0],setSelection(x == selection));
+
+	update();
 }
 
 void
