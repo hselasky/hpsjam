@@ -175,7 +175,8 @@ hpsjam_sanity_check_format(const AudioStreamBasicDescription &sd)
 	    (sd.mFramesPerPacket != 1) ||
 	    (sd.mBitsPerChannel != 32) ||
 	    (!(sd.mFormatFlags & kAudioFormatFlagIsFloat)) ||
-	    (!(sd.mFormatFlags & kAudioFormatFlagIsPacked)));
+	    (!(sd.mFormatFlags & kAudioFormatFlagIsPacked)) ||
+	    (sd.mFormatFlags & kAudioFormatFlagIsNonInterleaved));
 }
 
 static bool
@@ -360,9 +361,24 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	frameSize = hpsjam_set_buffer_size(audioInputDevice,
 	    kAudioDevicePropertyScopeInput, 2 * HPSJAM_DEF_SAMPLES);
 
+	/* try different buffer sizes before giving up */
 	if (hpsjam_set_buffer_size(audioOutputDevice,
-	    kAudioDevicePropertyScopeOutput, frameSize) != frameSize)
-		return (true);
+	    kAudioDevicePropertyScopeOutput, frameSize) != frameSize) {
+
+		frameSize = hpsjam_set_buffer_size(audioInputDevice,
+		    kAudioDevicePropertyScopeInput, 64);
+
+		if (hpsjam_set_buffer_size(audioOutputDevice,
+		    kAudioDevicePropertyScopeOutput, frameSize) != frameSize) {
+
+			frameSize = hpsjam_set_buffer_size(audioInputDevice,
+			    kAudioDevicePropertyScopeInput, 128);
+
+			if (hpsjam_set_buffer_size(audioOutputDevice,
+			    kAudioDevicePropertyScopeOutput, frameSize) != frameSize)
+				return (true);
+		}
+	}
 
 	audioBufferSamples = frameSize;
 
