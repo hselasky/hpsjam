@@ -545,8 +545,8 @@ hpsjam_asio_get_buffer_size()
 		lGranularity = 1;
 	if (lMaxSize > MAX_SAMPLES)
 		lMaxSize = MAX_SAMPLES;
-	if (lMinSize < 1)
-		lMinSize = 1;
+	if (lMinSize <= 0)
+		lMinSize = lGranularity;
 
 	/* compute nearest buffer size or use the preferred size */
 	for (lBufSize = lMinSize; lBufSize + lGranularity <= lMaxSize &&
