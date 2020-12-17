@@ -562,6 +562,9 @@ hpsjam_sound_init(const char *, bool)
 	QMutexLocker locker(&audioMutex);
 	unsigned index = 0;
 
+	if (audioInit == true)
+		return (true);
+
 	if (audioMaxSelection == 0) {
 		static char dummy[] = { "dummy" };
 
