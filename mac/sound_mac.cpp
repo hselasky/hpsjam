@@ -64,7 +64,7 @@ hpsjam_device_notification(AudioDeviceID,
 }
 
 static OSStatus
-hpsjam_audio_callback(AudioDeviceID inDevice,
+hpsjam_audio_callback(AudioDeviceID deviceID,
     const AudioTimeStamp *,
     const AudioBufferList * inData,
     const AudioTimeStamp *,
@@ -97,18 +97,11 @@ hpsjam_audio_callback(AudioDeviceID inDevice,
 
 	if (n_in > 1 || n_out > 1 || (n_in == 0 && n_out == 0) ||
 	    audioInputBuffer[0] == 0 || audioInputBuffer[1] == 0 ||
-	    audioInputBuffer[2] == 0) {
-error:
-		/* fill silence in all outputs */
-		for (size_t x = 0; x != n_out; x++) {
-			memset(outData->mBuffers[x].mData, 0,
-			    outData->mBuffers[x].mDataByteSize);
-		}
-		return (kAudioHardwareNoError);
-	}
+	    audioInputBuffer[2] == 0)
+		goto error;
 
 	/* copy input to buffer */
-	if (n_in == 1) {
+	if (n_in == 1 && deviceID == audioInputDevice) {
 		for (unsigned ch = 0; ch != 2; ch++) {
 			for (uint32_t x = 0; x != audioBufferSamples; x++) {
 				audioInputBuffer[ch][x] = ((float *)inData->mBuffers[0].mData)
@@ -119,6 +112,9 @@ error:
 
 	/* process audio on output */
 	if (n_out == 1) {
+		if (deviceID != audioOutputDevice)
+			goto error;
+
 		hpsjam_client_peer->sound_process(audioInputBuffer[0],
 		    audioInputBuffer[1], audioBufferSamples);
 
@@ -143,6 +139,13 @@ error:
 		/* clear old buffer, just in case there is no input */
 		memset(audioInputBuffer[0], 0, audioBufferSamples * sizeof(float));
 		memset(audioInputBuffer[1], 0, audioBufferSamples * sizeof(float));
+	}
+	return (kAudioHardwareNoError);
+error:
+	/* fill silence in all outputs, if any */
+	for (size_t x = 0; x != n_out; x++) {
+		memset(outData->mBuffers[x].mData, 0,
+		    outData->mBuffers[x].mDataByteSize);
 	}
 	return (kAudioHardwareNoError);
 }
@@ -285,6 +288,9 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	uint32_t size = 0;
 	uint32_t frameSize;
 
+	if (audioInit == true)
+		return (true);
+
 	AudioObjectSetPropertyData(kAudioObjectSystemObject, &property, 0, 0,
 	    sizeof(theRunLoop), &theRunLoop);
 
@@ -404,18 +410,25 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	AudioObjectAddPropertyListener(audioInputDevice,
 	    &address, hpsjam_device_notification, 0);
 
-	AudioObjectAddPropertyListener(audioOutputDevice,
-	    &address, hpsjam_device_notification, 0);
+	if (audioOutputDevice != audioInputDevice) {
+		AudioObjectAddPropertyListener(audioOutputDevice,
+		    &address, hpsjam_device_notification, 0);
+	}
 
 	AudioDeviceCreateIOProcID(audioInputDevice,
 	    hpsjam_audio_callback, 0, &audioInputProcID);
 
-	AudioDeviceCreateIOProcID(audioOutputDevice,
-	    hpsjam_audio_callback, 0, &audioOutputProcID);
+	if (audioOutputDevice != audioInputDevice) {
+		AudioDeviceCreateIOProcID(audioOutputDevice,
+		    hpsjam_audio_callback, 0, &audioOutputProcID);
+	}
 
 	/* start audio */
 	AudioDeviceStart(audioInputDevice, audioInputProcID);
-	AudioDeviceStart(audioOutputDevice, audioOutputProcID);
+
+	if (audioOutputDevice != audioInputDevice) {
+		AudioDeviceStart(audioOutputDevice, audioOutputProcID);
+	}
 
 	return (false);
 }
@@ -430,19 +443,25 @@ hpsjam_sound_uninit()
 
 	audioInit = false;
 	AudioDeviceStop(audioInputDevice, audioInputProcID);
-	AudioDeviceStop(audioOutputDevice, audioOutputProcID);
+	if (audioOutputDevice != audioInputDevice) {
+		AudioDeviceStop(audioOutputDevice, audioOutputProcID);
+	}
 
 	AudioDeviceDestroyIOProcID(audioInputDevice, audioInputProcID);
-	AudioDeviceDestroyIOProcID(audioOutputDevice, audioOutputProcID);
+	if (audioOutputDevice != audioInputDevice) {
+		AudioDeviceDestroyIOProcID(audioOutputDevice, audioOutputProcID);
+	}
 
 	address.mElement = kAudioObjectPropertyElementMaster;
 	address.mScope = kAudioObjectPropertyScopeGlobal;
 	address.mSelector = kAudioDevicePropertyDeviceHasChanged;
 
-	AudioObjectRemovePropertyListener(audioOutputDevice,
-	    &address, hpsjam_device_notification, 0);
 	AudioObjectRemovePropertyListener(audioInputDevice,
 	    &address, hpsjam_device_notification, 0);
+	if (audioOutputDevice != audioInputDevice) {
+		AudioObjectRemovePropertyListener(audioOutputDevice,
+		    &address, hpsjam_device_notification, 0);
+	}
 
 	QMutexLocker locker(&audioMutex);
 
