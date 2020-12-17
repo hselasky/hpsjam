@@ -95,18 +95,19 @@ struct hpsjam_socket_address {
 		return (fd);
 	};
 	int bind() const {
-		int option = 1;
-
 		switch (v4.sin_family) {
 		case AF_INET:
 			return (::bind(fd, (const struct sockaddr *)&v4, sizeof(v4)));
 		case AF_INET6:
 #ifdef IPV6_V6ONLY
+			if (1) {
+				int option = 1;
 #ifdef _WIN32
-			setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&option, sizeof(option));
+				setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&option, sizeof(option));
 #else
-			setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &option, sizeof(option));
+				setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &option, sizeof(option));
 #endif
+			}
 #endif
 			return (::bind(fd, (const struct sockaddr *)&v6, sizeof(v6)));
 		default:
