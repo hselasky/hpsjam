@@ -95,7 +95,7 @@ struct hpsjam_socket_address {
 		return (fd);
 	};
 	int bind() const {
-		static const int option = 1;
+		int option = 1;
 
 		switch (v4.sin_family) {
 		case AF_INET:
