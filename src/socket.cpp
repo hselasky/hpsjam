@@ -189,16 +189,16 @@ hpsjam_socket_address :: resolve(const char *host, const char *port, struct hpsj
 }
 
 Q_DECL_EXPORT void
-hpsjam_socket_init(unsigned short ipv4_port, unsigned short ipv6_port, unsigned short cliport)
+hpsjam_socket_init(unsigned short port, unsigned short cliport)
 {
 	pthread_t pt;
 	int ret;
 
-	hpsjam_v4.init(AF_INET, ipv4_port);
+	hpsjam_v4.init(AF_INET, port);
 	ret = pthread_create(&pt, NULL, &hpsjam_socket_receive, &hpsjam_v4);
 	assert(ret == 0);
 
-	hpsjam_v6.init(AF_INET6, ipv6_port);
+	hpsjam_v6.init(AF_INET6, port);
 	ret = pthread_create(&pt, NULL, &hpsjam_socket_receive, &hpsjam_v6);
 	assert(ret == 0);
 

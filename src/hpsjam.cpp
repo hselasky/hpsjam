@@ -56,8 +56,6 @@ const char *hpsjam_welcome_message_file;
 static const struct option hpsjam_opts[] = {
 	{ "NSDocumentRevisionsDebugMode", required_argument, NULL, ' ' },
 	{ "port", required_argument, NULL, 'p' },
-	{ "ipv4-port", required_argument, NULL, 't' },
-	{ "ipv6-port", required_argument, NULL, 'u' },
 	{ "cli-port", required_argument, NULL, 'q' },
 	{ "welcome-msg-file", required_argument, NULL, 'w' },
 	{ "server", no_argument, NULL, 's' },
@@ -88,7 +86,7 @@ static const struct option hpsjam_opts[] = {
 static void
 usage(void)
 {
-        fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_IPV4_PORT_STR "] "
+        fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_PORT_STR "] "
 #ifndef _WIN32
 		"[--daemon] \\\n"
 #endif
@@ -108,8 +106,6 @@ usage(void)
 		"	[--audio-output-left <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-input-right <0,1,2,3 ... , Default is 1>] \\\n"
 		"	[--audio-output-right <0,1,2,3 ... , Default is 1>] \\\n"
-		"	[--ipv4-port " HPSJAM_DEFAULT_IPV4_PORT_STR "] \\\n"
-		"	[--ipv6-port " HPSJAM_DEFAULT_IPV6_PORT_STR "] \\\n"
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
 		"	[--welcome-msg-file <filename> \\\n"
 		"	[--cli-port <portnumber>]\n",
@@ -123,11 +119,10 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	static const char hpsjam_short_opts[] = {
-	    "M:q:p:sP:hBJ:n:K:t:u:w:N:i:c:U:D:I:O:l:L:r:R:"
+	    "M:q:p:sP:hBJ:n:K:w:N:i:c:U:D:I:O:l:L:r:R:"
 	};
 	int c;
-	int ipv4_port = HPSJAM_DEFAULT_IPV4_PORT;
-	int ipv6_port = HPSJAM_DEFAULT_IPV6_PORT;
+	int port = HPSJAM_DEFAULT_PORT;
 	int cliport = 0;
 #ifndef _WIN32
 	int do_fork = 0;
@@ -157,18 +152,8 @@ main(int argc, char **argv)
 				hpsjam_num_server_peers = 1;
 			break;
 		case 'p':
-			ipv4_port = ipv6_port = atoi(optarg);
-			if (ipv4_port <= 0 || ipv4_port >= 65536)
-				usage();
-			break;
-		case 't':
-			ipv4_port = atoi(optarg);
-			if (ipv4_port <= 0 || ipv4_port >= 65536)
-				usage();
-			break;
-		case 'u':
-			ipv6_port = atoi(optarg);
-			if (ipv6_port <= 0 || ipv6_port >= 65536)
+			port = atoi(optarg);
+			if (port <= 0 || port >= 65536)
 				usage();
 			break;
 		case 'q':
@@ -379,7 +364,7 @@ main(int argc, char **argv)
 		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX;
 
 		/* create sockets, if any */
-		hpsjam_socket_init(ipv4_port, ipv6_port, cliport);
+		hpsjam_socket_init(port, cliport);
 
 		/* create timer, if any */
 		hpsjam_timer_init();
@@ -403,7 +388,7 @@ main(int argc, char **argv)
 		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX * hpsjam_num_server_peers;
 
 		/* create sockets, if any */
-		hpsjam_socket_init(ipv4_port, ipv6_port, cliport);
+		hpsjam_socket_init(port, cliport);
 
 		/* create timer, if any */
 		hpsjam_timer_init();
