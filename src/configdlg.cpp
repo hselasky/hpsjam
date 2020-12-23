@@ -45,8 +45,9 @@ const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = 
 
 const struct hpsjam_audio_levels hpsjam_audio_levels[HPSJAM_AUDIO_LEVELS_MAX] = {
 	{ "OFF", 0.0f },
-	{ "LOW", 1.0f / 16.0f },
-	{ "MED", 1.0f / 4.0f },
+	{ "LOW", 1.0f / 32.0f },
+	{ "MEDIUM", 1.0f / 8.0f },
+	{ "HIGH", 1.0f / 2.0f },
 	{ "MAX", 1.0f },
 };
 
