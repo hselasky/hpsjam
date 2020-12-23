@@ -149,8 +149,17 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 	QMutexLocker locker(&lock);
 
 	if (address.valid() == false) {
-		memset(left, 0, sizeof(left[0]) * samples);
-		memset(right, 0, sizeof(right[0]) * samples);
+		if (audio_effects.isActive()) {
+			for (size_t x = 0; x != samples; x++) {
+				float temp = audio_effects.getSample();
+
+				left[x] = temp;
+				right[x] = temp;
+			}
+		} else {
+			memset(left, 0, sizeof(left[0]) * samples);
+			memset(right, 0, sizeof(right[0]) * samples);
+		}
 		return;
 	}
 
@@ -256,6 +265,16 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 				left[x] = left[x] * mg[1] + temp_l[x] * mg[0];
 				right[x] = right[x] * mg[1] + temp_r[x] * mg[0];
 			}
+		}
+	}
+
+	/* Add audio effects, if any */
+	if (audio_effects.isActive()) {
+		for (size_t x = 0; x != samples; x++) {
+			float temp = audio_effects.getSample();
+
+			left[x] += temp;
+			right[x] += temp;
 		}
 	}
 
@@ -1210,5 +1229,67 @@ hpsjam_cli_process(const struct hpsjam_socket_address &addr, const char *data, s
 			hpsjam_server_broadcast(*pkt);
 			delete pkt;
 		}
+	}
+}
+
+static void
+hpsjam_load_float_le32(const char *fname, int &off, int &max, float * &data)
+{
+	QFile file(fname);
+
+	if (!file.open(QIODevice::ReadOnly)) {
+		off = 0;
+		max = 0;
+		data = 0;
+		return;
+	}
+
+	QByteArray *pba = new QByteArray(file.readAll());
+	data = (float *)pba->data();
+	off = max = pba->length() / 4;
+
+	/* byte swap, if any */
+	for (int x = 0; x != max; x++) {
+		union {
+			float data_float;
+			uint32_t data_32;
+			uint8_t data_8[4];
+		} tmp;
+
+		assert(sizeof(tmp) == 4);
+
+		tmp.data_float = data[x];
+		tmp.data_32 = tmp.data_8[0] | (tmp.data_8[1] << 8) |
+		  (tmp.data_8[2] << 16) | (tmp.data_8[3] << 24);
+		data[x] = tmp.data_float;
+	}
+}
+
+hpsjam_client_audio_effects :: hpsjam_client_audio_effects()
+{
+	hpsjam_load_float_le32(":/sounds/new_message_float32le_48kHz_1ch.raw",
+	    new_message_off, new_message_max, new_message_data);
+	hpsjam_load_float_le32(":/sounds/new_user_float32le_48kHz_1ch.raw",
+	    new_user_off, new_user_max, new_user_data);
+
+	new_message_gain = 0.0f;
+	new_user_gain = 0.0f;
+}
+
+void
+hpsjam_client_audio_effects :: playNewMessage(float gain)
+{
+	if (new_message_off == new_message_max && gain > 0.0f) {
+		new_message_off = 0;
+		new_message_gain = gain;
+	}
+}
+
+void
+hpsjam_client_audio_effects :: playNewUser(float gain)
+{
+	if (new_user_off == new_user_max && gain > 0.0f) {
+		new_user_off = 0;
+		new_user_gain = gain;
 	}
 }

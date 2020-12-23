@@ -40,6 +40,7 @@
 #define	HPSJAM_SEQ_MAX 16
 #define	HPSJAM_NUM_ICONS 14
 #define	HPSJAM_AUDIO_FORMAT_MAX 9
+#define	HPSJAM_AUDIO_LEVELS_MAX 4
 #define	HPSJAM_ICON_SIZE 64 /* 64x64 px SVG */
 #define	HPSJAM_MAX_UDP 2048 /* bytes (need to have room for two packets) */
 #define	HPSJAM_DEFAULT_PORT 22124

@@ -217,6 +217,7 @@ HpsJamClient :: saveSettings()
 	settings.endGroup();
 
 	settings.beginGroup("config");
+	settings.setValue("effects_level", w_config->effects.selection);
 	settings.setValue("uplink_format", w_config->up_fmt.selection);
 	settings.setValue("downlink_format", w_config->down_fmt.selection);
 	settings.setValue("input_device", w_config->audio_dev.handle_toggle_input_device(-2));
@@ -238,6 +239,7 @@ HpsJamClient :: loadSettings()
 	w_connect->password.edit.setText(settings.value("connect/password", QString()).toString());
 	w_connect->server.edit.setText(settings.value("connect/server", QString("127.0.0.1:" HPSJAM_DEFAULT_PORT_STR)).toString());
 
+	HPSJAM_NO_SIGNAL(w_config->effects,setIndex(settings.value("config/effects_level", QString("0")).toInt()));
 	w_config->up_fmt.setIndex(settings.value("config/uplink_format", QString("1")).toInt());
 	w_config->down_fmt.setIndex(settings.value("config/downlink_format", QString("1")).toInt());
 
@@ -247,6 +249,24 @@ HpsJamClient :: loadSettings()
 	output_left = settings.value("config/output_left", QString("-1")).toInt();
 	input_right = settings.value("config/input_right", QString("-1")).toInt();
 	output_right = settings.value("config/output_right", QString("-1")).toInt();
+}
+
+void
+HpsJamClient :: playNewUser()
+{
+	float gain = hpsjam_audio_levels[w_config->effects.selection].gain;
+
+	QMutexLocker locker(&hpsjam_client_peer->lock);
+	hpsjam_client_peer->audio_effects.playNewUser(gain);
+}
+
+void
+HpsJamClient :: playNewMessage()
+{
+	float gain = hpsjam_audio_levels[w_config->effects.selection].gain;
+
+	QMutexLocker locker(&hpsjam_client_peer->lock);
+	hpsjam_client_peer->audio_effects.playNewMessage(gain);
 }
 
 void

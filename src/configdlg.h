@@ -163,6 +163,50 @@ signals:
 	void valueChanged();
 };
 
+struct hpsjam_audio_levels {
+	const char *descr;
+	float gain;
+};
+
+extern const struct hpsjam_audio_levels hpsjam_audio_levels[HPSJAM_AUDIO_LEVELS_MAX];
+
+class HpsJamConfigEffects : public QGroupBox {
+	Q_OBJECT;
+public:
+	HpsJamConfigEffects() : gl(this) {
+		for (unsigned x = 0; x != HPSJAM_AUDIO_LEVELS_MAX; x++) {
+			b[x].setFlat(x != 0);
+			b[x].setText(hpsjam_audio_levels[x].descr);
+			connect(&b[x], SIGNAL(released()), this, SLOT(handle_selection()));
+			gl.addWidget(b + x, 0, x);
+		}
+		selection = 0;
+	};
+	uint8_t selection;
+	QPushButton b[HPSJAM_AUDIO_LEVELS_MAX];
+	QGridLayout gl;
+	QString description;
+
+	void titleRegen() {
+		setTitle(description + QString(" :: %1").arg(hpsjam_audio_levels[selection].descr));
+	};
+
+	void setIndex(unsigned index) {
+		for (unsigned x = 0; x != HPSJAM_AUDIO_LEVELS_MAX; x++) {
+			b[x].setFlat(x != index);
+			if (x != index || index == selection)
+				continue;
+			selection = index;
+			titleRegen();
+			valueChanged();
+		}
+	};
+public slots:
+	void handle_selection();
+signals:
+	void valueChanged();
+};
+
 class HpsJamLyricsFormat : public QGroupBox {
 public:
 	HpsJamLyricsFormat() : gl(this), b_font_select(tr("Select font")) {
@@ -183,24 +227,31 @@ public:
 		down_fmt.description = tr("Downlink audio format");
 		down_fmt.titleRegen();
 
+		effects.description = tr("Sound effects");
+		effects.titleRegen();
+
 		gl.addWidget(&up_fmt, 0,0);
 		gl.addWidget(&down_fmt, 1,0);
 		gl.addWidget(&audio_dev, 2,0);
-		gl.addWidget(&lyrics_fmt, 3,0);
-		gl.setRowStretch(4,1);
+		gl.addWidget(&effects, 3,0);
+		gl.addWidget(&lyrics_fmt, 4,0);
+		gl.setRowStretch(5,1);
 
 		connect(&up_fmt, SIGNAL(valueChanged()), this, SLOT(handle_up_config()));
 		connect(&down_fmt, SIGNAL(valueChanged()), this, SLOT(handle_down_config()));
+		connect(&effects, SIGNAL(valueChanged()), this, SLOT(handle_effects_config()));
 	};
 	void keyPressEvent(QKeyEvent *);
 	QGridLayout gl;
 	HpsJamConfigFormat up_fmt;
 	HpsJamConfigFormat down_fmt;
 	HpsJamDeviceSelection audio_dev;
+	HpsJamConfigEffects effects;
 	HpsJamLyricsFormat lyrics_fmt;
 public slots:
 	void handle_up_config();
 	void handle_down_config();
+	void handle_effects_config();
 };
 
 #endif		/* _HPSJAM_CONFIGDLG_H_ */

@@ -102,6 +102,9 @@ public:
 	void loadSettings();
 	void saveSettings();
 
+	void playNewUser();
+	void playNewMessage();
+
 	void closeEvent(QCloseEvent *event);
 
 public slots:

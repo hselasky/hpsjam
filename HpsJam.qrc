@@ -14,5 +14,7 @@
 <file>icons/sun.svg</file>
 <file>icons/jack.svg</file>
 <file>icons/note.svg</file>
+<file>sounds/new_message_float32le_48kHz_1ch.raw</file>
+<file>sounds/new_user_float32le_48kHz_1ch.raw</file>
 </qresource>
 </RCC>

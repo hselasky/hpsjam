@@ -704,6 +704,8 @@ HpsJamMixer :: enable(unsigned index)
 	peer_strip[index].show();
 	if (!hpsjam_client->w_mixer->isVisible())
 		hpsjam_client->b_mixer.setFlashing();
+
+	hpsjam_client->playNewUser();
 }
 
 void

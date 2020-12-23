@@ -29,6 +29,7 @@
 #include "protocol.h"
 #include "peer.h"
 #include "configdlg.h"
+#include "clientdlg.h"
 
 const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = {
 	{ HPSJAM_TYPE_AUDIO_SILENCE, "DISABLE" , Qt::Key_0 },
@@ -40,6 +41,13 @@ const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = 
 	{ HPSJAM_TYPE_AUDIO_16_BIT_2CH, "2CH@16Bit", Qt::Key_4 },
 	{ HPSJAM_TYPE_AUDIO_24_BIT_2CH, "2CH@24Bit", Qt::Key_6 },
 	{ HPSJAM_TYPE_AUDIO_32_BIT_2CH, "2CH@32Bit", Qt::Key_8 },
+};
+
+const struct hpsjam_audio_levels hpsjam_audio_levels[HPSJAM_AUDIO_LEVELS_MAX] = {
+	{ "OFF", 0.0f },
+	{ "LOW", 1.0f / 16.0f },
+	{ "MED", 1.0f / 4.0f },
+	{ "MAX", 1.0f },
 };
 
 int
@@ -161,6 +169,15 @@ HpsJamConfigFormat :: handle_selection()
 }
 
 void
+HpsJamConfigEffects :: handle_selection()
+{
+	for (unsigned x = 0; x != HPSJAM_AUDIO_LEVELS_MAX; x++) {
+		if (sender() == b + x)
+			setIndex(x);
+	}
+}
+
+void
 HpsJamConfig :: handle_up_config()
 {
 	QMutexLocker locker(&hpsjam_client_peer->lock);
@@ -180,6 +197,12 @@ HpsJamConfig :: handle_down_config()
 		pkt->packet.type = HPSJAM_TYPE_CONFIGURE_REQUEST;
 		pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
 	}
+}
+
+void
+HpsJamConfig :: handle_effects_config()
+{
+	hpsjam_client->playNewUser();
 }
 
 void

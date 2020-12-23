@@ -94,4 +94,6 @@ HpsJamChat :: append(const QString &str)
 
 	if (!isVisible())
 		hpsjam_client->b_chat.setFlashing();
+
+	hpsjam_client->playNewMessage();
 }

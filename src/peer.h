@@ -104,6 +104,40 @@ public slots:
 	void handle_pending_timeout();
 };
 
+class hpsjam_client_audio_effects {
+public:
+	hpsjam_client_audio_effects();
+
+	void playNewMessage(float = 1.0f);
+	void playNewUser(float = 1.0f);
+
+	int new_message_off;
+	int new_user_off;
+
+	int new_message_max;
+	int new_user_max;
+
+	float new_message_gain;
+	float new_user_gain;
+
+	float *new_message_data;
+	float *new_user_data;
+
+	bool isActive() {
+		return (new_message_off < new_message_max ||
+		    new_user_off < new_user_max);
+	};
+
+	float getSample() {
+		float ret = 0.0f;
+		if (new_message_off < new_message_max)
+			ret += new_message_data[new_message_off++] * new_message_gain;
+		if (new_user_off < new_user_max)
+			ret += new_user_data[new_user_off++] * new_user_gain;
+		return (ret);
+	};
+};
+
 class hpsjam_client_peer : public QObject {
 	Q_OBJECT;
 public:
@@ -118,6 +152,7 @@ public:
 	class hpsjam_audio_level out_level[2];
 	class hpsjam_equalizer local_eq;
 	class hpsjam_equalizer eq;
+	class hpsjam_client_audio_effects audio_effects;
 	float mon_gain[2];
 	float mon_pan;
 	float in_gain;
