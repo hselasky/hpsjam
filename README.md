@@ -14,6 +14,11 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
       <li>delay - With this feature you can hear yourself with an "average" delay that fits the real one from the server. This provides a clean local signal without jitter, while maintaining the delay and thus being "in sync" with fellow musicians when playing/jamming. Usage: click "MIXER" then "EQ DELAY" then "Long Delay" and then "Apply". This will apply the calculated average. You may want to click the "Long Delay" button several times before hitting apply, so that you can choose the appropiate delay. Credits go to <A HREF="https://github.com/dingodoppelt">Nils Brederlow</A> for suggesting it.</li>
     </ul>
   </li>
+  <li>automatic audio compression when signal overflows.</li>
+  <li>built in HTTP server allows for streaming the uncompressed audio
+  in 32-bit stereo WAV-file format to disk or other programs. Supported for
+  both client and server.</li>
+  <li>server and mixer access can be password protected.</li>
 </ul>
 
 ## How to build
