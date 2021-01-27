@@ -60,6 +60,15 @@ HpsJam
 HpsJam --server --port 22124 --peers 16 --daemon
 </pre>
 
+## Example how to use ffmpeg to stream from HpsJam to icecast
+<pre>
+HpsJam --server --port 22124 --peers 16 --httpd 127.0.0.1:8080 --daemon
+
+ffmpeg -f s32le -ac 2 -ar 48000 -i http://127.0.0.1:8080/stream.wav \
+       -acodec libmp3lame -ab 128k -ac 2 -content_type audio/mpeg \
+       -f mp3 icecast://source:yourpassword@127.0.0.1:8000/stream
+</pre>
+
 ## How to get help about the commandline parameters
 <pre>
 HpsJam -h
