@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -768,9 +768,6 @@ hpsjam_server_peer :: audio_export()
 
 	/* check if we should adjust the timer */
 	hpsjam_server_adjust[in_audio[0].getLowWater()]++;
-
-	/* clear output audio */
-	memset(out_audio, 0, sizeof(out_audio));
 }
 
 void
@@ -856,7 +853,7 @@ hpsjam_send_levels()
 }
 
 static inline float
-float_gain(float value, uint32_t gain)
+float_gain(float value, int32_t gain)
 {
 	return (value * gain) * (1.0f / 256.0f);
 }
@@ -873,34 +870,52 @@ get_gain_from_bits(uint8_t value)
 	return (powf(256.0f, (temp + 16) / 16.0f));
 }
 
+static struct hpsjam_server_default_mix hpsjam_server_default_mix;
+
 void
 hpsjam_server_peer :: audio_mixing()
 {
 	QMutexLocker locker(&lock);
 
-	if (valid == false)
+	if (valid == false) {
+		/* clear output audio */
+		memset(out_audio, 0, sizeof(out_audio));
 		return;
+	}
 
 	for (unsigned y = 0; y != hpsjam_num_server_peers; y++) {
 		if (bits[y] & HPSJAM_BIT_SOLO)
 			goto do_solo;
 	}
 
+	/* use the default mix as a starting point */
+	assert(sizeof(out_audio) == sizeof(hpsjam_server_default_mix.out_audio));
+	memcpy(out_audio, hpsjam_server_default_mix.out_audio, sizeof(out_audio));
+
 	for (unsigned y = 0; y != hpsjam_num_server_peers; y++) {
 		const class hpsjam_server_peer &other = hpsjam_server_peers[y];
-		const uint32_t gain = get_gain_from_bits(bits[y]);
 
-		if (other.valid == false)
+		if (other.valid == false || bits[y] == 0)
 			continue;
-		if (bits[y] & HPSJAM_BIT_MUTE)
-			continue;
-		if (bits[y] & HPSJAM_BIT_INVERT) {
+		if (bits[y] & HPSJAM_BIT_MUTE) {
 			for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
+				/* silence own mix */
+				out_audio[0][z] -= other.tmp_audio[0][z];
+				out_audio[1][z] -= other.tmp_audio[1][z];
+			}
+		} else if (bits[y] & HPSJAM_BIT_INVERT) {
+			const int32_t gain = get_gain_from_bits(bits[y]) + 256;
+
+			for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
+				/* adjust mix */
 				out_audio[0][z] -= float_gain(other.tmp_audio[0][z], gain);
 				out_audio[1][z] -= float_gain(other.tmp_audio[1][z], gain);
 			}
 		} else {
+			const int32_t gain = get_gain_from_bits(bits[y]) - 256;
+
 			for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
+				/* adjust mix */
 				out_audio[0][z] += float_gain(other.tmp_audio[0][z], gain);
 				out_audio[1][z] += float_gain(other.tmp_audio[1][z], gain);
 			}
@@ -909,20 +924,26 @@ hpsjam_server_peer :: audio_mixing()
 	return;
 
 do_solo:
+	/* clear output audio */
+	memset(out_audio, 0, sizeof(out_audio));
+
 	for (unsigned y = 0; y != hpsjam_num_server_peers; y++) {
 		const class hpsjam_server_peer &other = hpsjam_server_peers[y];
-		const uint32_t gain = get_gain_from_bits(bits[y]);
 
 		if (other.valid == false)
 			continue;
 		if (~bits[y] & HPSJAM_BIT_SOLO)
 			continue;
 		if (bits[y] & HPSJAM_BIT_INVERT) {
+			const int32_t gain = get_gain_from_bits(bits[y]);
+
 			for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
 				out_audio[0][z] -= float_gain(other.tmp_audio[0][z], gain);
 				out_audio[1][z] -= float_gain(other.tmp_audio[1][z], gain);
 			}
 		} else {
+			const int32_t gain = get_gain_from_bits(bits[y]);
+
 			for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
 				out_audio[0][z] += float_gain(other.tmp_audio[0][z], gain);
 				out_audio[1][z] += float_gain(other.tmp_audio[1][z], gain);
@@ -937,9 +958,22 @@ hpsjam_server_tick()
 	/* reset timer adjustment */
 	memset(hpsjam_server_adjust, 0, sizeof(hpsjam_server_adjust));
 
+	/* reset the default mix */
+	memset(&hpsjam_server_default_mix, 0, sizeof(hpsjam_server_default_mix));
+
 	/* get audio */
-	for (unsigned x = 0; x != hpsjam_num_server_peers; x++)
-		hpsjam_server_peers[x].audio_export();
+	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+		class hpsjam_server_peer &peer = hpsjam_server_peers[x];
+
+		/* export audio from data buffer, if any */
+		peer.audio_export();
+
+		/* create the default mix */
+		for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
+			hpsjam_server_default_mix.out_audio[0][z] += peer.tmp_audio[0][z];
+			hpsjam_server_default_mix.out_audio[1][z] += peer.tmp_audio[1][z];
+		}
+	}
 
 	/* send out levels, if any */
 	hpsjam_send_levels();

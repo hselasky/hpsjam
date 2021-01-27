@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,6 +39,10 @@
 
 #include <stdbool.h>
 
+struct hpsjam_server_default_mix {
+	float out_audio[2][64];
+};
+
 class hpsjam_server_peer : public QObject {
 	Q_OBJECT;
 public:
@@ -57,7 +61,7 @@ public:
 
 	QString name;
 	QByteArray icon;
-	uint8_t bits[256];
+	uint8_t bits[HPSJAM_PEERS_MAX];
 	float gain;
 	float pan;
 	float out_peak;
