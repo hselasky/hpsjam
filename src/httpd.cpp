@@ -356,7 +356,7 @@ hpsjam_httpd_handle_connection(int fd, const struct sockaddr_in *sa)
 
 			case 0:
 				fflush(io);
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
 				fd = dup(fd);
 				fclose(io);
 #else
@@ -558,6 +558,9 @@ hpsjam_httpd_streamer(const float *pleft, const float *pright, size_t samples)
 		uint16_t delta = ts - http_state[x].ts;
 		uint8_t tmp[1];
 		int write_len;
+#ifdef __APPLE__
+		socklen_t socklen = sizeof(int);
+#endif
 
 		if (fd < 0) {
 			/* do nothing */
@@ -568,15 +571,17 @@ hpsjam_httpd_streamer(const float *pleft, const float *pright, size_t samples)
 		} else if (read(fd, tmp, sizeof(tmp)) != -1 || errno != EWOULDBLOCK) {
 			http_state[x].fd = -1;
 			close(fd);
-#ifdef __linux__
-		} else if (ioctl(fd, SIOCOUTQ, &write_len) < 0) {
-			http_state[x].fd = -1;
-			close(fd);
+		} else if (
+#if defined(__linux__)
+			   ioctl(fd, SIOCOUTQ, &write_len) < 0
+#elif defined(__APPLE__)
+			   getsockopt(fd, SOL_SOCKET, SO_NWRITE, &write_len, &socklen) < 0
 #else
-		} else if (ioctl(fd, FIONWRITE, &write_len) < 0) {
+			   ioctl(fd, FIONWRITE, &write_len) < 0
+#endif
+			   ) {
 			http_state[x].fd = -1;
 			close(fd);
-#endif
 		} else if ((ssize_t)(bufferlimit - write_len) < (ssize_t)sizeof(buf)) {
 			/* do nothing */
 		} else if (write(fd, buf, sizeof(buf)) != (ssize_t)sizeof(buf)) {
