@@ -35,6 +35,10 @@
 #include <poll.h>
 #include <assert.h>
 
+#ifdef __linux__
+#include <linux/sockios.h>
+#endif
+
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -352,7 +356,8 @@ hpsjam_httpd_handle_connection(int fd, const struct sockaddr_in *sa)
 
 			case 0:
 				fflush(io);
-				fdclose(io, 0);
+				fd = dup(fd);
+				fclose(io);
 				if (ioctl(fd, FIONBIO, &enable) != 0) {
 					close(fd);
 					return;
@@ -559,9 +564,15 @@ hpsjam_httpd_streamer(const float *pleft, const float *pright, size_t samples)
 		} else if (read(fd, tmp, sizeof(tmp)) != -1 || errno != EWOULDBLOCK) {
 			http_state[x].fd = -1;
 			close(fd);
+#ifdef __linux__
+		} else if (ioctl(fd, SIOCOUTQ, &write_len) < 0) {
+			http_state[x].fd = -1;
+			close(fd);
+#else
 		} else if (ioctl(fd, FIONWRITE, &write_len) < 0) {
 			http_state[x].fd = -1;
 			close(fd);
+#endif
 		} else if ((ssize_t)(bufferlimit - write_len) < (ssize_t)sizeof(buf)) {
 			/* do nothing */
 		} else if (write(fd, buf, sizeof(buf)) != (ssize_t)sizeof(buf)) {
