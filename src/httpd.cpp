@@ -44,12 +44,6 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-#include <net/if.h>
-#include <net/if_vlan_var.h>
-#include <net/bpf.h>
-
-#include <arpa/inet.h>
-
 #include <pthread.h>
 
 #include "hpsjam.h"
