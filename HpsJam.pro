@@ -52,6 +52,12 @@ HEADERS		+= mac/activity.h
 SOURCES		+= mac/activity.mm
 }
 
+unix {
+DEFINES         += HAVE_HTTPD
+HEADERS         += src/httpd.h
+SOURCES         += src/httpd.cpp
+}
+
 isEmpty(WITHOUT_AUDIO) {
 
 # ASIO audio backend

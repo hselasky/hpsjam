@@ -29,6 +29,7 @@
 #include "connectdlg.h"
 #include "configdlg.h"
 #include "timer.h"
+#include "httpd.h"
 
 #include "../mac/activity.h"
 
@@ -57,6 +58,10 @@ static const struct option hpsjam_opts[] = {
 	{ "NSDocumentRevisionsDebugMode", required_argument, NULL, ' ' },
 	{ "port", required_argument, NULL, 'p' },
 	{ "cli-port", required_argument, NULL, 'q' },
+#ifdef HAVE_HTTPD
+	{ "httpd", required_argument, NULL, 't' },
+	{ "httpd-conns", required_argument, NULL, 'T' },
+#endif
 	{ "welcome-msg-file", required_argument, NULL, 'w' },
 	{ "server", no_argument, NULL, 's' },
 	{ "peers", required_argument, NULL, 'P' },
@@ -97,6 +102,10 @@ usage(void)
 		"	[--nickname <nickname>] \\\n"
 		"	[--icon <0..%u>] \\\n"
 		"	[--connect <servername:port>] \\\n"
+#ifdef HAVE_HTTPD
+		"	[--httpd <servername:port, Default port is 80>] \\\n"
+		"	[--httpd-conns <max number of connections, Default is 1> \\\n"
+#endif
 		"	[--audio-uplink-format <0..%u>] \\\n"
 		"	[--audio-downlink-format <0..%u>] \\\n"
 
@@ -119,7 +128,7 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	static const char hpsjam_short_opts[] = {
-	    "M:q:p:sP:hBJ:n:K:w:N:i:c:U:D:I:O:l:L:r:R:"
+	    "M:q:p:sP:hBJ:n:K:w:N:i:c:U:D:I:O:l:L:r:R:t:T:"
 	};
 	int c;
 	int port = HPSJAM_DEFAULT_PORT;
@@ -144,6 +153,28 @@ main(int argc, char **argv)
 
 	while ((c = getopt_long_only(argc, argv, hpsjam_short_opts, hpsjam_opts, NULL)) != -1) {
 		switch (c) {
+#ifdef HAVE_HTTPD
+		case 't': {
+			char *ptr;
+
+			http_host = optarg;
+			ptr = strchr(optarg, ':');
+			if (ptr == 0) {
+				http_port = "80";
+			} else {
+				*ptr++ = 0;
+				http_port = ptr;
+			}
+			if (http_nstate == 0)
+				http_nstate = 1;
+			break;
+		}
+		case 'T':
+			http_nstate = atoi(optarg);
+			if (http_nstate == 0 || http_host == 0 || http_port == 0)
+				usage();
+			break;
+#endif
 		case 'w':
 			hpsjam_welcome_message_file = optarg;
 			break;
@@ -252,6 +283,11 @@ main(int argc, char **argv)
 #ifndef _WIN32
 	if (do_fork && daemon(0, 0) != 0)
 		errx(1, "Cannot daemonize");
+#endif
+
+#ifdef HAVE_HTTPD
+	/* start httpd server, if any */
+	hpsjam_httpd_start();
 #endif
 
 	qRegisterMetaType<uint8_t>("uint8_t");

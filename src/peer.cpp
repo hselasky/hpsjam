@@ -33,6 +33,7 @@
 #include "clientdlg.h"
 #include "chatdlg.h"
 #include "lyricsdlg.h"
+#include "httpd.h"
 
 #include "timer.h"
 
@@ -278,6 +279,11 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 		}
 	}
 
+#ifdef HAVE_HTTPD
+	/* Stream the audio output, if any */
+	if (http_nstate != 0)
+		hpsjam_httpd_streamer(left, right, samples);
+#endif
 	/* Process final compressor */
 	for (size_t x = 0; x != samples; x++) {
 		hpsjam_stereo_compressor(HPSJAM_SAMPLE_RATE,
@@ -975,6 +981,15 @@ hpsjam_server_tick()
 		}
 	}
 
+#ifdef HAVE_HTTPD
+	/* stream the default mix, if any */
+	if (http_nstate != 0) {
+		hpsjam_httpd_streamer(
+		    hpsjam_server_default_mix.out_audio[0],
+		    hpsjam_server_default_mix.out_audio[1],
+		    HPSJAM_DEF_SAMPLES);
+	}
+#endif
 	/* send out levels, if any */
 	hpsjam_send_levels();
 
