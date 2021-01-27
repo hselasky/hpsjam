@@ -356,8 +356,12 @@ hpsjam_httpd_handle_connection(int fd, const struct sockaddr_in *sa)
 
 			case 0:
 				fflush(io);
+#ifdef __linux__
 				fd = dup(fd);
 				fclose(io);
+#else
+				fdclose(io, 0);
+#endif
 				if (ioctl(fd, FIONBIO, &enable) != 0) {
 					close(fd);
 					return;
