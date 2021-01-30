@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +30,7 @@
 #include "peer.h"
 #include "configdlg.h"
 #include "clientdlg.h"
+#include "mixerdlg.h"
 
 const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX] = {
 	{ HPSJAM_TYPE_AUDIO_SILENCE, "DISABLE" , Qt::Key_0 },
@@ -176,6 +177,12 @@ HpsJamConfigEffects :: handle_selection()
 		if (sender() == b + x)
 			setIndex(x);
 	}
+}
+
+void
+HpsJamConfigMixer :: handle_selection()
+{
+	hpsjam_client->w_mixer->setMixerCols(mixer_cols.value());
 }
 
 void

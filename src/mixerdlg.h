@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -248,6 +248,7 @@ class HpsJamMixer : public QScrollArea {
 public:
 	HpsJamMixer() : gl(&w_main) {
 		my_peer = 0;
+		mixer_cols = HPSJAM_PEERS_MAX + 1;
 		setWidgetResizable(true);
 
 		self_strip.description = tr("Balance");
@@ -266,7 +267,7 @@ public:
 			peer_strip[x].hide();
 			peer_strip[x].w_slider.setValue(1);
 
-			gl.addWidget(peer_strip + x, (1 + x) / 8, (1 + x) % 8);
+			addPeer(x);
 			connect(peer_strip + x, SIGNAL(bitsChanged(int)), this, SLOT(handle_bits_changed(int)));
 			connect(peer_strip + x, SIGNAL(gainChanged(int)), this, SLOT(handle_gain_changed(int)));
 			connect(peer_strip + x, SIGNAL(panChanged(int)), this, SLOT(handle_pan_changed(int)));
@@ -280,6 +281,7 @@ public:
 	HpsJamStrip self_strip;
 	HpsJamStrip peer_strip[HPSJAM_PEERS_MAX];
 	HpsJamStrip *my_peer;
+	unsigned mixer_cols;
 	void enable(unsigned index);
 	void disable(unsigned index);
 	void init() {
@@ -288,6 +290,22 @@ public:
 			peer_strip[x].init();
 			peer_strip[x].hide();
 		}
+	};
+	void addPeer(unsigned x) {
+		gl.addWidget(peer_strip + x, (1 + x) / mixer_cols, (1 + x) % mixer_cols);
+	};
+	unsigned getMixerCols() {
+		return (mixer_cols);
+	};
+	void setMixerCols(unsigned _value) {
+		/* check for invalid parameter */
+		if (_value <= 0 || _value >= 65536)
+			return;
+		mixer_cols = _value;
+		for (unsigned x = 0; x != HPSJAM_PEERS_MAX; x++)
+			gl.removeWidget(peer_strip + x);
+		for (unsigned x = 0; x != HPSJAM_PEERS_MAX; x++)
+			addPeer(x);
 	};
 
 public slots:

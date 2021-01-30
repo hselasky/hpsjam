@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -114,8 +114,6 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("S&ERVER")),
 	connect(hpsjam_client_peer, SIGNAL(receivedFaderSelf(uint8_t,uint8_t)),
 		w_mixer, SLOT(handle_fader_self(uint8_t,uint8_t)));
 
-	loadSettings();
-
 	connect(&watchdog, SIGNAL(timeout()), this, SLOT(handle_watchdog()));
 	watchdog.start(250);
 }
@@ -220,6 +218,7 @@ HpsJamClient :: saveSettings()
 	settings.setValue("effects_level", w_config->effects.selection);
 	settings.setValue("uplink_format", w_config->up_fmt.selection);
 	settings.setValue("downlink_format", w_config->down_fmt.selection);
+	settings.setValue("mixer_cols", w_config->mixer.mixer_cols.value());
 	settings.setValue("input_device", w_config->audio_dev.handle_toggle_input_device(-2));
 	settings.setValue("output_device", w_config->audio_dev.handle_toggle_output_device(-2));
 	settings.setValue("input_left", w_config->audio_dev.handle_toggle_input_left(-2));
@@ -242,6 +241,10 @@ HpsJamClient :: loadSettings()
 	HPSJAM_NO_SIGNAL(w_config->effects,setIndex(settings.value("config/effects_level", QString("0")).toInt()));
 	w_config->up_fmt.setIndex(settings.value("config/uplink_format", QString("1")).toInt());
 	w_config->down_fmt.setIndex(settings.value("config/downlink_format", QString("1")).toInt());
+#if (HPSJAM_PEERS_MAX + 1 != 257)
+#error "Please update the defaults below"
+#endif
+	w_config->mixer.mixer_cols.setValue(settings.value("config/mixer_cols", QString("257")).toInt());
 
 	input_device = settings.value("config/input_device", QString("-1")).toInt();
 	output_device = settings.value("config/output_device", QString("-1")).toInt();

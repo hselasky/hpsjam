@@ -301,6 +301,9 @@ main(int argc, char **argv)
 		hpsjam_client_peer = new class hpsjam_client_peer;
 		hpsjam_client = new HpsJamClient();
 
+		/* load current settings, if any */
+		hpsjam_client->loadSettings();
+
 		if (input_device < 0)
 			input_device = hpsjam_client->input_device;
 		if (output_device < 0)

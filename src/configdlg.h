@@ -207,6 +207,22 @@ signals:
 	void valueChanged();
 };
 
+class HpsJamConfigMixer : public QGroupBox {
+	Q_OBJECT;
+public:
+	HpsJamConfigMixer() : gl(this) {
+		setTitle("Mixer configuration");
+		gl.addWidget(new QLabel("Select maximum number of columns"), 0,0);
+		gl.addWidget(&mixer_cols, 0,1);
+		mixer_cols.setRange(1, HPSJAM_PEERS_MAX + 1);
+		connect(&mixer_cols, SIGNAL(valueChanged(int)), this, SLOT(handle_selection()));
+	};
+	QGridLayout gl;
+	QSpinBox mixer_cols;
+public slots:
+	void handle_selection();
+};
+
 class HpsJamLyricsFormat : public QGroupBox {
 public:
 	HpsJamLyricsFormat() : gl(this), b_font_select(tr("Select font")) {
@@ -234,8 +250,9 @@ public:
 		gl.addWidget(&down_fmt, 1,0);
 		gl.addWidget(&audio_dev, 2,0);
 		gl.addWidget(&effects, 3,0);
-		gl.addWidget(&lyrics_fmt, 4,0);
-		gl.setRowStretch(5,1);
+		gl.addWidget(&mixer, 4,0);
+		gl.addWidget(&lyrics_fmt, 5,0);
+		gl.setRowStretch(6,1);
 
 		connect(&up_fmt, SIGNAL(valueChanged()), this, SLOT(handle_up_config()));
 		connect(&down_fmt, SIGNAL(valueChanged()), this, SLOT(handle_down_config()));
@@ -243,6 +260,7 @@ public:
 	};
 	void keyPressEvent(QKeyEvent *);
 	QGridLayout gl;
+	HpsJamConfigMixer mixer;
 	HpsJamConfigFormat up_fmt;
 	HpsJamConfigFormat down_fmt;
 	HpsJamDeviceSelection audio_dev;
