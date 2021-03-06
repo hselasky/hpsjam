@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,6 +36,53 @@
 #include "timer.h"
 
 #include "../mac/activity.h"
+
+void
+HpsJamConnectList :: updateSelection(const QString &other)
+{
+	QString temp = toPlainText();
+	QStringList list = temp.split(QString("\n"), Qt::SkipEmptyParts);
+
+	for (int x = 0; x != list.length(); x++) {
+		if (list[x] == other) {
+			updateSelection(x);
+			return;
+		} else if (list[x] > other) {
+			if (list.length() >= HPSJAM_SERVER_LIST_MAX)
+				return;
+			list.insert(x, other);
+			setPlainText(list.join("\n"));
+			updateSelection(x);
+			return;
+		}
+	}
+	if (list.length() >= HPSJAM_SERVER_LIST_MAX)
+		return;
+	list.append(other);
+	setPlainText(list.join("\n"));
+	updateSelection(list.length() - 1);
+}
+
+void
+HpsJamConnectList :: updateSelection(int which)
+{
+	QTextCursor c = textCursor();
+	int old = c.blockNumber();
+
+	if (which > -1) {
+		c.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
+		c.movePosition(QTextCursor::NextBlock, QTextCursor::MoveAnchor, which);
+	}
+	c.movePosition(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
+	c.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor);
+
+	if (which == -1 || old != c.blockNumber()) {
+		QString s = c.selectedText();
+		if (!s.isEmpty())
+			emit valueChanged(s);
+	}
+	setTextCursor(c);
+}
 
 HpsJamConnectIcon :: HpsJamConnectIcon() : gl(this)
 {
@@ -116,13 +163,6 @@ HpsJamConnectIcon :: handle_selection()
 	}
 }
 
-void
-HpsJamConnectList :: selectionChanged(const QItemSelection &cur, const QItemSelection &prev)
-{
-	QListView::selectionChanged(cur, prev);
-	emit valueChanged();
-}
-
 HpsJamConnect :: HpsJamConnect() : gl(this)
 {
 	gl.addWidget(&icon, 0,0);
@@ -132,8 +172,8 @@ HpsJamConnect :: HpsJamConnect() : gl(this)
 	gl.setRowStretch(3,1);
 	gl.addWidget(&buttons, 4,0);
 
-	connect(&server.list, SIGNAL(valueChanged()), this, SLOT(handle_server_change()));
-	connect(&buttons.b_refresh, SIGNAL(released()), this, SLOT(handle_refresh()));
+	connect(&server.list, SIGNAL(valueChanged(const QString)), &server.edit, SLOT(setText(const QString)));
+	connect(&buttons.b_reset, SIGNAL(released()), this, SLOT(handle_reset()));
 	connect(&buttons.b_connect, SIGNAL(released()), this, SLOT(handle_connect()));
 	connect(&buttons.b_disconnect, SIGNAL(released()), this, SLOT(handle_disconnect()));
 
@@ -143,15 +183,9 @@ HpsJamConnect :: HpsJamConnect() : gl(this)
 }
 
 void
-HpsJamConnect :: handle_server_change()
+HpsJamConnect :: handle_reset()
 {
-
-}
-
-void
-HpsJamConnect :: handle_refresh()
-{
-
+	server.list.setPlainText(QString());
 }
 
 void
@@ -216,6 +250,8 @@ HpsJamConnect :: handle_connect()
 			return;
 		}
 	}
+
+	server.list.updateSelection(text);
 
 	activate(false);
 

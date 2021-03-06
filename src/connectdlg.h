@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,18 +31,32 @@
 #include <QWidget>
 #include <QGroupBox>
 #include <QLineEdit>
-#include <QListWidget>
+#include <QPlainTextEdit>
 #include <QGridLayout>
 #include <QPushButton>
 #include <QByteArray>
 #include <QKeySequence>
 
-class HpsJamConnectList : public QListView {
+class HpsJamConnectList : public QPlainTextEdit {
 	Q_OBJECT;
 public:
-	void selectionChanged(const QItemSelection &, const QItemSelection &);
+	HpsJamConnectList() {
+		setReadOnly(true);
+		setMaximumBlockCount(HPSJAM_SERVER_LIST_MAX);
+		setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+
+		connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updateSelection()));
+	};
+
+	void mousePressEvent(QMouseEvent *event) {
+		QPlainTextEdit::mousePressEvent(event);
+		updateSelection();
+	};
+public slots:
+	void updateSelection(const QString &);
+	void updateSelection(int = -1);
 signals:
-	void valueChanged();
+	void valueChanged(const QString);
 };
 
 class HpsJamIcon;
@@ -65,6 +79,7 @@ public slots:
 };
 
 class HpsJamConnectName : public QGroupBox {
+	Q_OBJECT;
 public:
 	HpsJamConnectName() : gl(this) {
 		setTitle(tr("Select nickname"));
@@ -74,6 +89,10 @@ public:
 	};
 	QGridLayout gl;
 	QLineEdit edit;
+public slots:
+	void setText(const QString other) {
+		edit.setText(other);
+	};
 };
 
 class HpsJamConnectPassword : public QGroupBox {
@@ -89,6 +108,7 @@ public:
 };
 
 class HpsJamConnectServer : public QGroupBox {
+	Q_OBJECT;
 public:
 	HpsJamConnectServer() : gl(this) {
 		setTitle(tr("Select server"));
@@ -100,28 +120,32 @@ public:
 	QGridLayout gl;
 	QLineEdit edit;
 	HpsJamConnectList list;
+public slots:
+	void updateServer(const QString other) {
+		edit.setText(other);
+	};
 };
 
 class HpsJamConnectButtons : public QWidget {
 public:
 	HpsJamConnectButtons() :
             gl(this),
-	    b_refresh(tr("&Refresh")),
+	    b_reset(tr("&Reset server list")),
 	    b_connect(tr("C&onnect")),
 	    b_disconnect(tr("&Disconnect")) {
 
 #if defined(Q_OS_MACX)
-		b_refresh.setShortcut(QKeySequence(Qt::ALT + Qt::Key_R));
+		b_reset.setShortcut(QKeySequence(Qt::ALT + Qt::Key_R));
 		b_connect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_O));
 		b_disconnect.setShortcut(QKeySequence(Qt::ALT + Qt::Key_D));
 #endif
-		gl.addWidget(&b_refresh, 0,0);
+		gl.addWidget(&b_reset, 0,0);
 		gl.setColumnStretch(1,1);
 		gl.addWidget(&b_connect, 0,2);
 		gl.addWidget(&b_disconnect, 0,3);
 	};
 	QGridLayout gl;
-	QPushButton b_refresh;
+	QPushButton b_reset;
 	QPushButton b_connect;
 	QPushButton b_disconnect;
 };
@@ -148,8 +172,7 @@ public:
 		server.list.setEnabled(state);
 	};
 public slots:
-	void handle_server_change();
-	void handle_refresh();
+	void handle_reset();
 	void handle_connect();
 	void handle_disconnect();
 };

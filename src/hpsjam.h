@@ -52,6 +52,7 @@
 #define	HPSJAM_BIT_INVERT (1 << 2)
 #define	HPSJAM_BIT_GAIN_SET(x) (((x) & 31) << 3)
 #define	HPSJAM_BIT_GAIN_GET(x) (((x) >> 3) & 31)
+#define	HPSJAM_SERVER_LIST_MAX 100
 
 #define	HPSJAM_NO_SIGNAL(a,b) do {	\
   a.blockSignals(true);			\

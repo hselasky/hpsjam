@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,7 +49,7 @@ public:
         "## INSIDE SERVER TAB ##\n"
         "    Connect: ALT+O\n"
         "    Disconnect: ALT+D\n"
-        "    Refresh: ALT+R\n"
+        "    Reset server list: ALT+R\n"
         "\n"
 	"## INSIDE CHAT TAB ##\n"
 	"    Send a line of lyrics: ALT+Y\n"
