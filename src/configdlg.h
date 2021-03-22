@@ -246,13 +246,13 @@ public:
 		effects.description = tr("Sound effects");
 		effects.titleRegen();
 
-		gl.addWidget(&up_fmt, 0,0);
-		gl.addWidget(&down_fmt, 1,0);
-		gl.addWidget(&audio_dev, 2,0);
-		gl.addWidget(&effects, 3,0);
-		gl.addWidget(&mixer, 4,0);
-		gl.addWidget(&lyrics_fmt, 5,0);
-		gl.setRowStretch(6,1);
+		gl.addWidget(&up_fmt, 0,0,1,2);
+		gl.addWidget(&down_fmt, 1,0,1,2);
+		gl.addWidget(&audio_dev, 2,0,1,2);
+		gl.addWidget(&effects, 3,0,1,2);
+		gl.addWidget(&mixer, 4,0,1,1);
+		gl.addWidget(&lyrics_fmt, 4,1,1,1);
+		gl.setRowStretch(5,1);
 
 		connect(&up_fmt, SIGNAL(valueChanged()), this, SLOT(handle_up_config()));
 		connect(&down_fmt, SIGNAL(valueChanged()), this, SLOT(handle_down_config()));
