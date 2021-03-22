@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,6 +38,7 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 {
 	constexpr unsigned N = 2 * HPSJAM_SEQ_MAX;
 	uint64_t packet_loss;
+	uint64_t packet_damage;
 	uint16_t ping_time;
 	uint16_t jitter_time;
 	QRect frame(16, 16, width() - 32, height() - 32);
@@ -57,6 +58,7 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 		memcpy(stats[0], hpsjam_client_peer->input_pkt.jitter.stats, sizeof(stats[0]));
 		memcpy(stats[1], hpsjam_client_peer->in_audio[0].stats, sizeof(stats[1]));
 		packet_loss = hpsjam_client_peer->input_pkt.jitter.packet_loss;
+		packet_damage = hpsjam_client_peer->input_pkt.jitter.packet_damage;
 		ping_time = hpsjam_client_peer->output_pkt.ping_time;
 		jitter_time = hpsjam_client_peer->input_pkt.jitter.get_jitter_in_ms();
 	}
@@ -75,8 +77,8 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 
 	paint.fillRect(frame, bg);
 
-	l_status.setText(QString("%1 packets lost; Round trip time %2ms+%3ms")
-	    .arg(packet_loss).arg(ping_time).arg(jitter_time));
+	l_status.setText(QString("%1 packets lost and %2 damaged. Round trip time is %3ms+%4ms")
+	    .arg(packet_loss).arg(packet_damage).arg(ping_time).arg(jitter_time));
 
 	for (unsigned x = 0; x != 2; x++) {
 		for (unsigned i = xmax = 0; i != N; i++) {

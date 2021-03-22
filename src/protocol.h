@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -462,6 +462,9 @@ struct hpsjam_input_packetizer {
 	struct hpsjam_jitter jitter;
 	union hpsjam_frame current[HPSJAM_SEQ_MAX];
 	union hpsjam_frame mask[HPSJAM_SEQ_MAX];
+#define	HPSJAM_V_GOT_PACKET 1
+#define	HPSJAM_V_GOT_XOR_MASK 2
+#define	HPSJAM_V_GOT_RECEIVED 4
 	uint8_t valid[HPSJAM_SEQ_MAX];
 	uint8_t last_red;
 
@@ -482,26 +485,26 @@ struct hpsjam_input_packetizer {
 		uint8_t min_x;
 
 		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++)
-			mask |= ((valid[x] & 1) << x);
+			mask |= (valid[x] & HPSJAM_V_GOT_PACKET) << x;
 
+		/*
+		 * Figure out the rotation which gives the smallest
+		 * value aligned to the redundancy packet:
+		 */
 		start = mask;
 		min_x = 0;
 		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
-			if (start > mask) {
+			if (start > mask && (x % last_red) == 0) {
 				start = mask;
 				min_x = x;
 			}
 			if (mask & 1) {
 				mask >>= 1;
-				mask |= 1 << (HPSJAM_SEQ_MAX - 1);
+				mask |= 1U << (HPSJAM_SEQ_MAX - 1);
 			} else {
 				mask >>= 1;
 			}
 		}
-
-		/* align to red */
-		start <<= (min_x % last_red);
-		min_x -= (min_x % last_red);
 
 		/* compute the redundancy mask */
 		red = (1U << last_red) - 1U;
@@ -512,41 +515,36 @@ struct hpsjam_input_packetizer {
 		 * the redundancy mask.
 		 */
 		while ((start & red) == red || (start & ~red) != 0) {
-			/* check if we can consume packets */
-			for (uint8_t x = 0; x != last_red; x++) {
-				const uint8_t z = (min_x + x) % HPSJAM_SEQ_MAX;
-				switch (valid[z] & 5) {
-				case 0:
-				case 4:
-					/*
-					 * Fill in missing audio data:
-					 * First packet carries two
-					 * chunks and second packet
-					 * carries one chunk:
-					 */
-					valid[z] |= 1 | 4 | 8;
-					current[z].clear();
-					current[z].start[0].putSilence(HPSJAM_NOM_SAMPLES);
-					return (current + z);
-				case 1:
-					valid[z] |= 1 | 4;
-					return (current + z);
-				default:
-					break;
-				}
-			}
-
 			/* account for RX loss */
-			if (~valid[min_x] & 2)
+			if ((valid[min_x] & HPSJAM_V_GOT_RECEIVED) == 0 &&
+			    (valid[min_x] & HPSJAM_V_GOT_XOR_MASK) == 0)
 				jitter.rx_loss();
 
-			/* reset the valid bits and account for packet loss */
+			/* check if we can consume packet(s) */
 			for (uint8_t x = 0; x != last_red; x++) {
 				const uint8_t z = (min_x + x) % HPSJAM_SEQ_MAX;
-				/* account for RX loss */
-				if ((valid[z] & 9) != 1)
+				if (valid[z] & HPSJAM_V_GOT_RECEIVED)
+					continue;
+				if (~valid[z] & HPSJAM_V_GOT_PACKET) {
+					/* fill frame with silence */
+					current[z].clear();
+					current[z].start[0].putSilence(HPSJAM_NOM_SAMPLES);
+					/* account for RX loss */
 					jitter.rx_loss();
-				valid[z] = 0;
+					/* account for RX damage */
+					jitter.rx_damage();
+				}
+				/* mark this entry received */
+				valid[z] |= HPSJAM_V_GOT_RECEIVED;
+				/* clear received flag halfway through */
+				valid[(z + (HPSJAM_SEQ_MAX / 2)) % HPSJAM_SEQ_MAX] &= ~HPSJAM_V_GOT_RECEIVED;
+				return (current + z);
+			}
+
+			for (uint8_t x = 0; x != last_red; x++) {
+				const uint8_t z = (min_x + x) % HPSJAM_SEQ_MAX;
+				/* only keep the received flag */
+				valid[z] &= HPSJAM_V_GOT_RECEIVED;
 			}
 
 			/* see if there is more data */
@@ -562,32 +560,32 @@ struct hpsjam_input_packetizer {
 		if (last_red <= 1)
 			return;
 		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x += last_red) {
-			if (~valid[x] & 2)
+			if (~valid[x] & HPSJAM_V_GOT_XOR_MASK)
 				continue;
 			if (mask[x].hdr.getRedNo() != last_red)
 				continue;
 			uint8_t rx_missing = 0;
 			for (uint8_t y = 0; y != last_red; y++) {
 				const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
-				rx_missing += (~valid[z] & 1);
+				rx_missing += (~valid[z] & HPSJAM_V_GOT_PACKET);
 			}
 			if (rx_missing == 1) {
 				/* one frame missing */
 				for (uint8_t y = 0; y != last_red; y++) {
 					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
-					if (valid[z] & 1)
+					if (valid[z] & HPSJAM_V_GOT_PACKET)
 						mask[x].do_xor(current[z]);
 				}
 				/* recover the missing frame */
 				for (uint8_t y = 0; y != last_red; y++) {
 					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
-					if (~valid[z] & 1) {
+					if (~valid[z] & HPSJAM_V_GOT_PACKET) {
 						current[z] = mask[x];
 						/* invalidate headers */
 						mask[x].hdr.clear();
 						current[z].hdr.clear();
 						/* set valid bit */
-						valid[z] |= 1 | 8;
+						valid[z] |= HPSJAM_V_GOT_PACKET;
 					}
 				}
 			}
@@ -603,11 +601,11 @@ struct hpsjam_input_packetizer {
 			if ((HPSJAM_SEQ_MAX % rx_red) == 0 && (rx_seqno % rx_red) == 0) {
 				last_red = rx_red;
 				mask[rx_seqno] = frame;
-				valid[rx_seqno] |= 2;
+				valid[rx_seqno] |= HPSJAM_V_GOT_XOR_MASK;
 			}
 		} else {
 			current[rx_seqno] = frame;
-			valid[rx_seqno] |= 1;
+			valid[rx_seqno] |= HPSJAM_V_GOT_PACKET;
 		}
 
 		jitter.rx_packet();

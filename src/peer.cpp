@@ -1051,7 +1051,8 @@ hpsjam_client_peer :: tick()
 	out_audio[0].set_jitter_limit_in_ms(jitter);
 	out_audio[1].set_jitter_limit_in_ms(jitter);
 
-	while ((pkt = input_pkt.first_pkt())) {
+	/* read one packet, if any */
+	if ((pkt = input_pkt.first_pkt()) != 0) {
 		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {
 			/* check for unsequenced packets */
 			if (HpsJamReceiveUnSequenced

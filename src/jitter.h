@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,6 +40,7 @@
 struct hpsjam_jitter {
 	float stats[HPSJAM_MAX_JITTER];
 	uint64_t packet_loss;
+	uint64_t packet_damage;
 	uint16_t counter;
 	uint16_t jitter_ticks;
 
@@ -88,6 +89,10 @@ struct hpsjam_jitter {
 	void rx_loss() {
 		counter++;
 		packet_loss++;
+	};
+
+	void rx_damage() {
+		packet_damage++;
 	};
 };
 
