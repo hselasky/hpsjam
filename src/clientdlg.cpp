@@ -247,7 +247,8 @@ HpsJamClient :: loadSettings()
 	w_connect->icon.setSelection(settings.value("connect/icon", QString("0")).toInt());
 	w_connect->password.edit.setText(settings.value("connect/password", QString()).toString());
 	w_connect->server.edit.setText(settings.value("connect/server", QString("127.0.0.1:" HPSJAM_DEFAULT_PORT_STR)).toString());
-	w_connect->server.list.setPlainText(settings.value("connect/list", QString()).toString());
+	HPSJAM_NO_SIGNAL(w_connect->server.list,setPlainText(settings.value("connect/list", QString()).toString()));
+	w_connect->server.list.updateSelection(w_connect->server.edit.text());
 
 	HPSJAM_NO_SIGNAL(w_config->effects,setIndex(settings.value("config/effects_level", QString("0")).toInt()));
 	w_config->up_fmt.setIndex(settings.value("config/uplink_format", QString("1")).toInt());
