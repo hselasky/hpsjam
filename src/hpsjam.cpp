@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -53,9 +53,11 @@ struct hpsjam_socket_address hpsjam_v4;
 struct hpsjam_socket_address hpsjam_v6;
 struct hpsjam_socket_address hpsjam_cli;
 const char *hpsjam_welcome_message_file;
+int hpsjam_profile_index;
 
 static const struct option hpsjam_opts[] = {
 	{ "NSDocumentRevisionsDebugMode", required_argument, NULL, ' ' },
+	{ "profile", required_argument, NULL, 'f' },
 	{ "port", required_argument, NULL, 'p' },
 	{ "cli-port", required_argument, NULL, 'q' },
 #ifdef HAVE_HTTPD
@@ -95,6 +97,7 @@ usage(void)
 #ifndef _WIN32
 		"[--daemon] \\\n"
 #endif
+		"	[--profile <positive value, Default is 0>] \\\n"
 		"	[--password <64_bit_hexadecimal_password>] \\\n"
 #ifdef HAVE_JACK_AUDIO
 		"	[--jacknoconnect] [--jackname <name>] \\\n"
@@ -153,6 +156,11 @@ main(int argc, char **argv)
 
 	while ((c = getopt_long_only(argc, argv, hpsjam_short_opts, hpsjam_opts, NULL)) != -1) {
 		switch (c) {
+		case 'f':
+			hpsjam_profile_index = atoi(optarg);
+			if (hpsjam_profile_index < 0)
+				usage();
+			break;
 #ifdef HAVE_HTTPD
 		case 't': {
 			char *ptr;

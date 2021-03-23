@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -82,6 +82,7 @@ extern struct hpsjam_socket_address hpsjam_v4;
 extern struct hpsjam_socket_address hpsjam_v6;
 extern struct hpsjam_socket_address hpsjam_cli;
 extern const char *hpsjam_welcome_message_file;
+extern int hpsjam_profile_index;
 
 extern void hpsjam_socket_init(unsigned short port, unsigned short cliport);
 

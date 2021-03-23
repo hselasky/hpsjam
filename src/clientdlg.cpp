@@ -202,10 +202,19 @@ HpsJamClient :: closeEvent(QCloseEvent *event)
 	QCoreApplication::exit(0);
 }
 
+static QString
+HpsJamGetProfile()
+{
+	if (hpsjam_profile_index == 0)
+		return (QString("HpsJam"));
+	else
+		return (QString("HpsJam%1").arg(hpsjam_profile_index));
+}
+
 void
 HpsJamClient :: saveSettings()
 {
-	QSettings settings("HpsJam");
+	QSettings settings(HpsJamGetProfile());
 
 	settings.beginGroup("connect");
 	settings.setValue("username", w_connect->name.edit.text());
@@ -232,7 +241,7 @@ HpsJamClient :: saveSettings()
 void
 HpsJamClient :: loadSettings()
 {
-	QSettings settings("HpsJam");
+	QSettings settings(HpsJamGetProfile());
 
 	w_connect->name.edit.setText(settings.value("connect/username").toString());
 	w_connect->icon.setSelection(settings.value("connect/icon", QString("0")).toInt());
