@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -124,11 +124,11 @@ public:
 		}
 		/* try to keep the low water level around 2ms */
 		if (x < 2)
-			return (0);
+			return (0);	/* low data - go slower */
 		else if (x > 2)
-			return (2);
+			return (2);	/* high data - go faster */
 		else
-			return (1);
+			return (1);	/* normal */
 	};
 
 	/* getHighWater() returns one of 0,1 or 2. */
@@ -166,7 +166,7 @@ public:
 
 		stats[index] += 1.0f;
 
-		if (stats[index] >= 8) {
+		if (stats[index] >= 64.0f) {
 			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++)
 				stats[x] /= 2.0f;
 
@@ -308,6 +308,10 @@ public:
 			if (consumer == HPSJAM_MAX_SAMPLES)
 				consumer = 0;
 		}
+		/* shift stats down */
+		for (uint8_t x = 0; x != (HPSJAM_SEQ_MAX * 2 - 1); x++)
+			stats[x] = stats[x + 1];
+		stats[HPSJAM_SEQ_MAX * 2 - 1] = 0.0f;
 	};
 };
 

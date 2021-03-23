@@ -517,8 +517,10 @@ struct hpsjam_input_packetizer {
 		while ((start & red) == red || (start & ~red) != 0) {
 			/* account for RX loss */
 			if ((valid[min_x] & HPSJAM_V_GOT_RECEIVED) == 0 &&
-			    (valid[min_x] & HPSJAM_V_GOT_XOR_MASK) == 0)
+			    (valid[min_x] & HPSJAM_V_GOT_XOR_MASK) == 0) {
+				/* account for RX loss */
 				jitter.rx_loss();
+			}
 
 			/* check if we can consume packet(s) */
 			for (uint8_t x = 0; x != last_red; x++) {
@@ -586,6 +588,8 @@ struct hpsjam_input_packetizer {
 						current[z].hdr.clear();
 						/* set valid bit */
 						valid[z] |= HPSJAM_V_GOT_PACKET;
+						/* account for RX loss */
+						jitter.rx_loss();
 					}
 				}
 			}
