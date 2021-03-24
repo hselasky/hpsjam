@@ -368,13 +368,13 @@ main(int argc, char **argv)
 				QObject::tr("Cannot find the specified audio output device"));
 		}
 		if (output_left > -1)
-			hpsjam_client->w_config->audio_dev.handle_toggle_output_left(output_left);
+			hpsjam_client->w_config->audio_dev.handle_toggle_output_left(output_left + 1);
 		if (output_right > -1)
-			hpsjam_client->w_config->audio_dev.handle_toggle_output_right(output_right);
+			hpsjam_client->w_config->audio_dev.handle_toggle_output_right(output_right + 1);
 		if (input_left > -1)
-			hpsjam_client->w_config->audio_dev.handle_toggle_input_left(input_left);
+			hpsjam_client->w_config->audio_dev.handle_toggle_input_left(input_left + 1);
 		if (input_right > -1)
-			hpsjam_client->w_config->audio_dev.handle_toggle_input_right(input_right);
+			hpsjam_client->w_config->audio_dev.handle_toggle_input_right(input_right + 1);
 
 		hpsjam_client->w_config->audio_dev.refreshStatus();
 
@@ -395,13 +395,13 @@ main(int argc, char **argv)
 				QObject::tr("Cannot find the specified audio device"));
 		}
 		if (output_left > -1)
-			hpsjam_client->w_config->audio_dev.handle_toggle_output_left(output_left);
+			hpsjam_client->w_config->audio_dev.handle_toggle_output_left(output_left + 1);
 		if (output_right > -1)
-			hpsjam_client->w_config->audio_dev.handle_toggle_output_right(output_right);
+			hpsjam_client->w_config->audio_dev.handle_toggle_output_right(output_right + 1);
 		if (input_left > -1)
-			hpsjam_client->w_config->audio_dev.handle_toggle_input_left(input_left);
+			hpsjam_client->w_config->audio_dev.handle_toggle_input_left(input_left + 1);
 		if (input_right > -1)
-			hpsjam_client->w_config->audio_dev.handle_toggle_input_right(input_right);
+			hpsjam_client->w_config->audio_dev.handle_toggle_input_right(input_right + 1);
 
 		hpsjam_client->w_config->audio_dev.refreshStatus();
 

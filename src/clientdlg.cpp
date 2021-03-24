@@ -231,10 +231,10 @@ HpsJamClient :: saveSettings()
 	settings.setValue("mixer_cols", w_config->mixer.mixer_cols.value());
 	settings.setValue("input_device", w_config->audio_dev.handle_toggle_input_device(-2));
 	settings.setValue("output_device", w_config->audio_dev.handle_toggle_output_device(-2));
-	settings.setValue("input_left", w_config->audio_dev.handle_toggle_input_left(-2));
-	settings.setValue("output_left", w_config->audio_dev.handle_toggle_output_left(-2));
-	settings.setValue("input_right", w_config->audio_dev.handle_toggle_input_right(-2));
-	settings.setValue("output_right", w_config->audio_dev.handle_toggle_output_right(-2));
+	settings.setValue("input_left", w_config->audio_dev.handle_toggle_input_left(-1));
+	settings.setValue("output_left", w_config->audio_dev.handle_toggle_output_left(-1));
+	settings.setValue("input_right", w_config->audio_dev.handle_toggle_input_right(-1));
+	settings.setValue("output_right", w_config->audio_dev.handle_toggle_output_right(-1));
 	settings.endGroup();
 }
 
