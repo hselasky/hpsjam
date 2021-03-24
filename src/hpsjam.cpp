@@ -78,12 +78,14 @@ static const struct option hpsjam_opts[] = {
 	{ "connect", required_argument, NULL, 'c'},
 	{ "audio-uplink-format", required_argument, NULL, 'U'},
 	{ "audio-downlink-format", required_argument, NULL, 'D'},
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 	{ "audio-input-device", required_argument, NULL, 'I'},
 	{ "audio-output-device", required_argument, NULL, 'O'},
 	{ "audio-input-left", required_argument, NULL, 'l'},
 	{ "audio-output-left", required_argument, NULL, 'L'},
 	{ "audio-input-right", required_argument, NULL, 'r'},
 	{ "audio-output-right", required_argument, NULL, 'R'},
+#endif
 #ifdef HAVE_JACK_AUDIO
 	{ "jacknoconnect", no_argument, NULL, 'J' },
 	{ "jackname", required_argument, NULL, 'n' },
@@ -155,12 +157,14 @@ main(int argc, char **argv)
 	int icon_nr = -1;
 	int uplink_format = -1;
 	int downlink_format = -1;
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 	int input_device = -1;
 	int output_device = -1;
 	int input_left = -1;
 	int output_left = -1;
 	int input_right = -1;
 	int output_right = -1;
+#endif
 
 	while ((c = getopt_long_only(argc, argv, hpsjam_short_opts, hpsjam_opts, NULL)) != -1) {
 		switch (c) {
@@ -225,6 +229,7 @@ main(int argc, char **argv)
 			if (downlink_format < 0 || downlink_format > HPSJAM_AUDIO_FORMAT_MAX - 1)
 				usage();
 			break;
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 		case 'I':
 			input_device = atoi(optarg);
 			if (input_device < 0)
@@ -255,6 +260,7 @@ main(int argc, char **argv)
 			if (output_right < 0)
 				usage();
 			break;
+#endif
 #ifndef _WIN32
 		case 'B':
 			do_fork = 1;
@@ -320,6 +326,7 @@ main(int argc, char **argv)
 		/* load current settings, if any */
 		hpsjam_client->loadSettings();
 
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 		if (input_device < 0)
 			input_device = hpsjam_client->input_device;
 		if (output_device < 0)
@@ -332,6 +339,7 @@ main(int argc, char **argv)
 			input_right = hpsjam_client->input_right;
 		if (output_right < 0)
 			output_right = hpsjam_client->output_right;
+#endif
 
 #ifdef HAVE_JACK_AUDIO
 		if (hpsjam_sound_init(jackname, jackconnect)) {
