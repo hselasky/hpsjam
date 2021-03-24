@@ -60,6 +60,7 @@ static const struct option hpsjam_opts[] = {
 	{ "profile", required_argument, NULL, 'f' },
 	{ "port", required_argument, NULL, 'p' },
 	{ "cli-port", required_argument, NULL, 'q' },
+	{ "help", no_argument, NULL, 'h' },
 #ifdef HAVE_HTTPD
 	{ "httpd", required_argument, NULL, 't' },
 	{ "httpd-conns", required_argument, NULL, 'T' },
@@ -93,10 +94,17 @@ static const struct option hpsjam_opts[] = {
 static void
 usage(void)
 {
-        fprintf(stderr, "HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_PORT_STR "] "
-#ifndef _WIN32
-		"[--daemon] \\\n"
+        fprintf(
+#ifdef _WIN32
+		stdout,
+#else
+		stderr,
 #endif
+		"HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_PORT_STR "] \\\n"
+#ifndef _WIN32
+		"	[--daemon] \\\n"
+#endif
+		"	[--help] \\\n"
 		"	[--profile <positive value, Default is 0>] \\\n"
 		"	[--password <64_bit_hexadecimal_password>] \\\n"
 #ifdef HAVE_JACK_AUDIO
