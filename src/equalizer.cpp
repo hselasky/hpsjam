@@ -61,7 +61,7 @@ hpsjam_parse_double(const char **pp, bool is_ms, double &out)
 	}
 
 	if (*ptr == '.') {
-		double k = 1.0 / 1.0;
+		double k = 1.0 / 10.0;
 		ptr ++;
 		while (*ptr >= '0' && *ptr <= '9') {
 			out += k * (*ptr - '0');
