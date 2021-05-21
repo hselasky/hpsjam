@@ -30,7 +30,30 @@
 
 /* https://en.wikipedia.org/wiki/M-law_algorithm */
 
-static int
+static float hpsjam_powf[4][256];
+static float hpsjam_mul_8;
+static float hpsjam_mul_16;
+static float hpsjam_mul_24;
+static float hpsjam_mul_32;
+
+static void __attribute__((__constructor__))
+audio_init(void)
+{
+	for (uint8_t x = 0; x != 4; x++) {
+		for (uint32_t y = 0; y != 256; y++) {
+			hpsjam_powf[x][y] =
+			    powf(1.0f + 255.0f, (float)y / 128.0f /
+			        (float)(1U << (8 * x)));
+		}
+	}
+
+	hpsjam_mul_8 = 127.0f / logf(1.0f + 255.0f);
+	hpsjam_mul_16 = 32767.0f / logf(1.0f + 255.0f);
+	hpsjam_mul_24 = 8388607.0f / logf(1.0f + 255.0f);
+	hpsjam_mul_32 = 2147483647.0f / logf(1.0f + 255.0f);
+}
+
+static inline int
 audio_encode(float value, float multiplier)
 {
 	if (value == 0.0f)
@@ -41,18 +64,28 @@ audio_encode(float value, float multiplier)
 		return (logf(1.0f + 255.0f * value) * multiplier);
 }
 
-static float
+static inline float
 audio_decode(int input, const float scale)
 {
 	constexpr float multiplier = (1.0f / 255.0f);
-	const float value = input * scale;
 
-	if (value == 0.0f)
-		return (0);
-	else if (value < 0.0f)
-		return - multiplier * (powf(1.0f + 255.0f, -value) - 1.0f);
-	else
-		return multiplier * (powf(1.0f + 255.0f, value) - 1.0f);
+	if (input == 0) {
+		return (0.0f);
+	} else if (input < 0) {
+		const uint32_t value = - input * scale;
+		return - multiplier * (
+		    hpsjam_powf[0][(uint8_t)(value >> 24)] *
+		    hpsjam_powf[1][(uint8_t)(value >> 16)] *
+		    hpsjam_powf[2][(uint8_t)(value >> 8)] *
+		    hpsjam_powf[3][(uint8_t)value] - 1.0f);
+	} else {
+		const uint32_t value = input * scale;
+		return multiplier * (
+		    hpsjam_powf[0][(uint8_t)(value >> 24)] *
+		    hpsjam_powf[1][(uint8_t)(value >> 16)] *
+		    hpsjam_powf[2][(uint8_t)(value >> 8)] *
+		    hpsjam_powf[3][(uint8_t)value] - 1.0f);
+	}
 }
 
 size_t
@@ -61,8 +94,8 @@ hpsjam_packet::get8Bit2ChSample(float *left, float *right) const
 	const size_t samples = (length - 1) * 2;
 
 	for (size_t x = 0; x != samples; x++) {
-		left[x] = audio_decode(getS8(x * 2), 1.0f / 127.0f);
-		right[x] = audio_decode(getS8(x * 2 + 1), 1.0f / 127.0f);
+		left[x] = audio_decode(getS8(x * 2), (float)(1U << 31) / 127.0f);
+		right[x] = audio_decode(getS8(x * 2 + 1), (float)(1U << 31) / 127.0f);
 	}
 	return (samples);
 }
@@ -73,8 +106,8 @@ hpsjam_packet::get16Bit2ChSample(float *left, float *right) const
 	const size_t samples = (length - 1);
 
 	for (size_t x = 0; x != samples; x++) {
-		left[x] = audio_decode(getS16(x * 4), 1.0f / 32767.0f);
-		right[x] = audio_decode(getS16(x * 4 + 2), 1.0f / 32767.0f);
+		left[x] = audio_decode(getS16(x * 4), (float)(1U << 31) / 32767.0f);
+		right[x] = audio_decode(getS16(x * 4 + 2), (float)(1U << 31) / 32767.0f);
 	}
 	return (samples);
 }
@@ -85,8 +118,8 @@ hpsjam_packet::get24Bit2ChSample(float *left, float *right) const
 	const size_t samples = ((length - 1) * 4) / 6;
 
 	for (size_t x = 0; x != samples; x++) {
-		left[x] = audio_decode(getS24(x * 6), 1.0f / 8388607.0f);
-		right[x] = audio_decode(getS24(x * 6 + 3), 1.0f / 8388607.0f);
+		left[x] = audio_decode(getS24(x * 6), (float)(1U << 31) / 8388607.0f);
+		right[x] = audio_decode(getS24(x * 6 + 3), (float)(1U << 31) / 8388607.0f);
 	}
 	return (samples);
 }
@@ -97,8 +130,8 @@ hpsjam_packet::get32Bit2ChSample(float *left, float *right) const
 	const size_t samples = (length - 1) / 2;
 
 	for (size_t x = 0; x != samples; x++) {
-		left[x] = audio_decode(getS32(x * 8), 1.0f / 2147483647.0f);
-		right[x] = audio_decode(getS32(x * 8 + 4), 1.0f / 2147483647.0f);
+		left[x] = audio_decode(getS32(x * 8), (float)(1U << 31) / 2147483647.0f);
+		right[x] = audio_decode(getS32(x * 8 + 4), (float)(1U << 31) / 2147483647.0f);
 	}
 	return (samples);
 }
@@ -109,7 +142,7 @@ hpsjam_packet::get8Bit1ChSample(float *left) const
 	const size_t samples = (length - 1) * 4;
 
 	for (size_t x = 0; x != samples; x++) {
-		left[x] = audio_decode(getS8(x), 1.0f / 127.0f);
+		left[x] = audio_decode(getS8(x), (float)(1U << 31) / 127.0f);
 	}
 	return (samples);
 }
@@ -120,7 +153,7 @@ hpsjam_packet::get16Bit1ChSample(float *left) const
 	const size_t samples = (length - 1) * 2;
 
 	for (size_t x = 0; x != samples; x++) {
-		left[x] = audio_decode(getS16(2 * x), 1.0f / 32767.0f);
+		left[x] = audio_decode(getS16(2 * x), (float)(1U << 31) / 32767.0f);
 	}
 	return (samples);
 }
@@ -131,7 +164,7 @@ hpsjam_packet::get24Bit1ChSample(float *left) const
 	const size_t samples = ((length - 1) * 4) / 3;
 
 	for (size_t x = 0; x != samples; x++) {
-		left[x] = audio_decode(getS24(3 * x), 1.0f / 8388607.0f);
+		left[x] = audio_decode(getS24(3 * x), (float)(1U << 31) / 8388607.0f);
 	}
 	return (samples);
 }
@@ -142,7 +175,7 @@ hpsjam_packet::get32Bit1ChSample(float *left) const
 	const size_t samples = length - 1;
 
 	for (size_t x = 0; x != samples; x++) {
-		left[x] = audio_decode(getS32(4 * x), 1.0f / 2147483647.0f);
+		left[x] = audio_decode(getS32(4 * x), (float)(1U << 31) / 2147483647.0f);
 	}
 	return (samples);
 }
@@ -150,8 +183,6 @@ hpsjam_packet::get32Bit1ChSample(float *left) const
 void
 hpsjam_packet::put8Bit2ChSample(float *left, float *right, size_t samples)
 {
-	const float multiplier = 127.0f / logf(1.0f + 255.0f);
-
 	assert((samples % 2) == 0);
 
 	length = 1 + samples / 2;
@@ -160,64 +191,56 @@ hpsjam_packet::put8Bit2ChSample(float *left, float *right, size_t samples)
 	sequence[1] = 0;
 
 	for (size_t x = 0; x != samples; x++) {
-		putS8(x * 2, audio_encode(left[x], multiplier));
-		putS8(x * 2 + 1, audio_encode(right[x], multiplier));
+		putS8(x * 2, audio_encode(left[x], hpsjam_mul_8));
+		putS8(x * 2 + 1, audio_encode(right[x], hpsjam_mul_8));
 	}
 }
 
 void
 hpsjam_packet::put16Bit2ChSample(float *left, float *right, size_t samples)
 {
-	const float multiplier = 32767.0f / logf(1.0f + 255.0f);
-
 	length = 1 + samples;
 	type = HPSJAM_TYPE_AUDIO_16_BIT_2CH;
 	sequence[0] = 0;
 	sequence[1] = 0;
 
 	for (size_t x = 0; x != samples; x++) {
-		putS16(x * 4, audio_encode(left[x], multiplier));
-		putS16(x * 4 + 2, audio_encode(right[x], multiplier));
+		putS16(x * 4, audio_encode(left[x], hpsjam_mul_16));
+		putS16(x * 4 + 2, audio_encode(right[x], hpsjam_mul_16));
 	}
 }
 
 void
 hpsjam_packet::put24Bit2ChSample(float *left, float *right, size_t samples)
 {
-	const float multiplier = 8388607.0f / logf(1.0f + 255.0f);
-
 	length = 1 + (samples * 6 + 3) / 4;
 	type = HPSJAM_TYPE_AUDIO_24_BIT_2CH;
 	sequence[0] = 0;
 	sequence[1] = 0;
 
 	for (size_t x = 0; x != samples; x++) {
-		putS24(x * 6, audio_encode(left[x], multiplier));
-		putS24(x * 6 + 3, audio_encode(right[x], multiplier));
+		putS24(x * 6, audio_encode(left[x], hpsjam_mul_24));
+		putS24(x * 6 + 3, audio_encode(right[x], hpsjam_mul_24));
 	}
 }
 
 void
 hpsjam_packet::put32Bit2ChSample(float *left, float *right, size_t samples)
 {
-	const float multiplier = 2147483647.0f / logf(1.0f + 255.0f);
-
 	length = 1 + (samples * 2);
 	type = HPSJAM_TYPE_AUDIO_32_BIT_2CH;
 	sequence[0] = 0;
 	sequence[1] = 0;
 
 	for (size_t x = 0; x != samples; x++) {
-		putS32(x * 8, audio_encode(left[x], multiplier));
-		putS32(x * 8 + 4, audio_encode(right[x], multiplier));
+		putS32(x * 8, audio_encode(left[x], hpsjam_mul_32));
+		putS32(x * 8 + 4, audio_encode(right[x], hpsjam_mul_32));
 	}
 }
 
 void
 hpsjam_packet::put8Bit1ChSample(float *left, size_t samples)
 {
-	const float multiplier = 127.0f / logf(1.0f + 255.0f);
-
 	assert((samples % 4) == 0);
 
 	length = 1 + samples / 4;
@@ -226,15 +249,13 @@ hpsjam_packet::put8Bit1ChSample(float *left, size_t samples)
 	sequence[1] = 0;
 
 	for (size_t x = 0; x != samples; x++) {
-		putS8(x, audio_encode(left[x], multiplier));
+		putS8(x, audio_encode(left[x], hpsjam_mul_8));
 	}
 }
 
 void
 hpsjam_packet::put16Bit1ChSample(float *left, size_t samples)
 {
-	const float multiplier = 32767.0f / logf(1.0f + 255.0f);
-
 	assert((samples % 2) == 0);
 
 	length = 1 + samples / 2;
@@ -243,37 +264,33 @@ hpsjam_packet::put16Bit1ChSample(float *left, size_t samples)
 	sequence[1] = 0;
 
 	for (size_t x = 0; x != samples; x++) {
-		putS16(2 * x, audio_encode(left[x], multiplier));
+		putS16(2 * x, audio_encode(left[x], hpsjam_mul_16));
 	}
 }
 
 void
 hpsjam_packet::put24Bit1ChSample(float *left, size_t samples)
 {
-	const float multiplier = 8388607.0f / logf(1.0f + 255.0f);
-
 	length = 1 + (samples * 3 + 3) / 4;
 	type = HPSJAM_TYPE_AUDIO_24_BIT_1CH;
 	sequence[0] = 0;
 	sequence[1] = 0;
 
 	for (size_t x = 0; x != samples; x++) {
-		putS24(3 * x, audio_encode(left[x], multiplier));
+		putS24(3 * x, audio_encode(left[x], hpsjam_mul_24));
 	}
 }
 
 void
 hpsjam_packet::put32Bit1ChSample(float *left, size_t samples)
 {
-	const float multiplier = 2147483647.0f / logf(1.0f + 255.0f);
-
 	length = 1 + samples;
 	type = HPSJAM_TYPE_AUDIO_32_BIT_1CH;
 	sequence[0] = 0;
 	sequence[1] = 0;
 
 	for (size_t x = 0; x != samples; x++) {
-		putS32(4 * x, audio_encode(left[x], multiplier));
+		putS32(4 * x, audio_encode(left[x], hpsjam_mul_32));
 	}
 }
 
@@ -306,7 +323,7 @@ hpsjam_packet::getFaderValue(uint8_t &mix, uint8_t &index, float *gain, size_t &
 			num--;
 		}
 		for (size_t x = 0; x != num; x++)
-			gain[x] = audio_decode(getS16(4 + 2 * x), 1.0f / 32767.0f);
+			gain[x] = audio_decode(getS16(4 + 2 * x), (float)(1U << 31) / 32767.0f);
 		return (true);
 	}
 	return (false);
@@ -315,7 +332,6 @@ hpsjam_packet::getFaderValue(uint8_t &mix, uint8_t &index, float *gain, size_t &
 void
 hpsjam_packet::setFaderValue(uint8_t mix, uint8_t index, const float *gain, size_t ngain)
 {
-	const float multiplier = 32767.0f / logf(1.0f + 255.0f);
 	const size_t tot = 2 + ((ngain + 1) / 2);
 
 	assert(tot <= 255);
@@ -329,7 +345,7 @@ hpsjam_packet::setFaderValue(uint8_t mix, uint8_t index, const float *gain, size
 	putS8(3, 0);
 
 	for (size_t x = 0; x != ngain; x++)
-		putS16(4 + 2 * x, audio_encode(gain[x], multiplier));
+		putS16(4 + 2 * x, audio_encode(gain[x], hpsjam_mul_16));
 
 	/* zero-pad remainder */
 	while (ngain % 2)
