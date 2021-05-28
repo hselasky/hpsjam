@@ -1279,6 +1279,14 @@ hpsjam_cli_process(const struct hpsjam_socket_address &addr, const char *data, s
 			hpsjam_server_broadcast(*pkt);
 			delete pkt;
 		}
+	} else if (str.startsWith("kick=")) {
+		int id = str.mid(5).toInt();
+
+		if (hpsjam_num_server_peers == 0) {
+			/* nothing to do */
+		} else if (id > 0 && id <= (int)hpsjam_num_server_peers) {
+			emit hpsjam_server_peers[id - 1].output_pkt.pendingTimeout();
+		}
 	}
 }
 
