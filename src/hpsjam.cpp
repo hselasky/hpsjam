@@ -44,6 +44,7 @@
 
 unsigned hpsjam_num_server_peers;
 unsigned hpsjam_udp_buffer_size;
+unsigned hpsjam_num_cpu = 1;
 uint64_t hpsjam_server_passwd;
 uint64_t hpsjam_mixer_passwd;
 class hpsjam_server_peer *hpsjam_server_peers;
@@ -61,6 +62,7 @@ static const struct option hpsjam_opts[] = {
 	{ "port", required_argument, NULL, 'p' },
 	{ "cli-port", required_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
+	{ "ncpu", required_argument, NULL, 'j' },
 #ifdef HAVE_HTTPD
 	{ "httpd", required_argument, NULL, 't' },
 	{ "httpd-conns", required_argument, NULL, 'T' },
@@ -129,11 +131,13 @@ usage(void)
 		"	[--audio-input-right <0,1,2,3 ... , Default is 1>] \\\n"
 		"	[--audio-output-right <0,1,2,3 ... , Default is 1>] \\\n"
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
+		"	[--ncpu <1,2,3, ... %d, Default is 1>] \\\n"
 		"	[--welcome-msg-file <filename> \\\n"
 		"	[--cli-port <portnumber>]\n",
 		HPSJAM_NUM_ICONS - 1,
 		HPSJAM_AUDIO_FORMAT_MAX - 1,
-		HPSJAM_AUDIO_FORMAT_MAX - 1);
+		HPSJAM_AUDIO_FORMAT_MAX - 1,
+		HPSJAM_CPU_MAX);
         exit(1);
 }
 
@@ -141,7 +145,7 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	static const char hpsjam_short_opts[] = {
-	    "M:q:p:sP:hBJ:n:K:w:N:i:c:U:D:I:O:l:L:r:R:t:T:"
+	    "M:q:p:sP:hBJ:n:K:w:N:i:j:c:U:D:I:O:l:L:r:R:t:T:"
 	};
 	int c;
 	int port = HPSJAM_DEFAULT_PORT;
@@ -268,6 +272,13 @@ main(int argc, char **argv)
 #endif
 		case 'J':
 			jackconnect = false;
+			break;
+		case 'j':
+			hpsjam_num_cpu = atoi(optarg);
+			if (hpsjam_num_cpu == 0)
+				usage();
+			else if (hpsjam_num_cpu > HPSJAM_CPU_MAX)
+				usage();
 			break;
 		case 'n':
 			jackname = optarg;

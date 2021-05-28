@@ -53,6 +53,7 @@
 #define	HPSJAM_BIT_GAIN_SET(x) (((x) & 31) << 3)
 #define	HPSJAM_BIT_GAIN_GET(x) (((x) >> 3) & 31)
 #define	HPSJAM_SERVER_LIST_MAX 100
+#define	HPSJAM_CPU_MAX 64
 
 #define	HPSJAM_NO_SIGNAL(a,b) do {	\
   a.blockSignals(true);			\
@@ -73,6 +74,7 @@ struct hpsjam_socket_address;
 
 extern uint64_t hpsjam_server_passwd;
 extern uint64_t hpsjam_mixer_passwd;
+extern unsigned hpsjam_num_cpu;
 extern unsigned hpsjam_num_server_peers;
 extern unsigned hpsjam_udp_buffer_size;
 extern class hpsjam_server_peer *hpsjam_server_peers;

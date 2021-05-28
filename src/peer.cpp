@@ -876,7 +876,7 @@ get_gain_from_bits(uint8_t value)
 	return (powf(256.0f, (temp + 16) / 16.0f));
 }
 
-static struct hpsjam_server_default_mix hpsjam_server_default_mix;
+static struct hpsjam_server_default_mix hpsjam_server_default_mix[HPSJAM_CPU_MAX];
 
 void
 hpsjam_server_peer :: audio_mixing()
@@ -895,8 +895,8 @@ hpsjam_server_peer :: audio_mixing()
 	}
 
 	/* use the default mix as a starting point */
-	assert(sizeof(out_audio) == sizeof(hpsjam_server_default_mix.out_audio));
-	memcpy(out_audio, hpsjam_server_default_mix.out_audio, sizeof(out_audio));
+	assert(sizeof(out_audio) == sizeof(hpsjam_server_default_mix[0].out_audio));
+	memcpy(out_audio, hpsjam_server_default_mix[0].out_audio, sizeof(out_audio));
 
 	for (unsigned y = 0; y != hpsjam_num_server_peers; y++) {
 		const class hpsjam_server_peer &other = hpsjam_server_peers[y];
@@ -958,17 +958,13 @@ do_solo:
 	}
 }
 
-Q_DECL_EXPORT void
-hpsjam_server_tick()
+static void
+hpsjam_server_get_audio(unsigned rem)
 {
-	/* reset timer adjustment */
-	memset(hpsjam_server_adjust, 0, sizeof(hpsjam_server_adjust));
-
-	/* reset the default mix */
-	memset(&hpsjam_server_default_mix, 0, sizeof(hpsjam_server_default_mix));
-
-	/* get audio */
 	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+		if ((x % hpsjam_num_cpu) != rem)
+			continue;
+
 		class hpsjam_server_peer &peer = hpsjam_server_peers[x];
 
 		/* export audio from data buffer, if any */
@@ -976,8 +972,51 @@ hpsjam_server_tick()
 
 		/* create the default mix */
 		for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
-			hpsjam_server_default_mix.out_audio[0][z] += peer.tmp_audio[0][z];
-			hpsjam_server_default_mix.out_audio[1][z] += peer.tmp_audio[1][z];
+			hpsjam_server_default_mix[rem].out_audio[0][z] += peer.tmp_audio[0][z];
+			hpsjam_server_default_mix[rem].out_audio[1][z] += peer.tmp_audio[1][z];
+		}
+	}
+}
+
+static void
+hpsjam_server_audio_mixing(unsigned rem)
+{
+	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+		if ((x % hpsjam_num_cpu) != rem)
+			continue;
+		hpsjam_server_peers[x].audio_mixing();
+	}
+}
+
+static void
+hpsjam_server_audio_import(unsigned rem)
+{
+	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+		if ((x % hpsjam_num_cpu) != rem)
+			continue;
+		hpsjam_server_peers[x].audio_import();
+	}
+}
+
+Q_DECL_EXPORT void
+hpsjam_server_tick()
+{
+	/* reset timer adjustment */
+	memset(hpsjam_server_adjust, 0, sizeof(hpsjam_server_adjust));
+
+	/* reset the default server mix */
+	memset(hpsjam_server_default_mix, 0, sizeof(hpsjam_server_default_mix[0]) * hpsjam_num_cpu);
+
+	/* get audio */
+	hpsjam_execute(&hpsjam_server_get_audio);
+
+	/* merge audio from each worker thread, if any */
+	for (unsigned rem = 1; rem != hpsjam_num_cpu; rem++) {
+		for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
+			hpsjam_server_default_mix[0].out_audio[0][z] +=
+			    hpsjam_server_default_mix[rem].out_audio[0][z];
+			hpsjam_server_default_mix[0].out_audio[1][z] +=
+			    hpsjam_server_default_mix[rem].out_audio[1][z];
 		}
 	}
 
@@ -985,8 +1024,8 @@ hpsjam_server_tick()
 	/* stream the default mix, if any */
 	if (http_nstate != 0) {
 		hpsjam_httpd_streamer(
-		    hpsjam_server_default_mix.out_audio[0],
-		    hpsjam_server_default_mix.out_audio[1],
+		    hpsjam_server_default_mix[0].out_audio[0],
+		    hpsjam_server_default_mix[0].out_audio[1],
 		    HPSJAM_DEF_SAMPLES);
 	}
 #endif
@@ -994,12 +1033,10 @@ hpsjam_server_tick()
 	hpsjam_send_levels();
 
 	/* mix everything */
-	for (unsigned x = 0; x != hpsjam_num_server_peers; x++)
-		hpsjam_server_peers[x].audio_mixing();
+	hpsjam_execute(&hpsjam_server_audio_mixing);
 
 	/* send audio */
-	for (unsigned x = 0; x != hpsjam_num_server_peers; x++)
-		hpsjam_server_peers[x].audio_import();
+	hpsjam_execute(&hpsjam_server_audio_import);
 
 	/* adjust timer, if any */
 	if (hpsjam_server_adjust[1] >= hpsjam_server_adjust[0] &&

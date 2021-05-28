@@ -44,6 +44,8 @@ static QElapsedTimer hpsjam_timer;
 #include "timer.h"
 #include "peer.h"
 
+#include <QWaitCondition>
+
 uint16_t hpsjam_ticks;
 int hpsjam_timer_adjust;
 
@@ -62,7 +64,7 @@ hpsjam_timer_set_priority()
 }
 
 static void *
-hpsjam_timer_loop(void *arg)
+hpsjam_timer_loop(void *)
 {
 	hpsjam_timer_set_priority();
 
@@ -145,6 +147,56 @@ hpsjam_timer_loop(void *arg)
 	return (0);
 }
 
+static hpsjam_execute_cb_t *hpsjam_execute_callback;
+static uint64_t hpsjam_execute_pending;
+static QMutex hpsjam_execute_mtx;
+static QWaitCondition hpsjam_execute_wait[2];
+
+static void *
+hpsjam_execute_thread(void *arg)
+{
+	const uint64_t mask = 1ULL << ((long)arg);
+
+	hpsjam_execute_mtx.lock();
+
+	do {
+		while ((hpsjam_execute_pending & mask) == 0)
+			hpsjam_execute_wait[0].wait(&hpsjam_execute_mtx);
+		hpsjam_execute_mtx.unlock();
+
+		hpsjam_execute_callback((long)arg);
+
+		hpsjam_execute_mtx.lock();
+		hpsjam_execute_pending &= ~mask;
+		if (mask != 1 && hpsjam_execute_pending == 0)
+			hpsjam_execute_wait[1].wakeOne();
+	} while (mask != 1);
+
+	hpsjam_execute_mtx.unlock();
+	return (0);
+}
+
+Q_DECL_EXPORT void
+hpsjam_execute(hpsjam_execute_cb_t *cb)
+{
+	hpsjam_execute_callback = cb;
+
+	hpsjam_execute_mtx.lock();
+	if (hpsjam_num_cpu == 64)
+		hpsjam_execute_pending = -1ULL;
+	else
+		hpsjam_execute_pending = (1ULL << hpsjam_num_cpu) - 1ULL;
+	hpsjam_execute_wait[0].wakeAll();
+	hpsjam_execute_mtx.unlock();
+
+	hpsjam_execute_thread(0);
+
+	hpsjam_execute_mtx.lock();
+	while (hpsjam_execute_pending != 0)
+		hpsjam_execute_wait[1].wait(&hpsjam_execute_mtx);
+	hpsjam_execute_mtx.unlock();
+}
+
 Q_DECL_EXPORT void
 hpsjam_timer_init()
 {
@@ -153,4 +205,10 @@ hpsjam_timer_init()
 
 	ret = pthread_create(&pt, 0, &hpsjam_timer_loop, 0);
 	assert(ret == 0);
+
+	/* create additional worker threads, if any */
+	for (unsigned x = 1; x != hpsjam_num_cpu; x++) {
+		ret = pthread_create(&pt, 0, &hpsjam_execute_thread, (void *)(long)x);
+		assert(ret == 0);
+	}
 }

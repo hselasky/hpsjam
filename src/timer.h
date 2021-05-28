@@ -28,9 +28,12 @@
 
 #include <stdint.h>
 
+typedef void (hpsjam_execute_cb_t)(unsigned);
+
 extern uint16_t hpsjam_ticks;
 extern int hpsjam_timer_adjust;
 
 extern void hpsjam_timer_init();
+extern void hpsjam_execute(hpsjam_execute_cb_t *);
 
 #endif		/* _HPSJAM_TIMER_H_ */
