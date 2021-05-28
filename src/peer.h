@@ -168,6 +168,7 @@ public:
 	float in_peak;
 	float out_peak;
 	float local_peak;
+	uint8_t in_midi_escaped[4];
 	int self_index;
 	uint8_t bits;
 	uint8_t output_fmt;
@@ -196,6 +197,7 @@ public:
 		in_peak = 0.0f;
 		out_peak = 0.0f;
 		local_peak = 0.0f;
+		memset(in_midi_escaped, 0, sizeof(in_midi_escaped));
 		output_fmt = HPSJAM_TYPE_AUDIO_SILENCE;
 		bits = 0;
 		eq.cleanup();

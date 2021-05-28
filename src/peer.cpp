@@ -305,12 +305,26 @@ hpsjam_client_peer :: midi_process(uint8_t *buffer)
 	uint8_t data[1];
 	int retval = 0;
 
+	/* Duplicate all NOTE OFF events, to kill of any hanging notes. */
+	if (in_midi_escaped[0]) {
+		in_midi_escaped[2] = 0;	/* clear the velocity */
+		memcpy(buffer, in_midi_escaped, 3);
+		memset(in_midi_escaped, 0, sizeof(in_midi_escaped));
+		return (3);
+	}
+
+	/* Read from MIDI buffer. */
 	while (in_midi.remData(data, sizeof(data))) {
 		if (hpsjam_midi_convert_to_usb(&in_midi_parse, 0, data[0])) {
 			retval = hpsjam_midi_cmd_to_len[in_midi_parse.temp_cmd[0] & 0xF];
 			if (retval == 0)
 				continue;
+			assert(retval > 0);
+			assert(retval < 5);
 			memcpy(buffer, &in_midi_parse.temp_cmd[1], retval);
+			/* Make a copy of NOTE OFF events. */
+			if (retval == 3 && (buffer[0] & 0xF0) == 0x80)
+				memcpy(in_midi_escaped, buffer, retval);
 			break;
 		}
 	}
@@ -1239,9 +1253,13 @@ hpsjam_server_tick()
 	hpsjam_execute(&hpsjam_server_audio_mixing);
 
 	/* prepare MIDI buffer, if any */
-	hpsjam_midi_bufsize =
-	    hpsjam_default_midi[0].remData(
-	    hpsjam_midi_data, sizeof(hpsjam_midi_data));
+	if (hpsjam_midi_bufsize == 0) {
+		hpsjam_midi_bufsize =
+		  hpsjam_default_midi[0].remData(
+		  hpsjam_midi_data, sizeof(hpsjam_midi_data));
+	} else {
+		hpsjam_midi_bufsize = 0 ;
+	}
 
 	/* send audio */
 	hpsjam_execute(&hpsjam_server_audio_import);
@@ -1455,9 +1473,13 @@ hpsjam_client_peer :: tick()
 	}
 
 	/* prepare MIDI buffer, if any */
-	hpsjam_midi_bufsize =
-	    hpsjam_default_midi[0].remData(
-	    hpsjam_midi_data, sizeof(hpsjam_midi_data));
+	if (hpsjam_midi_bufsize == 0) {
+		hpsjam_midi_bufsize =
+		  hpsjam_default_midi[0].remData(
+		  hpsjam_midi_data, sizeof(hpsjam_midi_data));
+	} else {
+		hpsjam_midi_bufsize = 0;
+	}
 
 	/* extract samples for this tick */
 	out_audio[0].remSamples(audio[0], HPSJAM_DEF_SAMPLES);
