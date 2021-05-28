@@ -331,6 +331,7 @@ main(int argc, char **argv)
 		/* set consistent double click interval */
 		app.setDoubleClickInterval(250);
 
+		hpsjam_default_midi = new hpsjam_midi_buffer[1];
 		hpsjam_client_peer = new class hpsjam_client_peer;
 		hpsjam_client = new HpsJamClient();
 
@@ -456,6 +457,7 @@ main(int argc, char **argv)
 	} else {
 		QCoreApplication app(argc, argv);
 
+		hpsjam_default_midi = new hpsjam_midi_buffer[hpsjam_num_cpu];
 		hpsjam_server_peers = new class hpsjam_server_peer [hpsjam_num_server_peers];
 
 		/* set a valid UDP buffer size */

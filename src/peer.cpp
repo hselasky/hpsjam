@@ -144,6 +144,179 @@ hpsjam_server_broadcast(const struct hpsjam_packet_entry &entry,
 	}
 }
 
+static const uint8_t hpsjam_midi_cmd_to_len[16] = {
+	0,			/* reserved */
+	0,			/* reserved */
+	2,			/* bytes */
+	3,			/* bytes */
+	3,			/* bytes */
+	1,			/* bytes */
+	2,			/* bytes */
+	3,			/* bytes */
+	3,			/* bytes */
+	3,			/* bytes */
+	3,			/* bytes */
+	3,			/* bytes */
+	2,			/* bytes */
+	2,			/* bytes */
+	3,			/* bytes */
+	1,			/* bytes */
+};
+
+/*
+ * The following statemachine, that converts MIDI commands to
+ * USB MIDI packets, derives from Linux's usbmidi.c, which
+ * was written by "Clemens Ladisch":
+ *
+ * Returns:
+ *    0: No command
+ * Else: Command is complete
+ */
+static uint8_t
+hpsjam_midi_convert_to_usb(struct hpsjam_midi_parse *parser, uint8_t cn, uint8_t b)
+{
+	uint8_t p0 = (cn << 4);
+
+	if (b >= 0xf8) {
+		parser->temp_0[0] = p0 | 0x0f;
+		parser->temp_0[1] = b;
+		parser->temp_0[2] = 0;
+		parser->temp_0[3] = 0;
+		parser->temp_cmd = parser->temp_0;
+		return (1);
+
+	} else if (b >= 0xf0) {
+		switch (b) {
+		case 0xf0:		/* system exclusive begin */
+			parser->temp_1[1] = b;
+			parser->state = HPSJAM_MIDI_ST_SYSEX_1;
+			break;
+		case 0xf1:		/* MIDI time code */
+		case 0xf3:		/* song select */
+			parser->temp_1[1] = b;
+			parser->state = HPSJAM_MIDI_ST_1PARAM;
+			break;
+		case 0xf2:		/* song position pointer */
+			parser->temp_1[1] = b;
+			parser->state = HPSJAM_MIDI_ST_2PARAM_1;
+			break;
+		case 0xf4:		/* unknown */
+		case 0xf5:		/* unknown */
+			parser->state = HPSJAM_MIDI_ST_UNKNOWN;
+			break;
+		case 0xf6:		/* tune request */
+			parser->temp_1[0] = p0 | 0x05;
+			parser->temp_1[1] = 0xf6;
+			parser->temp_1[2] = 0;
+			parser->temp_1[3] = 0;
+			parser->temp_cmd = parser->temp_1;
+			parser->state = HPSJAM_MIDI_ST_UNKNOWN;
+			return (1);
+
+		case 0xf7:		/* system exclusive end */
+			switch (parser->state) {
+			case HPSJAM_MIDI_ST_SYSEX_0:
+				parser->temp_1[0] = p0 | 0x05;
+				parser->temp_1[1] = 0xf7;
+				parser->temp_1[2] = 0;
+				parser->temp_1[3] = 0;
+				parser->temp_cmd = parser->temp_1;
+				parser->state = HPSJAM_MIDI_ST_UNKNOWN;
+				return (1);
+			case HPSJAM_MIDI_ST_SYSEX_1:
+				parser->temp_1[0] = p0 | 0x06;
+				parser->temp_1[2] = 0xf7;
+				parser->temp_1[3] = 0;
+				parser->temp_cmd = parser->temp_1;
+				parser->state = HPSJAM_MIDI_ST_UNKNOWN;
+				return (1);
+			case HPSJAM_MIDI_ST_SYSEX_2:
+				parser->temp_1[0] = p0 | 0x07;
+				parser->temp_1[3] = 0xf7;
+				parser->temp_cmd = parser->temp_1;
+				parser->state = HPSJAM_MIDI_ST_UNKNOWN;
+				return (1);
+			}
+			parser->state = HPSJAM_MIDI_ST_UNKNOWN;
+			break;
+		}
+	} else if (b >= 0x80) {
+		parser->temp_1[1] = b;
+		if ((b >= 0xc0) && (b <= 0xdf)) {
+			parser->state = HPSJAM_MIDI_ST_1PARAM;
+		} else {
+			parser->state = HPSJAM_MIDI_ST_2PARAM_1;
+		}
+	} else {			/* b < 0x80 */
+		switch (parser->state) {
+		case HPSJAM_MIDI_ST_1PARAM:
+			if (parser->temp_1[1] < 0xf0) {
+				p0 |= parser->temp_1[1] >> 4;
+			} else {
+				p0 |= 0x02;
+				parser->state = HPSJAM_MIDI_ST_UNKNOWN;
+			}
+			parser->temp_1[0] = p0;
+			parser->temp_1[2] = b;
+			parser->temp_1[3] = 0;
+			parser->temp_cmd = parser->temp_1;
+			return (1);
+		case HPSJAM_MIDI_ST_2PARAM_1:
+			parser->temp_1[2] = b;
+			parser->state = HPSJAM_MIDI_ST_2PARAM_2;
+			break;
+		case HPSJAM_MIDI_ST_2PARAM_2:
+			if (parser->temp_1[1] < 0xf0) {
+				p0 |= parser->temp_1[1] >> 4;
+				parser->state = HPSJAM_MIDI_ST_2PARAM_1;
+			} else {
+				p0 |= 0x03;
+				parser->state = HPSJAM_MIDI_ST_UNKNOWN;
+			}
+			parser->temp_1[0] = p0;
+			parser->temp_1[3] = b;
+			parser->temp_cmd = parser->temp_1;
+			return (1);
+		case HPSJAM_MIDI_ST_SYSEX_0:
+			parser->temp_1[1] = b;
+			parser->state = HPSJAM_MIDI_ST_SYSEX_1;
+			break;
+		case HPSJAM_MIDI_ST_SYSEX_1:
+			parser->temp_1[2] = b;
+			parser->state = HPSJAM_MIDI_ST_SYSEX_2;
+			break;
+		case HPSJAM_MIDI_ST_SYSEX_2:
+			parser->temp_1[0] = p0 | 0x04;
+			parser->temp_1[3] = b;
+			parser->temp_cmd = parser->temp_1;
+			parser->state = HPSJAM_MIDI_ST_SYSEX_0;
+			return (1);
+		default:
+			break;
+		}
+	}
+	return (0);
+}
+
+int
+hpsjam_client_peer :: midi_process(uint8_t *buffer)
+{
+	QMutexLocker locker(&lock);
+	uint8_t data[1];
+	int retval = 0;
+
+	while (in_midi.remData(data, sizeof(data))) {
+		if (hpsjam_midi_convert_to_usb(&in_midi_parse, 0, data[0])) {
+			retval = hpsjam_midi_cmd_to_len[in_midi_parse.temp_cmd[0] & 0xF];
+			if (retval == 0)
+				continue;
+			memcpy(buffer, &in_midi_parse.temp_cmd[1], retval);
+			break;
+		}
+	}
+	return (retval);
+}
+
 void
 hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 {
@@ -354,11 +527,20 @@ void HpsJamProcessOutputAudio(T &s, float *left, float *right)
 	s.out_buffer[1].addSamples(right, HPSJAM_DEF_SAMPLES);
 }
 
+static uint8_t hpsjam_midi_data[16];
+static size_t hpsjam_midi_bufsize;
+
 template <typename T>
 void HpsJamSendPacket(T &s)
 {
 	struct hpsjam_packet_entry entry;
 	float temp[2][HPSJAM_NOM_SAMPLES];
+
+	/* append MIDI data, if any */
+	if (hpsjam_midi_bufsize != 0) {
+		entry.packet.putMidiData(hpsjam_midi_data, hpsjam_midi_bufsize);
+		s.output_pkt.append_pkt(entry);
+	}
 
 	/* check if we are sending XOR data */
 	if (s.output_pkt.isXorFrame())
@@ -483,9 +665,11 @@ bool HpsJamReceiveUnSequenced(T &s, const struct hpsjam_packet *ptr, float *temp
 		s.in_level[1].addSamples(temp + (HPSJAM_MAX_PKT / 2), num);
 		return (true);
 	case HPSJAM_TYPE_AUDIO_32_BIT_2CH + 1 ... HPSJAM_TYPE_AUDIO_MAX:
-		/* for the future */
-		s.in_audio[0].addSilence(HPSJAM_NOM_SAMPLES);
-		s.in_audio[1].addSilence(HPSJAM_NOM_SAMPLES);
+		return (true);
+	case HPSJAM_TYPE_MIDI_PACKET:
+		num = HPSJAM_MAX_PKT * sizeof(temp[0]);
+		if (ptr->getMidiData((uint8_t *)temp, &num))
+			s.in_midi.addData((uint8_t *)temp, num);
 		return (true);
 	case HPSJAM_TYPE_AUDIO_SILENCE:
 		num = ptr->getSilence();
@@ -877,6 +1061,7 @@ get_gain_from_bits(uint8_t value)
 }
 
 static struct hpsjam_server_default_mix hpsjam_server_default_mix[HPSJAM_CPU_MAX];
+hpsjam_midi_buffer *hpsjam_default_midi;
 
 void
 hpsjam_server_peer :: audio_mixing()
@@ -961,6 +1146,9 @@ do_solo:
 static void
 hpsjam_server_get_audio(unsigned rem)
 {
+	uint8_t temp[hpsjam_midi_buffer::MIDI_BUFFER_MAX];
+	size_t num;
+
 	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
 		if ((x % hpsjam_num_cpu) != rem)
 			continue;
@@ -970,11 +1158,18 @@ hpsjam_server_get_audio(unsigned rem)
 		/* export audio from data buffer, if any */
 		peer.audio_export();
 
-		/* create the default mix */
+		/* create the default audio mix */
 		for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
-			hpsjam_server_default_mix[rem].out_audio[0][z] += peer.tmp_audio[0][z];
-			hpsjam_server_default_mix[rem].out_audio[1][z] += peer.tmp_audio[1][z];
+			hpsjam_server_default_mix[rem].out_audio[0][z] +=
+			    peer.tmp_audio[0][z];
+			hpsjam_server_default_mix[rem].out_audio[1][z] +=
+			    peer.tmp_audio[1][z];
 		}
+
+		/* create the default MIDI mix */
+		num = peer.in_midi.remData(temp, sizeof(temp));
+		if (num != 0)
+			hpsjam_default_midi[rem].addData(temp, num);
 	}
 }
 
@@ -1010,14 +1205,22 @@ hpsjam_server_tick()
 	/* get audio */
 	hpsjam_execute(&hpsjam_server_get_audio);
 
-	/* merge audio from each worker thread, if any */
+	/* merge audio and MIDI from each worker thread, if any */
 	for (unsigned rem = 1; rem != hpsjam_num_cpu; rem++) {
+		uint8_t temp[hpsjam_midi_buffer::MIDI_BUFFER_MAX];
+		size_t num;
+
 		for (unsigned z = 0; z != HPSJAM_DEF_SAMPLES; z++) {
 			hpsjam_server_default_mix[0].out_audio[0][z] +=
 			    hpsjam_server_default_mix[rem].out_audio[0][z];
 			hpsjam_server_default_mix[0].out_audio[1][z] +=
 			    hpsjam_server_default_mix[rem].out_audio[1][z];
 		}
+
+		/* create the default MIDI mix */
+		num = hpsjam_default_midi[rem].remData(temp, sizeof(temp));
+		if (num != 0)
+			hpsjam_default_midi[0].addData(temp, num);
 	}
 
 #ifdef HAVE_HTTPD
@@ -1034,6 +1237,11 @@ hpsjam_server_tick()
 
 	/* mix everything */
 	hpsjam_execute(&hpsjam_server_audio_mixing);
+
+	/* prepare MIDI buffer, if any */
+	hpsjam_midi_bufsize =
+	    hpsjam_default_midi[0].remData(
+	    hpsjam_midi_data, sizeof(hpsjam_midi_data));
 
 	/* send audio */
 	hpsjam_execute(&hpsjam_server_audio_import);
@@ -1245,6 +1453,11 @@ hpsjam_client_peer :: tick()
 		pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
 		pres->insert_tail(&output_pkt.head);
 	}
+
+	/* prepare MIDI buffer, if any */
+	hpsjam_midi_bufsize =
+	    hpsjam_default_midi[0].remData(
+	    hpsjam_midi_data, sizeof(hpsjam_midi_data));
 
 	/* extract samples for this tick */
 	out_audio[0].remSamples(audio[0], HPSJAM_DEF_SAMPLES);

@@ -309,6 +309,7 @@ HpsJamConnect :: handle_disconnect()
 
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 	hpsjam_client_peer->init();
+	hpsjam_default_midi[0].clear();
 	locker.unlock();
 
 	hpsjam_client->w_mixer->init();

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,12 +35,19 @@ static jack_port_t *input_port_left;
 static jack_port_t *input_port_right;
 static jack_port_t *output_port_left;
 static jack_port_t *output_port_right;
+static jack_port_t *output_port_midi;
+static jack_port_t *input_port_midi;
+
 static jack_client_t *jack_client;
 static int jack_is_shutdown;
 
 static int
 hpsjam_sound_process_cb(jack_nframes_t nframes, void *arg)
 {
+	jack_midi_event_t event;
+	int events;
+	int error;
+
 	const float *in_left = (jack_default_audio_sample_t *)
 	    jack_port_get_buffer(input_port_left, nframes);
 	const float *in_right = (jack_default_audio_sample_t *)
@@ -51,6 +58,16 @@ hpsjam_sound_process_cb(jack_nframes_t nframes, void *arg)
 	float *out_right = (jack_default_audio_sample_t *)
 	    jack_port_get_buffer(output_port_right, nframes);
 
+	uint8_t *in_midi = (uint8_t *)
+	    jack_port_get_buffer(input_port_midi, nframes);
+	uint8_t *out_midi = (uint8_t *)
+	    jack_port_get_buffer(output_port_midi, nframes);
+
+#ifdef JACK_MIDI_NEEDS_NFRAMES
+	jack_midi_clear_buffer(out_midi, nframes);
+#else
+	jack_midi_clear_buffer(out_midi);
+#endif
 	if (jack_is_shutdown != 0) {
 		memset(out_left, 0, sizeof(out_left[0]) * nframes);
 		memset(out_right, 0, sizeof(out_right[0]) * nframes);
@@ -58,7 +75,41 @@ hpsjam_sound_process_cb(jack_nframes_t nframes, void *arg)
 		memcpy(out_left, in_left, sizeof(out_left[0]) * nframes);
 		memcpy(out_right, in_right, sizeof(out_right[0]) * nframes);
 
+#ifdef JACK_MIDI_NEEDS_NFRAMES
+		events = jack_midi_get_event_count(in_midi, nframes);
+#else
+		events = jack_midi_get_event_count(in_midi);
+#endif
+		for (int i = 0; i < events; i++) {
+#ifdef JACK_MIDI_NEEDS_NFRAMES
+			error = jack_midi_event_get(&event, in_midi, i, nframes);
+#else
+			error = jack_midi_event_get(&event, in_midi, i);
+#endif
+			if (error)
+				continue;
+
+			QMutexLocker lock(&hpsjam_client_peer->lock);
+			hpsjam_default_midi[0].addData(event.buffer, event.size);
+		}
+
 		hpsjam_client_peer->sound_process(out_left, out_right, nframes);
+
+		for (int i = 0;; i++) {
+			uint8_t mbuf[4] = {};
+			void *buffer;
+			int len = hpsjam_client_peer->midi_process(mbuf);
+			if (len < 1)
+				break;
+#ifdef JACK_MIDI_NEEDS_NFRAMES
+			buffer = jack_midi_event_reserve(out_midi, i, len, nframes);
+#else
+			buffer = jack_midi_event_reserve(out_midi, i, len);
+#endif
+			if (buffer == 0)
+				break;
+			memcpy(buffer, mbuf, len);
+		}
 	}
 	return (0);
 }
@@ -106,8 +157,16 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	output_port_right = jack_port_register(jack_client, "output_1",
 	    JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 
-	if ((input_port_left == 0) || (input_port_right == 0) ||
-	    (output_port_left == 0) || (output_port_right == 0)) {
+	input_port_midi = jack_port_register(jack_client, "input_midi",
+	    JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
+
+	output_port_midi = jack_port_register(jack_client, "output_midi",
+	    JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
+
+	if (input_port_left == 0 || input_port_right == 0 ||
+	    input_port_midi == 0 ||
+	    output_port_left == 0 || output_port_right == 0 ||
+	    output_port_midi == 0) {
 		jack_client_close(jack_client);
 		jack_client = 0;
 		return (true);
@@ -165,12 +224,16 @@ hpsjam_sound_uninit()
 	jack_port_disconnect(jack_client, input_port_right);
 	jack_port_disconnect(jack_client, output_port_left);
 	jack_port_disconnect(jack_client, output_port_right);
+	jack_port_disconnect(jack_client, input_port_midi);
+	jack_port_disconnect(jack_client, output_port_midi);
 
 	jack_deactivate(jack_client);
 	jack_port_unregister(jack_client, input_port_left);
 	jack_port_unregister(jack_client, input_port_right);
 	jack_port_unregister(jack_client, output_port_left);
 	jack_port_unregister(jack_client, output_port_right);
+	jack_port_unregister(jack_client, input_port_midi);
+	jack_port_unregister(jack_client, output_port_midi);
 	jack_client_close(jack_client);
 	jack_client = 0;
 }

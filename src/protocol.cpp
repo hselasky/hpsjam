@@ -303,6 +303,35 @@ hpsjam_packet::putSilence(size_t samples)
 	sequence[1] = 0;
 }
 
+void
+hpsjam_packet::putMidiData(const uint8_t *ptr, size_t bytes)
+{
+	length = 1 + (bytes + 3) / 4;
+	type = HPSJAM_TYPE_MIDI_PACKET;
+	sequence[0] = (-bytes) & 3;
+	sequence[1] = 0;
+	/* copy MIDI data in-place */
+	memcpy(sequence + 2, ptr, bytes);
+	/* zero padding */
+	while (bytes & 3)
+		sequence[2 + bytes++] = 0;
+}
+
+bool
+hpsjam_packet::getMidiData(uint8_t *ptr, size_t *pbytes) const
+{
+	size_t bytes;
+
+	if (length < 2)
+		return (false);
+	bytes = (length - 1) * 4 - (sequence[0] & 3);
+	if (bytes > *pbytes)
+		return (false);
+	memcpy(ptr, sequence + 2, bytes);
+	*pbytes = bytes;
+	return (true);
+}
+
 size_t
 hpsjam_packet::getSilence() const
 {

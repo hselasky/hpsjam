@@ -33,6 +33,7 @@
 
 #include "hpsjam.h"
 #include "audiobuffer.h"
+#include "midibuffer.h"
 #include "equalizer.h"
 #include "socket.h"
 #include "protocol.h"
@@ -50,6 +51,7 @@ public:
 	struct hpsjam_socket_address address;
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;
+	class hpsjam_midi_buffer in_midi;
 	class hpsjam_audio_buffer in_audio[2];
 	class hpsjam_audio_buffer out_buffer[2];
 	class hpsjam_audio_level in_level[2];
@@ -149,6 +151,8 @@ public:
 	struct hpsjam_socket_address address;
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;
+	struct hpsjam_midi_parse in_midi_parse;
+	class hpsjam_midi_buffer in_midi;
 	class hpsjam_audio_buffer in_audio[2];
 	class hpsjam_audio_level in_level[2];
 	class hpsjam_audio_buffer out_buffer[2];
@@ -172,6 +176,8 @@ public:
 		address.clear();
 		input_pkt.init();
 		output_pkt.init();
+		in_midi_parse.clear();
+		in_midi.clear();
 		in_audio[0].clear();
 		in_audio[1].clear();
 		in_level[0].clear();
@@ -204,6 +210,7 @@ public:
 		connect(this, SIGNAL(receivedLyrics(QString *)), this, SLOT(handleLyrics(QString *)));
 	};
 	void sound_process(float *, float *, size_t);
+	int midi_process(uint8_t *);
 	void tick();
 	void send_single_pkt(struct hpsjam_packet_entry *pkt) {
 		QMutexLocker locker(&lock);
@@ -239,6 +246,8 @@ signals:
 	void receivedFaderDisconnect(uint8_t, uint8_t);
 	void receivedFaderSelf(uint8_t, uint8_t);
 };
+
+extern hpsjam_midi_buffer *hpsjam_default_midi;
 
 extern void hpsjam_cli_process(const struct hpsjam_socket_address &, const char *, size_t);
 extern void hpsjam_peer_receive(const struct hpsjam_socket_address &,
