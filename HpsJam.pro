@@ -82,6 +82,7 @@ macx {
 SOURCES		+= mac/sound_mac.cpp
 LIBS+=		-framework AudioUnit
 LIBS+=		-framework CoreAudio
+LIBS+=		-framework CoreMIDI
 DEFINES		+= HAVE_MAC_AUDIO
 }
 
