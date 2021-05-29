@@ -581,8 +581,10 @@ hpsjam_sound_init(const char *, bool)
 			audioDeviceNames[x] = 0;
 		}
 
-		if (audioMaxSelection == 0)
+		if (audioMaxSelection == 0) {
+			ASIOControlPanel();
 			return (true);
+		}
 
 		audioCallbacks.bufferSwitch = &hpsjam_asio_buffer_switch;
 		audioCallbacks.sampleRateDidChange = &hpsjam_asio_sample_rate_changed;
