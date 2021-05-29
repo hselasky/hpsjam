@@ -147,16 +147,16 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 		return (true);
 	}
 
-	input_port_left = jack_port_register(jack_client, "input_0",
+	input_port_left = jack_port_register(jack_client, "input_1",
 	    JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
 
-	input_port_right = jack_port_register(jack_client, "input_1",
+	input_port_right = jack_port_register(jack_client, "input_2",
 	    JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
 
-	output_port_left = jack_port_register(jack_client, "output_0",
+	output_port_left = jack_port_register(jack_client, "output_1",
 	    JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 
-	output_port_right = jack_port_register(jack_client, "output_1",
+	output_port_right = jack_port_register(jack_client, "output_2",
 	    JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 
 	input_port_midi = jack_port_register(jack_client, "input_midi",
