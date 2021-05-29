@@ -87,6 +87,7 @@ static const struct option hpsjam_opts[] = {
 	{ "audio-output-left", required_argument, NULL, 'L'},
 	{ "audio-input-right", required_argument, NULL, 'r'},
 	{ "audio-output-right", required_argument, NULL, 'R'},
+	{ "midi-port-name", required_argument, NULL, 'n'},
 #endif
 #ifdef HAVE_JACK_AUDIO
 	{ "jacknoconnect", no_argument, NULL, 'J' },
@@ -123,13 +124,15 @@ usage(void)
 #endif
 		"	[--audio-uplink-format <0..%u>] \\\n"
 		"	[--audio-downlink-format <0..%u>] \\\n"
-
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 		"	[--audio-input-device <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-output-device <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-input-left <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-output-left <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-input-right <0,1,2,3 ... , Default is 1>] \\\n"
 		"	[--audio-output-right <0,1,2,3 ... , Default is 1>] \\\n"
+		"	[--midi-port-name <name>, Default is hpsjam] \\\n"
+#endif
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
 		"	[--ncpu <1,2,3, ... %d, Default is 1>] \\\n"
 		"	[--welcome-msg-file <filename> \\\n"
@@ -365,6 +368,9 @@ main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_MAC_AUDIO
+		/* setup MIDI first */
+		hpsjam_midi_init(jackname);
+
 		if (hpsjam_sound_init(0, 0)) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot connect to audio subsystem.\n"

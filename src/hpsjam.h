@@ -88,6 +88,9 @@ extern int hpsjam_profile_index;
 
 extern void hpsjam_socket_init(unsigned short port, unsigned short cliport);
 
+/* MIDI APIs */
+extern void hpsjam_midi_init(const char *);
+
 /* sound APIs */
 extern bool hpsjam_sound_init(const char *, bool);
 extern void hpsjam_sound_uninit();

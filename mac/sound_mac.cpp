@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,6 +32,9 @@
 
 #include <AudioUnit/AudioUnit.h>
 #include <AudioToolbox/AudioToolbox.h>
+#include <CoreMIDI/CoreMIDI.h>
+
+#include <mach/mach_time.h>
 
 static AudioDeviceID audioInputDevice;
 static AudioDeviceID audioOutputDevice;
@@ -51,6 +54,10 @@ static unsigned audioOutputSelection[2];
 static QString audioInputDeviceName;
 static QString audioOutputDeviceName;
 
+static MIDIClientRef hpsjam_midi_client;
+static MIDIPortRef hpsjam_midi_input_port;
+static MIDIEndpointRef hpsjam_midi_output_endpoint;
+
 static OSStatus
 hpsjam_device_notification(AudioDeviceID,
     uint32_t,
@@ -61,6 +68,85 @@ hpsjam_device_notification(AudioDeviceID,
 
 	}
 	return (noErr);
+}
+
+static void
+hpsjam_midi_read_event(const MIDIPacketList * pktList, void *refCon, void *connRefCon)
+{
+	QMutexLocker lock(&hpsjam_client_peer->lock);
+
+	/* Only buffer up MIDI data when connected. */
+	if (hpsjam_client_peer->address.valid()) {
+		const MIDIPacket *packet = &pktList->packet[0];
+
+		for (unsigned n = 0; n != pktList->numPackets; n++) {
+			hpsjam_default_midi[0].addData(packet->data, packet->length);
+			packet = MIDIPacketNext(packet);
+		}
+	}
+}
+
+static void
+hpsjam_midi_write_event(void)
+{
+	uint8_t mbuf[4] = {};
+	MIDIPacketList pktList;
+	MIDIPacket *pkt;
+	int len;
+
+	if (hpsjam_midi_client == 0)
+		return;
+
+	while (1) {
+		len = hpsjam_client_peer->midi_process(mbuf);
+		if (len < 1)
+			break;
+		pkt = MIDIPacketListInit(&pktList);
+		pkt = MIDIPacketListAdd(&pktList, sizeof(pktList),
+		    pkt, (MIDITimeStamp)mach_absolute_time(), len, mbuf);
+		MIDIReceived(hpsjam_midi_output_endpoint, &pktList);
+	}
+}
+
+static void
+hpsjam_midi_notify(const MIDINotification *message, void *refCon)
+{
+}
+
+static CFStringRef
+hpsjam_midi_create_cfstr(const char *str)
+{
+	return (CFStringCreateWithCString(kCFAllocatorDefault,
+	    str, kCFStringEncodingMacRoman));
+}
+
+Q_DECL_EXPORT void
+hpsjam_midi_init(const char *name)
+{
+	char devname[64];
+
+	/* Check if already initialized. */
+	if (hpsjam_midi_client != 0 || name == 0)
+		return;
+
+	MIDIClientCreate(hpsjam_midi_create_cfstr(name),
+	    &hpsjam_midi_notify, NULL, &hpsjam_midi_client);
+
+	/* Check if failure. */
+	if (hpsjam_midi_client == 0)
+		return;
+
+	snprintf(devname, sizeof(devname), "%s_output", name);
+
+	MIDISourceCreate(hpsjam_midi_client,
+	    hpsjam_midi_create_cfstr(devname),
+	    &hpsjam_midi_output_endpoint);
+
+	snprintf(devname, sizeof(devname), "%s_input", name);
+
+	MIDIInputPortCreate(hpsjam_midi_client,
+	    hpsjam_midi_create_cfstr(name), &hpsjam_midi_read_event,
+	    0, &hpsjam_midi_input_port);
 }
 
 static OSStatus
@@ -117,6 +203,9 @@ hpsjam_audio_callback(AudioDeviceID deviceID,
 
 		hpsjam_client_peer->sound_process(audioInputBuffer[0],
 		    audioInputBuffer[1], audioBufferSamples);
+
+		/* Move MIDI data, if any */
+		hpsjam_midi_write_event();
 
 		/* check for mono output */
 		if (audioInputSelection[0] == audioInputSelection[1]) {
