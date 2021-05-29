@@ -55,7 +55,7 @@ static QString audioInputDeviceName;
 static QString audioOutputDeviceName;
 
 static MIDIClientRef hpsjam_midi_client;
-static MIDIPortRef hpsjam_midi_input_port;
+static MIDIEndpointRef hpsjam_midi_input_endpoint;
 static MIDIEndpointRef hpsjam_midi_output_endpoint;
 
 static OSStatus
@@ -144,9 +144,9 @@ hpsjam_midi_init(const char *name)
 
 	snprintf(devname, sizeof(devname), "%s_input", name);
 
-	MIDIInputPortCreate(hpsjam_midi_client,
+	MIDIDestinationCreate(hpsjam_midi_client,
 	    hpsjam_midi_create_cfstr(name), &hpsjam_midi_read_event,
-	    0, &hpsjam_midi_input_port);
+	    0, &hpsjam_midi_input_endpoint);
 }
 
 static OSStatus
