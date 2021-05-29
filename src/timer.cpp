@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -155,7 +155,8 @@ static QWaitCondition hpsjam_execute_wait[2];
 static void *
 hpsjam_execute_thread(void *arg)
 {
-	const uint64_t mask = 1ULL << ((long)arg);
+	const unsigned shift = (unsigned)((uint8_t *)arg - (uint8_t *)0);
+	const uint64_t mask = 1ULL << shift;
 
 	hpsjam_execute_mtx.lock();
 
@@ -164,7 +165,7 @@ hpsjam_execute_thread(void *arg)
 			hpsjam_execute_wait[0].wait(&hpsjam_execute_mtx);
 		hpsjam_execute_mtx.unlock();
 
-		hpsjam_execute_callback((long)arg);
+		hpsjam_execute_callback(shift);
 
 		hpsjam_execute_mtx.lock();
 		hpsjam_execute_pending &= ~mask;
@@ -208,7 +209,7 @@ hpsjam_timer_init()
 
 	/* create additional worker threads, if any */
 	for (unsigned x = 1; x != hpsjam_num_cpu; x++) {
-		ret = pthread_create(&pt, 0, &hpsjam_execute_thread, (void *)(long)x);
+		ret = pthread_create(&pt, 0, &hpsjam_execute_thread, (void *)(((uint8_t *)0) + x));
 		assert(ret == 0);
 	}
 }
