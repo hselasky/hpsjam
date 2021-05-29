@@ -145,7 +145,7 @@ hpsjam_midi_init(const char *name)
 	snprintf(devname, sizeof(devname), "%s_input", name);
 
 	MIDIDestinationCreate(hpsjam_midi_client,
-	    hpsjam_midi_create_cfstr(name), &hpsjam_midi_read_event,
+	    hpsjam_midi_create_cfstr(devname), &hpsjam_midi_read_event,
 	    0, &hpsjam_midi_input_endpoint);
 }
 
