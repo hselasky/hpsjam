@@ -19,6 +19,7 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
   in 32-bit stereo WAV-file format to disk or other programs. Supported for
   both client and server.</li>
   <li>server and mixer access can be password protected.</li>
+  <li>low latency MIDI event routing</li>
 </ul>
 
 ## How to build
