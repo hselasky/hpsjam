@@ -1163,10 +1163,7 @@ hpsjam_server_get_audio(unsigned rem)
 	uint8_t temp[hpsjam_midi_buffer::MIDI_BUFFER_MAX];
 	size_t num;
 
-	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
-		if ((x % hpsjam_num_cpu) != rem)
-			continue;
-
+	for (unsigned x = rem; x < hpsjam_num_server_peers; x += hpsjam_num_cpu) {
 		class hpsjam_server_peer &peer = hpsjam_server_peers[x];
 
 		/* export audio from data buffer, if any */
@@ -1190,21 +1187,15 @@ hpsjam_server_get_audio(unsigned rem)
 static void
 hpsjam_server_audio_mixing(unsigned rem)
 {
-	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
-		if ((x % hpsjam_num_cpu) != rem)
-			continue;
+	for (unsigned x = rem; x < hpsjam_num_server_peers; x += hpsjam_num_cpu)
 		hpsjam_server_peers[x].audio_mixing();
-	}
 }
 
 static void
 hpsjam_server_audio_import(unsigned rem)
 {
-	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
-		if ((x % hpsjam_num_cpu) != rem)
-			continue;
+	for (unsigned x = rem; x < hpsjam_num_server_peers; x += hpsjam_num_cpu)
 		hpsjam_server_peers[x].audio_import();
-	}
 }
 
 Q_DECL_EXPORT void
