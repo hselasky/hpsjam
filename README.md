@@ -85,4 +85,5 @@ HPS JAM does not collect any information from its users.
   <li>Linux</li>
   <li>MacOSX <A HREF="http://home.selasky.org/privat/HpsJam.dmg">Binary build here</A> (Use Safari to download)</li>
   <li>Windows (64-bit) <A HREF="http://home.selasky.org/privat/hpsjam-binary-win64.zip">Binary build here</A></li>
+  <li>Raspberry-Pi <A HREF="https://github.com/kdoren/jambox-pi-gen">JamBox</A></li>
 </ul>
