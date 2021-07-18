@@ -254,6 +254,6 @@ extern hpsjam_midi_buffer *hpsjam_default_midi;
 extern void hpsjam_cli_process(const struct hpsjam_socket_address &, const char *, size_t);
 extern void hpsjam_peer_receive(const struct hpsjam_socket_address &,
     const union hpsjam_frame &);
-extern void hpsjam_server_tick();
+extern bool hpsjam_server_tick();
 
 #endif		/* _HPSJAM_PEER_H_ */

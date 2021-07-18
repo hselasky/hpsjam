@@ -1198,9 +1198,11 @@ hpsjam_server_audio_import(unsigned rem)
 		hpsjam_server_peers[x].audio_import();
 }
 
-Q_DECL_EXPORT void
+Q_DECL_EXPORT bool
 hpsjam_server_tick()
 {
+	bool retval = false;
+
 	/* reset timer adjustment */
 	memset(hpsjam_server_adjust, 0, sizeof(hpsjam_server_adjust));
 
@@ -1265,6 +1267,17 @@ hpsjam_server_tick()
 	} else {
 		hpsjam_timer_adjust = -1;	/* go faster */
 	}
+
+	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+		hpsjam_server_peer &peer = hpsjam_server_peers[x];
+
+		QMutexLocker locker(&peer.lock);
+		if (peer.valid) {
+			retval = true;
+			break;
+		}
+	}
+	return (retval);
 }
 
 void
