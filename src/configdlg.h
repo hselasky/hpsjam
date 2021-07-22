@@ -107,6 +107,8 @@ public:
 		connect(&s_output_right, SIGNAL(valueChanged(int)), this, SLOT(handle_toggle_output_right(int)));
 
 		connect(&b_toggle_buffer_samples, SIGNAL(released()), this, SLOT(handle_toggle_buffer_samples()));
+
+		handle_toggle_buffer_samples(0);
 	};
 	QGridLayout gl;
 	QPushButton b_toggle_input_device;
