@@ -235,6 +235,7 @@ HpsJamClient :: saveSettings()
 	settings.setValue("output_left", w_config->audio_dev.handle_toggle_output_left(-1));
 	settings.setValue("input_right", w_config->audio_dev.handle_toggle_input_right(-1));
 	settings.setValue("output_right", w_config->audio_dev.handle_toggle_output_right(-1));
+	settings.setValue("buffer_samples", w_config->audio_dev.handle_toggle_buffer_samples(0));
 	settings.endGroup();
 }
 
@@ -264,6 +265,7 @@ HpsJamClient :: loadSettings()
 	output_left = settings.value("config/output_left", QString("-1")).toInt();
 	input_right = settings.value("config/input_right", QString("-1")).toInt();
 	output_right = settings.value("config/output_right", QString("-1")).toInt();
+	buffer_samples = settings.value("config/buffer_samples", QString("96")).toInt();
 }
 
 void

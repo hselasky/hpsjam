@@ -52,7 +52,8 @@ public:
 #else
 	    b_toggle_input_device(tr("Toggle input device")),
 #endif
-	    b_toggle_output_device(tr("Toggle output device")) {
+	    b_toggle_output_device(tr("Toggle output device")),
+	    b_toggle_buffer_samples(tr("Toggle buffer size")) {
 		setTitle("Audio device configuration");
 
 		s_input_left.setAccessibleDescription("Set left input channel index");
@@ -77,6 +78,9 @@ public:
 		gl.addWidget(&s_output_left, 1,1);
 		gl.addWidget(&s_output_right, 1,2);
 		gl.addWidget(&l_output, 1,3);
+
+		gl.addWidget(&b_toggle_buffer_samples, 2,0);
+		gl.addWidget(&l_buffer_samples, 2,1,1,3);
 #endif
 
 #if defined(HAVE_ASIO_AUDIO)
@@ -87,6 +91,9 @@ public:
 
 		gl.addWidget(&s_output_left, 1,1);
 		gl.addWidget(&s_output_right, 1,2);
+
+		gl.addWidget(&b_toggle_buffer_samples, 2,0);
+		gl.addWidget(&l_buffer_samples, 2,1,1,3);
 #endif
 		gl.setColumnStretch(3,1);
 
@@ -98,6 +105,8 @@ public:
 
 		connect(&s_input_right, SIGNAL(valueChanged(int)), this, SLOT(handle_toggle_input_right(int)));
 		connect(&s_output_right, SIGNAL(valueChanged(int)), this, SLOT(handle_toggle_output_right(int)));
+
+		connect(&b_toggle_buffer_samples, SIGNAL(released()), this, SLOT(handle_toggle_buffer_samples()));
 	};
 	QGridLayout gl;
 	QPushButton b_toggle_input_device;
@@ -108,6 +117,8 @@ public:
 	QSpinBox s_output_right;
 	QLabel l_input;
 	QLabel l_output;
+	QPushButton b_toggle_buffer_samples;
+	QLabel l_buffer_samples;
 
 	void refreshStatus();
 
@@ -118,6 +129,7 @@ public slots:
 	int handle_toggle_output_left(int);
 	int handle_toggle_input_right(int);
 	int handle_toggle_output_right(int);
+	int handle_toggle_buffer_samples(int = -1);
 };
 
 class HpsJamConfigFormat : public QGroupBox {

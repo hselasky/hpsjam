@@ -120,6 +120,31 @@ HpsJamDeviceSelection :: handle_toggle_output_right(int value)
 #endif
 }
 
+int
+HpsJamDeviceSelection :: handle_toggle_buffer_samples(int value)
+{
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
+	if (value == -1) {
+		value = hpsjam_sound_toggle_buffer_samples(-1);
+		if (value <= 64)
+			value = 96;
+		else if (value <= 96)
+			value = 128;
+		else
+			value = 64;
+		value = hpsjam_sound_toggle_buffer_samples(value);
+	} else if (value == 0) {
+		value = hpsjam_sound_toggle_buffer_samples(-1);
+	} else {
+		value = hpsjam_sound_toggle_buffer_samples(value);
+	}
+	l_buffer_samples.setText(QString("%1 samples").arg(value));
+	return (value);
+#else
+	return (-1);
+#endif
+}
+
 void
 HpsJamDeviceSelection :: refreshStatus()
 {

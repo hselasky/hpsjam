@@ -34,6 +34,7 @@
 #define	HPSJAM_CHANNELS 2
 #define	HPSJAM_SAMPLE_BYTES 4 /* 32-bit audio */
 #define	HPSJAM_DEF_SAMPLES (HPSJAM_SAMPLE_RATE / 1000)
+#define	HPSJAM_MAX_BUFFER_SAMPLES 512
 #define	HPSJAM_NOM_SAMPLES ((3 * HPSJAM_SAMPLE_RATE) / (2 * 1000))
 #define	HPSJAM_WINDOW_TITLE "HPS Online Jamming"
 #define	HPSJAM_VERSION_STRING "v1.0.15"
@@ -94,6 +95,7 @@ extern void hpsjam_midi_init(const char *);
 /* sound APIs */
 extern bool hpsjam_sound_init(const char *, bool);
 extern void hpsjam_sound_uninit();
+extern int hpsjam_sound_toggle_buffer_samples(int);
 extern int hpsjam_sound_toggle_input_device(int);
 extern int hpsjam_sound_toggle_output_device(int);
 extern int hpsjam_sound_toggle_input_channel(int, int);

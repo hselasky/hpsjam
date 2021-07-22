@@ -87,6 +87,7 @@ static const struct option hpsjam_opts[] = {
 	{ "audio-output-left", required_argument, NULL, 'L'},
 	{ "audio-input-right", required_argument, NULL, 'r'},
 	{ "audio-output-right", required_argument, NULL, 'R'},
+	{ "audio-buffer-samples", required_argument, NULL, 'b'},
 	{ "midi-port-name", required_argument, NULL, 'n'},
 #endif
 #ifdef HAVE_JACK_AUDIO
@@ -131,6 +132,7 @@ usage(void)
 		"	[--audio-output-left <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-input-right <0,1,2,3 ... , Default is 1>] \\\n"
 		"	[--audio-output-right <0,1,2,3 ... , Default is 1>] \\\n"
+		"	[--audio-buffer-samples <Default is 96>] \\\n"
 		"	[--midi-port-name <name>, Default is hpsjam] \\\n"
 #endif
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
@@ -148,7 +150,7 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	static const char hpsjam_short_opts[] = {
-	    "M:q:p:sP:hBJ:n:K:w:N:i:j:c:U:D:I:O:l:L:r:R:t:T:"
+	    "M:q:p:sP:hBJ:n:K:w:N:i:j:c:U:D:I:O:l:L:r:R:t:T:b:"
 	};
 	int c;
 	int port = HPSJAM_DEFAULT_PORT;
@@ -171,6 +173,7 @@ main(int argc, char **argv)
 	int output_left = -1;
 	int input_right = -1;
 	int output_right = -1;
+	int buffer_samples = -1;
 #endif
 
 	while ((c = getopt_long_only(argc, argv, hpsjam_short_opts, hpsjam_opts, NULL)) != -1) {
@@ -267,6 +270,12 @@ main(int argc, char **argv)
 			if (output_right < 0)
 				usage();
 			break;
+		case 'b':
+			buffer_samples = atoi(optarg);
+			if (buffer_samples < 1 ||
+			    buffer_samples > HPSJAM_MAX_BUFFER_SAMPLES)
+				usage();
+			break;
 #endif
 #ifndef _WIN32
 		case 'B':
@@ -354,6 +363,8 @@ main(int argc, char **argv)
 			input_right = hpsjam_client->input_right;
 		if (output_right < 0)
 			output_right = hpsjam_client->output_right;
+		if (buffer_samples < 0)
+			buffer_samples = hpsjam_client->buffer_samples;
 #endif
 
 #ifdef HAVE_JACK_AUDIO
@@ -385,6 +396,8 @@ main(int argc, char **argv)
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio output device"));
 		}
+		if (buffer_samples > 0)
+			hpsjam_client->w_config->audio_dev.handle_toggle_buffer_samples(buffer_samples);
 		if (output_left > -1)
 			hpsjam_client->w_config->audio_dev.handle_toggle_output_left(output_left + 1);
 		if (output_right > -1)
@@ -412,6 +425,8 @@ main(int argc, char **argv)
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot find the specified audio device"));
 		}
+		if (buffer_samples > 0)
+			hpsjam_client->w_config->audio_dev.handle_toggle_buffer_samples(buffer_samples);
 		if (output_left > -1)
 			hpsjam_client->w_config->audio_dev.handle_toggle_output_left(output_left + 1);
 		if (output_right > -1)

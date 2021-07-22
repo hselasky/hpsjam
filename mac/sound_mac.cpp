@@ -41,6 +41,7 @@ static AudioDeviceID audioOutputDevice;
 static AudioDeviceIOProcID audioInputProcID;
 static AudioDeviceIOProcID audioOutputProcID;
 static bool audioInit;
+static uint32_t audioBufferDefSamples = 2 * HPSJAM_DEF_SAMPLES;
 static uint32_t audioBufferSamples;
 static uint32_t audioInputChannels;
 static uint32_t audioOutputChannels;
@@ -240,7 +241,7 @@ error:
 }
 
 static uint32_t
-hpsjam_set_buffer_size(AudioDeviceID & audioDeviceID,
+hpsjam_set_buffer_samples(AudioDeviceID & audioDeviceID,
     uint32_t mScope, uint32_t nframes)
 {
 	AudioObjectPropertyAddress address = {};
@@ -453,26 +454,22 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	AudioObjectGetPropertyData(audioOutputDevice, &address, 0, 0, &size, &cfstring);
 	audioOutputDeviceName = QString::fromCFString(cfstring);
 
-	frameSize = hpsjam_set_buffer_size(audioInputDevice,
-	    kAudioDevicePropertyScopeInput, 2 * HPSJAM_DEF_SAMPLES);
+	uint32_t defSamples[4] = {
+		audioBufferDefSamples,
+		2 * HPSJAM_DEF_SAMPLES,
+		64,
+		128
+	};
 
-	/* try different buffer sizes before giving up */
-	if (hpsjam_set_buffer_size(audioOutputDevice,
-	    kAudioDevicePropertyScopeOutput, frameSize) != frameSize) {
+	for (unsigned x = 0;; x++) {
+		if (x == 4)
+			return (true);
+		frameSize = hpsjam_set_buffer_samples(audioInputDevice,
+		    kAudioDevicePropertyScopeInput, defSamples[x]);
 
-		frameSize = hpsjam_set_buffer_size(audioInputDevice,
-		    kAudioDevicePropertyScopeInput, 64);
-
-		if (hpsjam_set_buffer_size(audioOutputDevice,
-		    kAudioDevicePropertyScopeOutput, frameSize) != frameSize) {
-
-			frameSize = hpsjam_set_buffer_size(audioInputDevice,
-			    kAudioDevicePropertyScopeInput, 128);
-
-			if (hpsjam_set_buffer_size(audioOutputDevice,
-			    kAudioDevicePropertyScopeOutput, frameSize) != frameSize)
-				return (true);
-		}
+		if (hpsjam_set_buffer_samples(audioOutputDevice,
+		    kAudioDevicePropertyScopeOutput, frameSize) == frameSize)
+			break;
 	}
 
 	audioBufferSamples = frameSize;
@@ -693,4 +690,17 @@ hpsjam_sound_get_output_status(QString &status)
 		    .arg(adev)
 		    .arg(audioOutputDeviceName);
 	}
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_buffer_samples(int value)
+{
+	if (value > 0 || value <= HPSJAM_MAX_BUFFER_SAMPLES) {
+		if (audioBufferDefSamples != (uint32_t)value) {
+			audioBufferDefSamples = value;
+			hpsjam_sound_uninit();
+			hpsjam_sound_init(0,0);
+		}
+	}
+	return (audioBufferDefSamples);
 }

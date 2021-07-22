@@ -98,6 +98,7 @@ public:
 	int output_left;
 	int input_right;
 	int output_right;
+	int buffer_samples;
 
 	void loadSettings();
 	void saveSettings();

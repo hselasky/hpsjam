@@ -36,7 +36,6 @@
 
 #define	MAX_CHANNELS 128
 #define	MAX_DRIVERS 16
-#define	MAX_SAMPLES (2 * HPSJAM_DEF_SAMPLES)
 
 extern AsioDrivers * asioDrivers;
 extern bool loadAsioDriver(char *name);
@@ -48,6 +47,7 @@ static ASIOCallbacks audioCallbacks;
 static bool audioPostOutput;
 static bool audioInit;
 static uint32_t audioBufferSamples;
+static uint32_t audioBufferDefSamples = 2 * HPSJAM_DEF_SAMPLES;
 static unsigned audioInputSelection[2];
 static unsigned audioOutputSelection[2];
 static long audioInputChannels;
@@ -543,8 +543,8 @@ hpsjam_asio_get_buffer_size()
 	/* range check arguments */
 	if (lGranularity <= 0)
 		lGranularity = 1;
-	if (lMaxSize > MAX_SAMPLES)
-		lMaxSize = MAX_SAMPLES;
+	if (lMaxSize > (long)audioBufferDefSamples)
+		lMaxSize = (long)audioBufferDefSamples;
 	if (lMinSize <= 0)
 		lMinSize = lGranularity;
 
@@ -781,4 +781,17 @@ Q_DECL_EXPORT void
 hpsjam_sound_get_output_status(QString &status)
 {
 	status = "";
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_buffer_samples(int value)
+{
+	if (value > 0 || value <= HPSJAM_MAX_BUFFER_SAMPLES) {
+		if (audioBufferDefSamples != (uint32_t)value) {
+			audioBufferDefSamples = value;
+			hpsjam_sound_uninit();
+			hpsjam_sound_init(0,0);
+		}
+	}
+	return (audioBufferDefSamples);
 }
