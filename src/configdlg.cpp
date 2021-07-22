@@ -124,7 +124,7 @@ int
 HpsJamDeviceSelection :: handle_toggle_buffer_samples(int value)
 {
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
-	if (value == -1) {
+	if (value < 0) {
 		value = hpsjam_sound_toggle_buffer_samples(-1);
 		if (value <= 64)
 			value = 96;

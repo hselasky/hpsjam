@@ -695,7 +695,7 @@ hpsjam_sound_get_output_status(QString &status)
 Q_DECL_EXPORT int
 hpsjam_sound_toggle_buffer_samples(int value)
 {
-	if (value > 0 || value <= HPSJAM_MAX_BUFFER_SAMPLES) {
+	if (value > 0 && value <= HPSJAM_MAX_BUFFER_SAMPLES) {
 		if (audioBufferDefSamples != (uint32_t)value) {
 			audioBufferDefSamples = value;
 			hpsjam_sound_uninit();
