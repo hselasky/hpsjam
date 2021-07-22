@@ -145,7 +145,7 @@ public:
 			if (x == 0)
 				gl.addWidget(b + x, 0, 0);
 			else
-				gl.addWidget(b + x, 1 + ((x - 1) / 4), (x - 1) % 4);
+				gl.addWidget(b + x, (x - 1) / 4, ((x - 1) % 4) + 1);
 		}
 		format = hpsjam_audio_format[1].format;
 		selection = 1;
