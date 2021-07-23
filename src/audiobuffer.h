@@ -163,7 +163,11 @@ public:
 		}
 
 		/* keep track of low water mark */
-		const uint8_t index = (total - num) / HPSJAM_DEF_SAMPLES;
+		uint8_t index = (total - num) / HPSJAM_DEF_SAMPLES;
+
+		/* shouldn't trigger, but just in case */
+		if (index > (HPSJAM_SEQ_MAX * 2 - 1))
+			index = (HPSJAM_SEQ_MAX * 2 - 1);
 
 		stats[index] += 1.0f;
 
