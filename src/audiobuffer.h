@@ -150,9 +150,10 @@ public:
 	/* remove samples from buffer, must be called periodically */
 	void remSamples(float *dst, size_t num) {
 		size_t fwd = HPSJAM_MAX_SAMPLES - consumer;
+		bool underrun = (num > total);
 
 		/* fill missing samples with last value */
-		if (total < num) {
+		if (underrun) {
 			for (size_t x = total; x != num; x++) {
 				last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
 				dst[x] = last_sample;
@@ -198,6 +199,19 @@ public:
 			} else {
 				assert(num == 0);
 				break;
+			}
+		}
+
+		/*
+		 * Fill in some samples on underrun, to avoid
+		 * multiple jitters:
+		 */
+		if (underrun) {
+			while (total < HPSJAM_DEF_SAMPLES) {
+				const size_t producer = (consumer + total) % HPSJAM_MAX_SAMPLES;
+				last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
+				samples[producer] = last_sample;
+				total++;
 			}
 		}
 	};
