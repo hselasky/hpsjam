@@ -171,7 +171,7 @@ public:
 
 		stats[index] += 1.0f;
 
-		if (stats[index] >= 64.0f) {
+		if (stats[index] >= 256.0f) {
 			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++)
 				stats[x] /= 2.0f;
 
