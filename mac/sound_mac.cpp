@@ -690,14 +690,14 @@ hpsjam_sound_rescan()
 
 	/* get list of audio device IDs */
 	audioDeviceID = new AudioDeviceID[audioDevicesMax];
-	size = sizeof(audioDeviceId[0]) * audioDevicesMax;
+	size = sizeof(audioDeviceID[0]) * audioDevicesMax;
 
 	AudioObjectGetPropertyData(kAudioObjectSystemObject,
 	    &address, 0, 0, &size, audioDeviceID);
 
 	audioDevicesMax++;
 	audioDeviceDescription = new QString [audioDevicesMax];
-	audioDeviceDescription[0] = QString(tr("Default"));
+	audioDeviceDescription[0] = QString("Default");
 
 	address.mScope = kAudioObjectPropertyScopeGlobal;
 	address.mSelector = kAudioObjectPropertyName;
