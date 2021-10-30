@@ -1123,10 +1123,13 @@ hpsjam_server_peer :: send_mixer_parameters()
 	}
 
 	for (unsigned index = 0; index < hpsjam_num_server_peers; index++) {
+		if (index == serverID())
+			continue;
+
 		hpsjam_server_peer &peer = hpsjam_server_peers[index];
 		QMutexLocker locker(&peer.lock);
 
-		if (peer.eq_size == 0)
+		if (peer.valid == false || peer.eq_size == 0)
 			continue;
 		pres = new struct hpsjam_packet_entry;
 		pres->packet.setFaderData(0, index, peer.eq_data, peer.eq_size);
