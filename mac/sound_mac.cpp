@@ -412,7 +412,7 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 
 	switch (audioOutputDeviceSelection) {
 	case 0:
-		size = sizeof(AudioDeviceID);
+		size = sizeof(AudioDeviceID[0]);
 		address.mSelector = kAudioHardwarePropertyDefaultOutputDevice;
 
 		if (AudioObjectGetPropertyData(kAudioObjectSystemObject,
@@ -680,7 +680,7 @@ hpsjam_sound_rescan()
 	AudioObjectGetPropertyDataSize(kAudioObjectSystemObject,
 	    &address, 0, 0, &size);
 
-	audioDevicesMax = size / sizeof(AudioDeviceID);
+	audioDevicesMax = size / sizeof(AudioDeviceID[0]);
 
 	delete [] audioDeviceDescription;
 	audioDeviceDescription = 0;
