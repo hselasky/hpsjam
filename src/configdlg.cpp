@@ -75,13 +75,13 @@ HpsJamDeviceSelection :: handle_rescan_device(bool forced)
 		b_output_device.addItem(name);
 	}
 
-	if (max > 0 && in_index > -1) {
+	if (max > 0 && in_index > -1 && in_index < max) {
 		HPSJAM_NO_SIGNAL(b_input_device,setCurrentIndex(in_index));
 		if (forced)
 			hpsjam_sound_set_input_device(in_index);
 	}
 
-	if (max > 0 && out_index > -1) {
+	if (max > 0 && out_index > -1 && out_index < max) {
 		HPSJAM_NO_SIGNAL(b_output_device,setCurrentIndex(out_index));
 		if (forced)
 			hpsjam_sound_set_output_device(out_index);
