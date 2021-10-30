@@ -38,7 +38,7 @@
 
 static uint32_t audioDevicesMax;
 static QString *audioDeviceDescription;
-static AudioDeviceID *audioDeviceID;
+static AudioDeviceID *audioDevicesID;
 
 static AudioDeviceID audioOutputDevice;
 static AudioDeviceID audioInputDevice;
@@ -406,13 +406,13 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	default:
 		if ((audioInputDeviceSelection - 1) >= audioDevicesMax)
 			return (true);
-		audioInputDevice = audioDeviceID[audioInputDeviceSelection - 1];
+		audioInputDevice = audioDevicesID[audioInputDeviceSelection - 1];
 		break;
 	}
 
 	switch (audioOutputDeviceSelection) {
 	case 0:
-		size = sizeof(AudioDeviceID[0]);
+		size = sizeof(audioOutputDevice);
 		address.mSelector = kAudioHardwarePropertyDefaultOutputDevice;
 
 		if (AudioObjectGetPropertyData(kAudioObjectSystemObject,
@@ -422,7 +422,7 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	default:
 		if ((audioOutputDeviceSelection - 1) >= audioDevicesMax)
 			return (true);
-		audioOutputDevice = audioDeviceID[audioOutputDeviceSelection - 1];
+		audioOutputDevice = audioDevicesID[audioOutputDeviceSelection - 1];
 		break;
 	}
 
@@ -680,23 +680,23 @@ hpsjam_sound_rescan()
 	AudioObjectGetPropertyDataSize(kAudioObjectSystemObject,
 	    &address, 0, 0, &size);
 
-	audioDevicesMax = size / sizeof(AudioDeviceID[0]);
+	audioDevicesMax = size / sizeof(AudioDeviceID);
 
 	delete [] audioDeviceDescription;
 	audioDeviceDescription = 0;
 
-	delete [] audioDeviceID;
-	audioDeviceID = 0;
+	delete [] audioDevicesID;
+	audioDevicesID = 0;
 
 	if (audioDevicesMax == 0)
 		return;
 
 	/* get list of audio device IDs */
-	audioDeviceID = new AudioDeviceID[audioDevicesMax];
-	size = sizeof(audioDeviceID[0]) * audioDevicesMax;
+	audioDevicesID = new AudioDeviceID[audioDevicesMax];
+	size = sizeof(audioDeviceID) * audioDevicesMax;
 
 	AudioObjectGetPropertyData(kAudioObjectSystemObject,
-	    &address, 0, 0, &size, audioDeviceID);
+	    &address, 0, 0, &size, audioDevicesID);
 
 	audioDevicesMax++;
 	audioDeviceDescription = new QString [audioDevicesMax];
@@ -709,7 +709,7 @@ hpsjam_sound_rescan()
 	for (uint32_t x = 1; x != audioDevicesMax; x++) {
 		cfstring = 0;
 		size = sizeof(CFStringRef);
-		AudioObjectGetPropertyData(audioDeviceID[x - 1],
+		AudioObjectGetPropertyData(audioDevicesID[x - 1],
 		    &address, 0, 0, &size, &cfstring);
 		audioDeviceDescription[x] = QString::fromCFString(cfstring);
 	}
