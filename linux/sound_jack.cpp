@@ -241,25 +241,25 @@ hpsjam_sound_uninit()
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_input_device(int)
+hpsjam_sound_set_input_device(int)
 {
 	return (0);
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_output_device(int)
+hpsjam_sound_set_output_device(int)
 {
 	return (0);
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_input_channel(int ch, int)
+hpsjam_sound_set_input_channel(int ch, int)
 {
 	return (ch);
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_output_channel(int ch, int)
+hpsjam_sound_set_output_channel(int ch, int)
 {
 	return (ch);
 }
@@ -286,4 +286,28 @@ Q_DECL_EXPORT void
 hpsjam_sound_get_output_status(QString &status)
 {
 	status = "Default audio output device";
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_toggle_buffer_samples(int)
+{
+	return (-1);
+}
+
+Q_DECL_EXPORT void
+hpsjam_sound_rescan()
+{
+
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_max_devices()
+{
+	return (1);
+}
+
+Q_DECL_EXPORT QString
+hpsjam_sound_get_device_name(int)
+{
+	return (QString("JACK"));
 }

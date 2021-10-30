@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +34,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QSpinBox>
+#include <QComboBox>
 
 struct hpsjam_audio_format {
 	uint8_t format;
@@ -47,13 +48,10 @@ class HpsJamDeviceSelection : public QGroupBox {
 	Q_OBJECT;
 public:
 	HpsJamDeviceSelection() : gl(this),
-#if defined(HAVE_ASIO_AUDIO)
-	    b_toggle_input_device(tr("Toggle device")),
-#else
-	    b_toggle_input_device(tr("Toggle input device")),
-#endif
-	    b_toggle_output_device(tr("Toggle output device")),
-	    b_toggle_buffer_samples(tr("Toggle buffer size")) {
+	    b_input_device(),
+	    b_output_device(),
+	    b_toggle_buffer_samples(tr("Toggle buffer size")),
+	    b_rescan_device("Rescan devices") {
 		setTitle("Audio device configuration");
 
 		s_input_left.setAccessibleDescription("Set left input channel index");
@@ -68,69 +66,66 @@ public:
 		s_output_right.setAccessibleDescription("Set right output channel index");
 		s_output_right.setPrefix(QString("R-OUT "));
 
-#if defined(HAVE_MAC_AUDIO)
-		gl.addWidget(&b_toggle_input_device, 0,0);
+		gl.addWidget(&b_input_device, 0,0);
 		gl.addWidget(&s_input_left, 0,1);
 		gl.addWidget(&s_input_right, 0,2);
 		gl.addWidget(&l_input, 0,3);
 
-		gl.addWidget(&b_toggle_output_device, 1,0);
+#if !defined(HAVE_ASIO_AUDIO)
+		gl.addWidget(&b_output_device, 1,0);
+#endif
 		gl.addWidget(&s_output_left, 1,1);
 		gl.addWidget(&s_output_right, 1,2);
+
+#if !defined(HAVE_ASIO_AUDIO)
 		gl.addWidget(&l_output, 1,3);
-
-		gl.addWidget(&b_toggle_buffer_samples, 2,0);
-		gl.addWidget(&l_buffer_samples, 2,1,1,3);
 #endif
 
-#if defined(HAVE_ASIO_AUDIO)
-		gl.addWidget(&b_toggle_input_device, 0,0);
-		gl.addWidget(&s_input_left, 0,1);
-		gl.addWidget(&s_input_right, 0,2);
-		gl.addWidget(&l_input, 0,3,2,1);
+		gl.addWidget(&b_toggle_buffer_samples, 2,1);
+		gl.addWidget(&l_buffer_samples, 2,2,1,2);
+		gl.addWidget(&b_rescan_device, 2,0,1,1);
 
-		gl.addWidget(&s_output_left, 1,1);
-		gl.addWidget(&s_output_right, 1,2);
-
-		gl.addWidget(&b_toggle_buffer_samples, 2,0);
-		gl.addWidget(&l_buffer_samples, 2,1,1,3);
-#endif
 		gl.setColumnStretch(3,1);
 
-		connect(&b_toggle_input_device, SIGNAL(released()), this, SLOT(handle_toggle_input_device()));
-		connect(&b_toggle_output_device, SIGNAL(released()), this, SLOT(handle_toggle_output_device()));
+		connect(&b_input_device, SIGNAL(currentIndexChanged(int)), this, SLOT(handle_set_input_device(int)));
+		connect(&b_output_device, SIGNAL(currentIndexChanged(int)), this, SLOT(handle_set_output_device(int)));
 
-		connect(&s_input_left, SIGNAL(valueChanged(int)), this, SLOT(handle_toggle_input_left(int)));
-		connect(&s_output_left, SIGNAL(valueChanged(int)), this, SLOT(handle_toggle_output_left(int)));
+		connect(&s_input_left, SIGNAL(valueChanged(int)), this, SLOT(handle_set_input_left(int)));
+		connect(&s_output_left, SIGNAL(valueChanged(int)), this, SLOT(handle_set_output_left(int)));
 
-		connect(&s_input_right, SIGNAL(valueChanged(int)), this, SLOT(handle_toggle_input_right(int)));
-		connect(&s_output_right, SIGNAL(valueChanged(int)), this, SLOT(handle_toggle_output_right(int)));
+		connect(&s_input_right, SIGNAL(valueChanged(int)), this, SLOT(handle_set_input_right(int)));
+		connect(&s_output_right, SIGNAL(valueChanged(int)), this, SLOT(handle_set_output_right(int)));
 
 		connect(&b_toggle_buffer_samples, SIGNAL(released()), this, SLOT(handle_toggle_buffer_samples()));
+		connect(&b_rescan_device, SIGNAL(released()), this, SLOT(handle_rescan_device()));
+
+		handle_rescan_device(false);
 
 		handle_toggle_buffer_samples(0);
 	};
 	QGridLayout gl;
-	QPushButton b_toggle_input_device;
+	QComboBox b_input_device;
 	QSpinBox s_input_left;
 	QSpinBox s_input_right;
-	QPushButton b_toggle_output_device;
+	QComboBox b_output_device;
 	QSpinBox s_output_left;
 	QSpinBox s_output_right;
 	QLabel l_input;
 	QLabel l_output;
 	QPushButton b_toggle_buffer_samples;
+	QPushButton b_rescan_device;
 	QLabel l_buffer_samples;
 
 	void refreshStatus();
 
 public slots:
-	int handle_toggle_input_device(int = -1);
-	int handle_toggle_output_device(int = -1);
-	int handle_toggle_input_left(int);
-	int handle_toggle_output_left(int);
-	int handle_toggle_input_right(int);
-	int handle_toggle_output_right(int);
+	void handle_rescan_device(bool = true);
+	int handle_set_input_device(int);
+	int handle_set_output_device(int);
+	int handle_set_input_left(int);
+	int handle_set_output_left(int);
+	int handle_set_input_right(int);
+	int handle_set_output_right(int);
 	int handle_toggle_buffer_samples(int = -1);
 };
 

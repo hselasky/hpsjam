@@ -52,78 +52,89 @@ const struct hpsjam_audio_levels hpsjam_audio_levels[HPSJAM_AUDIO_LEVELS_MAX] = 
 	{ "MAX", 1.0f },
 };
 
-int
-HpsJamDeviceSelection :: handle_toggle_input_device(int value)
+void
+HpsJamDeviceSelection :: handle_rescan_device(bool forced)
 {
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
-	const int input = hpsjam_sound_toggle_input_device(value);
+	int max;
+	int in_index;
+	int out_index;
+
+	if (forced)
+		hpsjam_sound_rescan();
+
+	max = hpsjam_sound_max_devices();
+	in_index = hpsjam_sound_set_input_device(-1);
+	out_index = hpsjam_sound_set_output_device(-1);
+
+	b_input_device.clear();
+	b_output_device.clear();
+
+	for (int x = 0; x < max; x++) {
+		QString name = hpsjam_sound_get_device_name(x);
+		b_input_device.addItem(name);
+		b_output_device.addItem(name);
+	}
+
+	if (max > 0 && in_index > -1) {
+		b_input_device.setCurrentIndex(in_index);
+		if (forced)
+			hpsjam_sound_set_input_device(in_index);
+	}
+
+	if (max > 0 && out_index > -1) {
+		b_output_device.setCurrentIndex(out_index);
+		if (forced)
+			hpsjam_sound_set_output_device(out_index);
+	}
+}
+
+int
+HpsJamDeviceSelection :: handle_set_input_device(int value)
+{
+	const int input = hpsjam_sound_set_input_device(value);
 	refreshStatus();
 	return (input);
-#else
-	return (-1);
-#endif
 }
 
 int
-HpsJamDeviceSelection :: handle_toggle_input_left(int value)
+HpsJamDeviceSelection :: handle_set_input_left(int value)
 {
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
-	const int input = hpsjam_sound_toggle_input_channel(0, value - 1);
+	const int input = hpsjam_sound_set_input_channel(0, value - 1);
 	return (input);
-#else
-	return (-1);
-#endif
 }
 
 int
-HpsJamDeviceSelection :: handle_toggle_input_right(int value)
+HpsJamDeviceSelection :: handle_set_input_right(int value)
 {
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
-	const int input = hpsjam_sound_toggle_input_channel(1, value - 1);
+	const int input = hpsjam_sound_set_input_channel(1, value - 1);
 	return (input);
-#else
-	return (-1);
-#endif
 }
 
 int
-HpsJamDeviceSelection :: handle_toggle_output_device(int value)
+HpsJamDeviceSelection :: handle_set_output_device(int value)
 {
-#if defined(HAVE_MAC_AUDIO)
-	const int output = hpsjam_sound_toggle_output_device(value);
+	const int output = hpsjam_sound_set_output_device(value);
 	refreshStatus();
 	return (output);
-#else
-	return (-1);
-#endif
 }
 
 int
-HpsJamDeviceSelection :: handle_toggle_output_left(int value)
+HpsJamDeviceSelection :: handle_set_output_left(int value)
 {
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
-	const int output = hpsjam_sound_toggle_output_channel(0, value - 1);
+	const int output = hpsjam_sound_set_output_channel(0, value - 1);
 	return (output);
-#else
-	return (-1);
-#endif
 }
 
 int
-HpsJamDeviceSelection :: handle_toggle_output_right(int value)
+HpsJamDeviceSelection :: handle_set_output_right(int value)
 {
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
-	const int output = hpsjam_sound_toggle_output_channel(1, value - 1);
+	const int output = hpsjam_sound_set_output_channel(1, value - 1);
 	return (output);
-#else
-	return (-1);
-#endif
 }
 
 int
 HpsJamDeviceSelection :: handle_toggle_buffer_samples(int value)
 {
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 	if (value < 0) {
 		value = hpsjam_sound_toggle_buffer_samples(-1);
 		if (value <= 32)
@@ -140,17 +151,16 @@ HpsJamDeviceSelection :: handle_toggle_buffer_samples(int value)
 	} else {
 		value = hpsjam_sound_toggle_buffer_samples(value);
 	}
-	l_buffer_samples.setText(QString("%1 samples").arg(value));
+	if (value > -1)
+		l_buffer_samples.setText(QString("%1 samples").arg(value));
+	else
+		l_buffer_samples.setText(QString("System default buffer size"));
 	return (value);
-#else
-	return (-1);
-#endif
 }
 
 void
 HpsJamDeviceSelection :: refreshStatus()
 {
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 	QString status;
 	int ch;
 
@@ -166,26 +176,25 @@ HpsJamDeviceSelection :: refreshStatus()
 	s_output_left.setRange(1, hpsjam_sound_max_output_channel());
 	s_output_right.setRange(1, hpsjam_sound_max_output_channel());
 
-	ch = hpsjam_sound_toggle_input_channel(0, -2);
+	ch = hpsjam_sound_set_input_channel(0, -1);
 	if (ch < 0)
 		ch = 0;
 	HPSJAM_NO_SIGNAL(s_input_left,setValue(ch + 1));
 
-	ch = hpsjam_sound_toggle_input_channel(1, -2);
+	ch = hpsjam_sound_set_input_channel(1, -1);
 	if (ch < 0)
 		ch = 0;
 	HPSJAM_NO_SIGNAL(s_input_right,setValue(ch + 1));
 
-	ch = hpsjam_sound_toggle_output_channel(0, -2);
+	ch = hpsjam_sound_set_output_channel(0, -1);
 	if (ch < 0)
 		ch = 0;
 	HPSJAM_NO_SIGNAL(s_output_left,setValue(ch + 1));
 
-	ch = hpsjam_sound_toggle_output_channel(1, -2);
+	ch = hpsjam_sound_set_output_channel(1, -1);
 	if (ch < 0)
 		ch = 0;
 	HPSJAM_NO_SIGNAL(s_output_right,setValue(ch + 1));
-#endif
 }
 
 void
@@ -249,16 +258,5 @@ HpsJamConfig :: keyPressEvent(QKeyEvent *event)
 			down_fmt.b[x].animateClick();
 			return;
 		}
-	}
-
-	switch (event->key()) {
-	case Qt::Key_I:
-		audio_dev.b_toggle_input_device.animateClick();
-		break;
-	case Qt::Key_O:
-		audio_dev.b_toggle_output_device.animateClick();
-		break;
-	default:
-		break;
 	}
 }

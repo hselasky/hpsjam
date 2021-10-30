@@ -229,12 +229,12 @@ HpsJamClient :: saveSettings()
 	settings.setValue("uplink_format", w_config->up_fmt.selection);
 	settings.setValue("downlink_format", w_config->down_fmt.selection);
 	settings.setValue("mixer_cols", w_config->mixer.mixer_cols.value());
-	settings.setValue("input_device", w_config->audio_dev.handle_toggle_input_device(-2));
-	settings.setValue("output_device", w_config->audio_dev.handle_toggle_output_device(-2));
-	settings.setValue("input_left", w_config->audio_dev.handle_toggle_input_left(-1));
-	settings.setValue("output_left", w_config->audio_dev.handle_toggle_output_left(-1));
-	settings.setValue("input_right", w_config->audio_dev.handle_toggle_input_right(-1));
-	settings.setValue("output_right", w_config->audio_dev.handle_toggle_output_right(-1));
+	settings.setValue("input_device", w_config->audio_dev.handle_set_input_device(-1));
+	settings.setValue("output_device", w_config->audio_dev.handle_set_output_device(-1));
+	settings.setValue("input_left", w_config->audio_dev.handle_set_input_left(-1));
+	settings.setValue("output_left", w_config->audio_dev.handle_set_output_left(-1));
+	settings.setValue("input_right", w_config->audio_dev.handle_set_input_right(-1));
+	settings.setValue("output_right", w_config->audio_dev.handle_set_output_right(-1));
 	settings.setValue("buffer_samples", w_config->audio_dev.handle_toggle_buffer_samples(0));
 	settings.endGroup();
 }

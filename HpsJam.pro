@@ -93,6 +93,10 @@ DEFINES		+= HAVE_JACK_AUDIO
 
 }
 
+!isEmpty(WITHOUT_AUDIO) {
+SOURCES         += src/sound_dummy.cpp
+}
+
 RESOURCES	+= HpsJam.qrc
 
 TARGET		= HpsJam

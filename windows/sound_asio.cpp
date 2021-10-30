@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2021 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -565,32 +565,8 @@ hpsjam_sound_init(const char *, bool)
 	if (audioInit == true)
 		return (true);
 
-	if (audioMaxSelection == 0) {
-		static char dummy[] = { "dummy" };
-
-		for (unsigned x = 0; x != MAX_DRIVERS; x++)
-			audioDeviceNames[x] = new char[32];
-
-		loadAsioDriver(dummy);
-		audioMaxSelection = asioDrivers->getDriverNames(audioDeviceNames, MAX_DRIVERS);
-
-		asioDrivers->removeCurrentDriver();
-
-		for (unsigned x = audioMaxSelection; x != MAX_DRIVERS; x++) {
-			delete[] audioDeviceNames[x];
-			audioDeviceNames[x] = 0;
-		}
-
-		if (audioMaxSelection == 0) {
-			ASIOControlPanel();
-			return (true);
-		}
-
-		audioCallbacks.bufferSwitch = &hpsjam_asio_buffer_switch;
-		audioCallbacks.sampleRateDidChange = &hpsjam_asio_sample_rate_changed;
-		audioCallbacks.asioMessage = &hpsjam_asio_messages;
-		audioCallbacks.bufferSwitchTimeInfo = &hpsjam_asio_buffer_switch_time_info;
-	}
+	if (audioDeviceSelection >= audioMaxSelection)
+		return (true);
 
 	loadAsioDriver(audioDeviceNames[audioDeviceSelection]);
 
@@ -638,10 +614,10 @@ hpsjam_sound_init(const char *, bool)
 
 	audioInit = true;
 
-	hpsjam_sound_toggle_input_channel(0, 0);
-	hpsjam_sound_toggle_input_channel(1, 1);
-	hpsjam_sound_toggle_output_channel(0, 0);
-	hpsjam_sound_toggle_output_channel(1, 1);
+	hpsjam_sound_set_input_channel(0, 0);
+	hpsjam_sound_set_input_channel(1, 1);
+	hpsjam_sound_set_output_channel(0, 0);
+	hpsjam_sound_set_output_channel(1, 1);
 
 	ASIOStart();
 
@@ -673,47 +649,46 @@ hpsjam_sound_uninit()
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_input_device(int value)
+hpsjam_sound_set_input_device(int value)
 {
-	if (value < -1) {
+	if (value < 0) {
 		if (audioInit == false)
 			return (-1);
 		else
 			return (audioDeviceSelection);
 	}
 
+	if ((unsigned)value >= audioMaxSelection)
+		value = 0;
+
+	if ((unsigned)value == audioDeviceSelection &&
+	    audioInit == true)
+		return (value);
+
 	hpsjam_sound_uninit();
 
-	for (uint32_t x = 0; x < audioMaxSelection; x++) {
-		audioDeviceSelection++;
-		if (audioDeviceSelection >= audioMaxSelection)
-			audioDeviceSelection = 0;
-		if (value > -1 && (uint32_t)value != audioDeviceSelection)
-			continue;
-		if (hpsjam_sound_init(0,0) == false)
-			return (audioDeviceSelection);
-	}
-	return (-1);
+	audioDeviceSelection = value;
+
+	if (hpsjam_sound_init(0,0) == false)
+		return (audioDeviceSelection);
+	else
+		return (-1);
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_output_device(int value)
+hpsjam_sound_set_output_device(int value)
 {
 	/* output follows input */
 	return (-1);
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_input_channel(int ch, int which)
+hpsjam_sound_set_input_channel(int ch, int which)
 {
 	if (audioInit == false)
 		return (-1);
 
-	if (which < -1)
-		;
-	else if (which == -1)
-		audioInputSelection[ch] += 1;
-	else
+	if (which < 0)
 		audioInputSelection[ch] = which;
 
 	if (audioInputChannels != 0)
@@ -725,16 +700,12 @@ hpsjam_sound_toggle_input_channel(int ch, int which)
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_output_channel(int ch, int which)
+hpsjam_sound_set_output_channel(int ch, int which)
 {
 	if (audioInit == false)
 		return (-1);
 
-	if (which < -1)
-		;
-	else if (which == -1)
-		audioOutputSelection[ch] += 1;
-	else
+	if (which < 0)
 		audioOutputSelection[ch] = which;
 
 	if (audioOutputChannels != 0)
@@ -766,13 +737,12 @@ hpsjam_sound_max_output_channel()
 Q_DECL_EXPORT void
 hpsjam_sound_get_input_status(QString &status)
 {
-	const int adev = hpsjam_sound_toggle_input_device(-2);
+	const int adev = hpsjam_sound_set_input_device(-1);
 
 	if (adev < 0) {
 		status = "Selection of audio device failed";
 	} else {
-		status = QString("Selected audio device is %1:%2")
-		    .arg(adev)
+		status = QString("Selected audio device is %1")
 		    .arg(audioDeviceNames[adev] ? audioDeviceNames[adev] : "");
 	}
 }
@@ -794,4 +764,51 @@ hpsjam_sound_toggle_buffer_samples(int value)
 		}
 	}
 	return (audioBufferDefSamples);
+}
+
+Q_DECL_EXPORT void
+hpsjam_sound_rescan()
+{
+	static char dummy[] = { "dummy" };
+
+	if (audioMaxSelection != 0)
+		return;
+
+	for (unsigned x = 0; x != MAX_DRIVERS; x++)
+		audioDeviceNames[x] = new char[32];
+
+	loadAsioDriver(dummy);
+	audioMaxSelection = asioDrivers->getDriverNames(audioDeviceNames, MAX_DRIVERS);
+
+	asioDrivers->removeCurrentDriver();
+
+	for (unsigned x = audioMaxSelection; x < MAX_DRIVERS; x++) {
+		delete[] audioDeviceNames[x];
+		audioDeviceNames[x] = 0;
+	}
+
+	if (audioMaxSelection == 0) {
+		ASIOControlPanel();
+		return;
+	}
+
+	audioCallbacks.bufferSwitch = &hpsjam_asio_buffer_switch;
+	audioCallbacks.sampleRateDidChange = &hpsjam_asio_sample_rate_changed;
+	audioCallbacks.asioMessage = &hpsjam_asio_messages;
+	audioCallbacks.bufferSwitchTimeInfo = &hpsjam_asio_buffer_switch_time_info;
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_max_devices()
+{
+	return (audioMaxSelection);
+}
+
+Q_DECL_EXPORT QString
+hpsjam_sound_get_device_name(int index)
+{
+	if (index < 0 || (unsigned)index >= audioMaxSelection)
+		return (QString("Unknown"));
+	else
+		return (audioDeviceNames[index]);
 }

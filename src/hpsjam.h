@@ -71,6 +71,7 @@ class hpsjam_server_peer;
 class hpsjam_client_peer;
 class HpsJamClient;
 class QMutex;
+class QString;
 struct hpsjam_socket_address;
 
 extern uint64_t hpsjam_server_passwd;
@@ -93,17 +94,19 @@ extern void hpsjam_socket_init(unsigned short port, unsigned short cliport);
 extern void hpsjam_midi_init(const char *);
 
 /* sound APIs */
+extern void hpsjam_sound_rescan();
 extern bool hpsjam_sound_init(const char *, bool);
 extern void hpsjam_sound_uninit();
 extern int hpsjam_sound_toggle_buffer_samples(int);
-extern int hpsjam_sound_toggle_input_device(int);
-extern int hpsjam_sound_toggle_output_device(int);
-extern int hpsjam_sound_toggle_input_channel(int, int);
-extern int hpsjam_sound_toggle_output_channel(int, int);
+extern QString hpsjam_sound_get_device_name(int);
+extern int hpsjam_sound_set_input_device(int);
+extern int hpsjam_sound_set_output_device(int);
+extern int hpsjam_sound_set_input_channel(int, int);
+extern int hpsjam_sound_set_output_channel(int, int);
 extern int hpsjam_sound_max_input_channel();
 extern int hpsjam_sound_max_output_channel();
+extern int hpsjam_sound_max_devices();
 
-class QString;
 extern void hpsjam_sound_get_input_status(QString &);
 extern void hpsjam_sound_get_output_status(QString &);
 

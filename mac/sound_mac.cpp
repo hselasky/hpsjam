@@ -36,8 +36,12 @@
 
 #include <mach/mach_time.h>
 
-static AudioDeviceID audioInputDevice;
+static uint32_t audioDevicesMax;
+static QString *audioDeviceDescription;
+static AudioDeviceID *audioDeviceID;
+
 static AudioDeviceID audioOutputDevice;
+static AudioDeviceID audioInputDevice;
 static AudioDeviceIOProcID audioInputProcID;
 static AudioDeviceIOProcID audioOutputProcID;
 static bool audioInit;
@@ -52,8 +56,6 @@ static uint32_t audioOutputDeviceSelection;
 static uint32_t audioMaxDeviceSelection;
 static unsigned audioInputSelection[2];
 static unsigned audioOutputSelection[2];
-static QString audioInputDeviceName;
-static QString audioOutputDeviceName;
 
 static MIDIClientRef hpsjam_midi_client;
 static MIDIEndpointRef hpsjam_midi_input_endpoint;
@@ -373,8 +375,13 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 		kAudioObjectPropertyScopeGlobal,
 		kAudioObjectPropertyElementMaster
 	};
+	const uint32_t defSamples[4] = {
+		audioBufferDefSamples,
+		2 * HPSJAM_DEF_SAMPLES,
+		64,
+		128
+	};
 	AudioObjectPropertyAddress address = {};
-	CFStringRef cfstring;
 	uint32_t size = 0;
 	uint32_t frameSize;
 
@@ -383,26 +390,6 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 
 	AudioObjectSetPropertyData(kAudioObjectSystemObject, &property, 0, 0,
 	    sizeof(theRunLoop), &theRunLoop);
-
-	address.mScope = kAudioObjectPropertyScopeGlobal;
-	address.mElement = kAudioObjectPropertyElementMaster;
-	address.mSelector = kAudioHardwarePropertyDevices;
-
-	AudioObjectGetPropertyDataSize(kAudioObjectSystemObject,
-	    &address, 0, 0, &size);
-
-	audioMaxDeviceSelection = size / sizeof(AudioDeviceID);
-
-	if (audioMaxDeviceSelection == 0)
-		return (true);
-
-	/* get list of audio device IDs */
-	AudioDeviceID audioDevices[audioMaxDeviceSelection];
-	AudioObjectGetPropertyData(kAudioObjectSystemObject,
-	    &address, 0, 0, &size, audioDevices);
-
-	/* account for default audio device */
-	audioMaxDeviceSelection++;
 
 	switch (audioInputDeviceSelection) {
 	case 0:
@@ -414,20 +401,11 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 			return (true);
 		break;
 	default:
-		if (audioInputDeviceSelection >= audioMaxDeviceSelection)
+		if ((audioInputDeviceSelection - 1) >= audioDevicesMax)
 			return (true);
-		audioInputDevice = audioDevices[audioInputDeviceSelection - 1];
+		audioInputDevice = audioDeviceID[audioInputDeviceSelection - 1];
 		break;
 	}
-
-	/* get input device name */
-	cfstring = 0;
-	address.mScope = kAudioObjectPropertyScopeGlobal;
-	address.mSelector = kAudioObjectPropertyName;
-	address.mElement = kAudioObjectPropertyElementMaster;
-	size = sizeof(CFStringRef);
-	AudioObjectGetPropertyData(audioInputDevice, &address, 0, 0, &size, &cfstring);
-	audioInputDeviceName = QString::fromCFString(cfstring);
 
 	switch (audioOutputDeviceSelection) {
 	case 0:
@@ -439,27 +417,11 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 			return (true);
 		break;
 	default:
-		if (audioOutputDeviceSelection >= audioMaxDeviceSelection)
+		if ((audioOutputDeviceSelection - 1) >= audioDevicesMax)
 			return (true);
-		audioOutputDevice = audioDevices[audioOutputDeviceSelection - 1];
+		audioOutputDevice = audioDeviceID[audioOutputDeviceSelection - 1];
 		break;
 	}
-
-	/* get output device name */
-	cfstring = 0;
-	address.mScope = kAudioObjectPropertyScopeGlobal;
-	address.mSelector = kAudioObjectPropertyName;
-	address.mElement = kAudioObjectPropertyElementMaster;
-	size = sizeof(CFStringRef);
-	AudioObjectGetPropertyData(audioOutputDevice, &address, 0, 0, &size, &cfstring);
-	audioOutputDeviceName = QString::fromCFString(cfstring);
-
-	uint32_t defSamples[4] = {
-		audioBufferDefSamples,
-		2 * HPSJAM_DEF_SAMPLES,
-		64,
-		128
-	};
 
 	for (unsigned x = 0;; x++) {
 		if (x == 4)
@@ -485,10 +447,10 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 
 	audioInit = true;
 
-	hpsjam_sound_toggle_input_channel(0, 0);
-	hpsjam_sound_toggle_input_channel(1, 1);
-	hpsjam_sound_toggle_output_channel(0, 0);
-	hpsjam_sound_toggle_output_channel(1, 1);
+	hpsjam_sound_set_input_channel(0, 0);
+	hpsjam_sound_set_input_channel(1, 1);
+	hpsjam_sound_set_output_channel(0, 0);
+	hpsjam_sound_set_output_channel(1, 1);
 
 	/* install callbacks */
 	address.mSelector = kAudioDevicePropertyDeviceHasChanged;
@@ -559,64 +521,66 @@ hpsjam_sound_uninit()
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_input_device(int value)
+hpsjam_sound_set_input_device(int value)
 {
-	if (value < -1) {
+	if (value < 0) {
 		if (audioInit == false)
 			return (-1);
 		else
 			return (audioInputDeviceSelection);
 	}
 
+	if ((unsigned)value >= audioDevicesMax)
+		value = 0;
+
+	if ((unsigned)value == audioInputDeviceSelection &&
+	    audioInit == true)
+		return (value);
+
 	hpsjam_sound_uninit();
 
-	for (uint32_t x = 0; x < audioMaxDeviceSelection; x++) {
-		audioInputDeviceSelection++;
-		if (audioInputDeviceSelection >= audioMaxDeviceSelection)
-			audioInputDeviceSelection = 0;
-		if (value > -1 && (uint32_t)value != audioInputDeviceSelection)
-			continue;
-		if (hpsjam_sound_init(0,0) == false)
-			return (audioInputDeviceSelection);
-	}
-	return (-1);
+	audioInputDeviceSelection = value;
+
+	if (hpsjam_sound_init(0,0) == false)
+		return (audioInputDeviceSelection);
+	else
+		return (-1);
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_output_device(int value)
+hpsjam_sound_set_output_device(int value)
 {
-	if (value < -1) {
+	if (value < 0) {
 		if (audioInit == false)
 			return (-1);
 		else
 			return (audioOutputDeviceSelection);
 	}
 
+	if ((unsigned)value >= audioDevicesMax)
+		value = 0;
+
+	if ((unsigned)value == audioOutputDeviceSelection &&
+	    audioInit == true)
+		return (value);
+
 	hpsjam_sound_uninit();
 
-	for (uint32_t x = 0; x < audioMaxDeviceSelection; x++) {
-		audioOutputDeviceSelection++;
-		if (audioOutputDeviceSelection >= audioMaxDeviceSelection)
-			audioOutputDeviceSelection = 0;
-		if (value > -1 && (uint32_t)value != audioOutputDeviceSelection)
-			continue;
-		if (hpsjam_sound_init(0,0) == false)
-			return (audioOutputDeviceSelection);
-	}
-	return (-1);
+	audioOutputDeviceSelection = value;
+
+	if (hpsjam_sound_init(0,0) == false)
+		return (audioOutputDeviceSelection);
+	else
+		return (-1);
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_input_channel(int ch, int which)
+hpsjam_sound_set_input_channel(int ch, int which)
 {
 	if (audioInit == false)
 		return (-1);
 
-	if (which < -1)
-		;
-	else if (which == -1)
-		audioInputSelection[ch] += 1;
-	else
+	if (which > -1)
 		audioInputSelection[ch] = which;
 
 	if (audioInputChannels != 0)
@@ -628,16 +592,12 @@ hpsjam_sound_toggle_input_channel(int ch, int which)
 }
 
 Q_DECL_EXPORT int
-hpsjam_sound_toggle_output_channel(int ch, int which)
+hpsjam_sound_set_output_channel(int ch, int which)
 {
 	if (audioInit == false)
 		return (-1);
 
-	if (which < -1)
-		;
-	else if (which == -1)
-		audioOutputSelection[ch] += 1;
-	else
+	if (which > -1)
 		audioOutputSelection[ch] = which;
 
 	if (audioOutputChannels != 0)
@@ -669,26 +629,24 @@ hpsjam_sound_max_output_channel()
 Q_DECL_EXPORT void
 hpsjam_sound_get_input_status(QString &status)
 {
-	const int adev = hpsjam_sound_toggle_input_device(-2);
+	const int adev = hpsjam_sound_set_input_device(-1);
 	if (adev < 0) {
 		status = "Selection of audio input device failed";
 	} else {
-		status = QString("Input is %1:%2")
-		    .arg(adev)
-		    .arg(audioInputDeviceName);
+		status = QString("Input is %1")
+		    .arg(audioDeviceDescription[adev]);
 	}
 }
 
 Q_DECL_EXPORT void
 hpsjam_sound_get_output_status(QString &status)
 {
-	const int adev = hpsjam_sound_toggle_output_device(-2);
+	const int adev = hpsjam_sound_set_output_device(-1);
 	if (adev < 0) {
 		status = "Selection of audio output device failed";
 	} else {
-		status = QString("Output is %1:%2")
-		    .arg(adev)
-		    .arg(audioOutputDeviceName);
+		status = QString("Output is %1")
+		    .arg(audioDeviceDescription[adev]);
 	}
 }
 
@@ -703,4 +661,68 @@ hpsjam_sound_toggle_buffer_samples(int value)
 		}
 	}
 	return (audioBufferDefSamples);
+}
+
+Q_DECL_EXPORT void
+hpsjam_sound_rescan()
+{
+	AudioObjectPropertyAddress address = {};
+	CFStringRef cfstring;
+	uint32_t size = 0;
+
+	address.mScope = kAudioObjectPropertyScopeGlobal;
+	address.mElement = kAudioObjectPropertyElementMaster;
+	address.mSelector = kAudioHardwarePropertyDevices;
+
+	AudioObjectGetPropertyDataSize(kAudioObjectSystemObject,
+	    &address, 0, 0, &size);
+
+	audioDevicesMax = size / sizeof(AudioDeviceID);
+
+	delete [] audioDeviceDescription;
+	audioDeviceDescription = 0;
+
+	delete [] audioDeviceID;
+	audioDeviceID = 0;
+
+	if (audioDevicesMax == 0)
+		return;
+
+	/* get list of audio device IDs */
+	audioDeviceID = new AudioDeviceID[audioDevicesMax];
+	size = sizeof(audioDeviceId[0]) * audioDevicesMax;
+
+	AudioObjectGetPropertyData(kAudioObjectSystemObject,
+	    &address, 0, 0, &size, audioDeviceID);
+
+	audioDevicesMax++;
+	audioDeviceDescription = new QString [audioDevicesMax];
+	audioDeviceDescription[0] = QString(tr("Default"));
+
+	address.mScope = kAudioObjectPropertyScopeGlobal;
+	address.mSelector = kAudioObjectPropertyName;
+	address.mElement = kAudioObjectPropertyElementMaster;
+
+	for (uint32_t x = 1; x != audioDevicesMax; x++) {
+		cfstring = 0;
+		size = sizeof(CFStringRef);
+		AudioObjectGetPropertyData(audioDeviceID[x - 1],
+		    &address, 0, 0, &size, &cfstring);
+		audioDeviceDescription[x] = QString::fromCFString(cfstring);
+	}
+}
+
+Q_DECL_EXPORT int
+hpsjam_sound_max_devices()
+{
+	return (audioDevicesMax);
+}
+
+Q_DECL_EXPORT QString
+hpsjam_sound_get_device_name(int index)
+{
+	if (index < 0 || (unsigned)index >= audioDevicesMax)
+		return (QString("Unknown"));
+	else
+		return (audioDeviceDescription[index]);
 }
