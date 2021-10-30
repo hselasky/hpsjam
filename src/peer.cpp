@@ -1113,7 +1113,7 @@ hpsjam_server_peer :: send_mixer_parameters()
 
 		pres = new struct hpsjam_packet_entry;
 		pres->packet.setFaderValue(0, group * maxLevel, gain_temp, maxLevel);
-		pres->packet.type = HPSJAM_TYPE_FADER_LEVEL_REPLY;
+		pres->packet.type = HPSJAM_TYPE_FADER_GAIN_REPLY;
 		pres->insert_tail(&output_pkt.head);
 
 		pres = new struct hpsjam_packet_entry;
