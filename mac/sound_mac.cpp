@@ -693,7 +693,7 @@ hpsjam_sound_rescan()
 
 	/* get list of audio device IDs */
 	audioDevicesID = new AudioDeviceID[audioDevicesMax];
-	size = sizeof(audioDeviceID) * audioDevicesMax;
+	size = sizeof(AudioDeviceID) * audioDevicesMax;
 
 	AudioObjectGetPropertyData(kAudioObjectSystemObject,
 	    &address, 0, 0, &size, audioDevicesID);
