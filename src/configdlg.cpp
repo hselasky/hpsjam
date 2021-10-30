@@ -76,13 +76,13 @@ HpsJamDeviceSelection :: handle_rescan_device(bool forced)
 	}
 
 	if (max > 0 && in_index > -1) {
-		b_input_device.setCurrentIndex(in_index);
+		HPSJAM_NO_SIGNAL(b_input_device,setCurrentIndex(in_index));
 		if (forced)
 			hpsjam_sound_set_input_device(in_index);
 	}
 
 	if (max > 0 && out_index > -1) {
-		b_output_device.setCurrentIndex(out_index);
+		HPSJAM_NO_SIGNAL(b_output_device,setCurrentIndex(out_index));
 		if (forced)
 			hpsjam_sound_set_output_device(out_index);
 	}
@@ -195,6 +195,8 @@ HpsJamDeviceSelection :: refreshStatus()
 	if (ch < 0)
 		ch = 0;
 	HPSJAM_NO_SIGNAL(s_output_right,setValue(ch + 1));
+
+	handle_rescan_device(false);
 }
 
 void

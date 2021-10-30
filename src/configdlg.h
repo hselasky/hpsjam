@@ -99,8 +99,6 @@ public:
 		connect(&b_toggle_buffer_samples, SIGNAL(released()), this, SLOT(handle_toggle_buffer_samples()));
 		connect(&b_rescan_device, SIGNAL(released()), this, SLOT(handle_rescan_device()));
 
-		handle_rescan_device(false);
-
 		handle_toggle_buffer_samples(0);
 	};
 	QGridLayout gl;
