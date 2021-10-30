@@ -66,13 +66,13 @@ HpsJamDeviceSelection :: handle_rescan_device(bool forced)
 	in_index = hpsjam_sound_set_input_device(-1);
 	out_index = hpsjam_sound_set_output_device(-1);
 
-	b_input_device.clear();
-	b_output_device.clear();
+	HPSJAM_NO_SIGNAL(b_input_device,clear());
+	HPSJAM_NO_SIGNAL(b_output_device,clear());
 
 	for (int x = 0; x < max; x++) {
 		QString name = hpsjam_sound_get_device_name(x);
-		b_input_device.addItem(name);
-		b_output_device.addItem(name);
+		HPSJAM_NO_SIGNAL(b_input_device,addItem(name));
+		HPSJAM_NO_SIGNAL(b_output_device,addItem(name));
 	}
 
 	if (max > 0 && in_index > -1 && in_index < max) {
