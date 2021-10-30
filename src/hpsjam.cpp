@@ -343,6 +343,9 @@ main(int argc, char **argv)
 		/* set consistent double click interval */
 		app.setDoubleClickInterval(250);
 
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO) || defined(HAVE_JACK_AUDIO)
+		hpsjam_sound_rescan();
+#endif
 		hpsjam_default_midi = new hpsjam_midi_buffer[1];
 		hpsjam_client_peer = new class hpsjam_client_peer;
 		hpsjam_client = new HpsJamClient();
@@ -368,8 +371,6 @@ main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_JACK_AUDIO
-		hpsjam_sound_rescan();
-
 		if (hpsjam_sound_init(jackname, jackconnect)) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				QObject::tr("Cannot connect to JACK server or \n"
@@ -383,8 +384,6 @@ main(int argc, char **argv)
 #ifdef HAVE_MAC_AUDIO
 		/* setup MIDI first */
 		hpsjam_midi_init(jackname);
-
-		hpsjam_sound_rescan();
 
 		if (hpsjam_sound_init(0, 0)) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
@@ -418,8 +417,6 @@ main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_ASIO_AUDIO
-		hpsjam_sound_rescan();
-
 		if (hpsjam_sound_init(0, 0)) {
 			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				    QObject::tr("Cannot connect to ASIO subsystem or \n"
