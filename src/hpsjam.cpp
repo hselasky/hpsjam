@@ -377,6 +377,9 @@ main(int argc, char **argv)
 					    "sample rate is different from %1Hz or \n"
 					    "latency is too high").arg(HPSJAM_SAMPLE_RATE));
 		}
+
+		hpsjam_client->w_config->audio_dev.refreshStatus();
+
 		/* register exit hook for audio */
 		atexit(&hpsjam_sound_uninit);
 #endif
