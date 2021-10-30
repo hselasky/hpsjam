@@ -391,6 +391,9 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	AudioObjectSetPropertyData(kAudioObjectSystemObject, &property, 0, 0,
 	    sizeof(theRunLoop), &theRunLoop);
 
+	address.mScope = kAudioObjectPropertyScopeGlobal;
+	address.mElement = kAudioObjectPropertyElementMaster;
+
 	switch (audioInputDeviceSelection) {
 	case 0:
 		size = sizeof(audioInputDevice);
