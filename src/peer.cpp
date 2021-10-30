@@ -101,8 +101,14 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 			    (hpsjam_mixer_passwd == 0 || hpsjam_mixer_passwd == passwd);
 			peer.valid = true;
 			peer.address = src;
+			peer.gain = 1.0f;
+			peer.pan = 0.0f;
+			delete [] peer.eq_data;
+			peer.eq_data = 0;
+			peer.eq_size = 0;
 			peer.input_pkt.receive(frame);
 			peer.send_welcome_message();
+			peer.send_mixer_parameters();
 
 			/* drop lock */
 			peer_locker.unlock();
@@ -875,9 +881,12 @@ hpsjam_server_peer :: audio_export()
 
 						if (index + x == serverID()) {
 							pres->insert_tail(&output_pkt.head);
+							gain = temp[x];
 						} else {
-							QMutexLocker other(&hpsjam_server_peers[index + x].lock);
-							pres->insert_tail(&hpsjam_server_peers[index + x].output_pkt.head);
+							hpsjam_server_peer &peer = hpsjam_server_peers[index + x];
+							QMutexLocker peer_locker(&peer.lock);
+							pres->insert_tail(&peer.output_pkt.head);
+							peer.gain = temp[x];
 						}
 					}
 				}
@@ -907,9 +916,12 @@ hpsjam_server_peer :: audio_export()
 
 						if (index + x == serverID()) {
 							pres->insert_tail(&output_pkt.head);
+							pan = temp[x];
 						} else {
-							QMutexLocker other(&hpsjam_server_peers[index + x].lock);
-							pres->insert_tail(&hpsjam_server_peers[index + x].output_pkt.head);
+							hpsjam_server_peer &peer = hpsjam_server_peers[index + x];
+							QMutexLocker peer_locker(&peer.lock);
+							pres->insert_tail(&peer.output_pkt.head);
+							peer.pan = temp[x];
 						}
 					}
 				}
@@ -918,7 +930,7 @@ hpsjam_server_peer :: audio_export()
 				if (allow_mixer_access == false)
 					break;
 				if (ptr->getFaderData(mix, index, &data, num)) {
-					if (mix != 0 || num <= 0)
+					if (mix != 0)
 						break;
 					if (index >= hpsjam_num_server_peers)
 						break;
@@ -935,9 +947,16 @@ hpsjam_server_peer :: audio_export()
 					/* local EQ */
 					if (index == serverID()) {
 						pres->insert_tail(&output_pkt.head);
+						delete [] eq_data;
+						eq_data = new char [eq_size = num];
+						memcpy(eq_data, data, eq_size);
 					} else {
-						QMutexLocker other(&hpsjam_server_peers[index].lock);
-						pres->insert_tail(&hpsjam_server_peers[index].output_pkt.head);
+						hpsjam_server_peer &peer = hpsjam_server_peers[index];
+						QMutexLocker other(&peer.lock);
+						pres->insert_tail(&peer.output_pkt.head);
+						delete [] peer.eq_data;
+						peer.eq_data = new char [peer.eq_size = num];
+						memcpy(peer.eq_data, data, peer.eq_size);
 					}
 				}
 				break;
@@ -1023,7 +1042,7 @@ hpsjam_send_levels()
 	constexpr size_t maxLevel = 32;
 	static unsigned group;
 	struct hpsjam_packet_entry entry;
-	float temp[maxLevel][2];
+	float level_temp[maxLevel][2];
 
 	if (hpsjam_ticks % 128)
 		return;
@@ -1032,21 +1051,21 @@ hpsjam_send_levels()
 		unsigned index = x + group * maxLevel;
 
 		if (index >= hpsjam_num_server_peers) {
-			temp[x][0] = 0.0f;
-			temp[x][1] = 0.0f;
+			level_temp[x][0] = 0.0f;
+			level_temp[x][1] = 0.0f;
 			continue;
 		}
 
 		QMutexLocker locker(&hpsjam_server_peers[index].lock);
 		if (hpsjam_server_peers[index].valid) {
-			temp[x][0] = hpsjam_server_peers[index].in_level[0].getLevel();
-			temp[x][1] = hpsjam_server_peers[index].in_level[1].getLevel();
+			level_temp[x][0] = hpsjam_server_peers[index].in_level[0].getLevel();
+			level_temp[x][1] = hpsjam_server_peers[index].in_level[1].getLevel();
 		} else {
-			temp[x][0] = 0.0f;
-			temp[x][1] = 0.0f;
+			level_temp[x][0] = 0.0f;
+			level_temp[x][1] = 0.0f;
 		}
 	}
-	entry.packet.setFaderValue(0, group * maxLevel, temp[0], 2 * maxLevel);
+	entry.packet.setFaderValue(0, group * maxLevel, level_temp[0], 2 * maxLevel);
 	entry.packet.type = HPSJAM_TYPE_FADER_LEVEL_REPLY;
 	hpsjam_server_broadcast(entry, 0, true);
 
@@ -1054,6 +1073,66 @@ hpsjam_send_levels()
 	group++;
 	if ((group * maxLevel) >= hpsjam_num_server_peers)
 		group = 0;
+}
+
+void
+hpsjam_server_peer :: send_mixer_parameters()
+{
+	constexpr size_t maxLevel = 32;
+	unsigned group_max = (hpsjam_num_server_peers + maxLevel - 1) / maxLevel;
+	hpsjam_packet_entry *pres;
+	float gain_temp[maxLevel];
+	float pan_temp[maxLevel];
+
+	for (unsigned group = 0; group != group_max; group++) {
+		for (unsigned x = 0; x != maxLevel; x++) {
+			const unsigned index = x + group * maxLevel;
+
+			if (index >= hpsjam_num_server_peers) {
+				gain_temp[x] = 1.0f;
+				pan_temp[x] = 0.0f;
+				continue;
+			}
+
+			if (index == serverID()) {
+				gain_temp[x] = gain;
+				pan_temp[x] = pan;
+			} else {
+				hpsjam_server_peer &peer = hpsjam_server_peers[index];
+				QMutexLocker locker(&peer.lock);
+
+				if (peer.valid) {
+					gain_temp[x] = peer.gain;
+					pan_temp[x] = peer.pan;
+				} else {
+					gain_temp[x] = 1.0f;
+					pan_temp[x] = 0.0f;
+				}
+			}
+		}
+
+		pres = new struct hpsjam_packet_entry;
+		pres->packet.setFaderValue(0, group * maxLevel, gain_temp, maxLevel);
+		pres->packet.type = HPSJAM_TYPE_FADER_LEVEL_REPLY;
+		pres->insert_tail(&output_pkt.head);
+
+		pres = new struct hpsjam_packet_entry;
+		pres->packet.setFaderValue(0, group * maxLevel, pan_temp, maxLevel);
+		pres->packet.type = HPSJAM_TYPE_FADER_PAN_REPLY;
+		pres->insert_tail(&output_pkt.head);
+	}
+
+	for (unsigned index = 0; index < hpsjam_num_server_peers; index++) {
+		hpsjam_server_peer &peer = hpsjam_server_peers[index];
+		QMutexLocker locker(&peer.lock);
+
+		if (peer.eq_size == 0)
+			continue;
+		pres = new struct hpsjam_packet_entry;
+		pres->packet.setFaderData(0, index, peer.eq_data, peer.eq_size);
+		pres->packet.type = HPSJAM_TYPE_FADER_EQ_REPLY;
+		pres->insert_tail(&output_pkt.head);
+	}
 }
 
 static inline float

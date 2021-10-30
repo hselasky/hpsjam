@@ -66,6 +66,8 @@ public:
 	uint8_t bits[HPSJAM_PEERS_MAX];
 	float gain;
 	float pan;
+	char *eq_data;
+	size_t eq_size;
 	float out_peak;
 	uint8_t output_fmt;
 	bool valid;
@@ -88,6 +90,8 @@ public:
 		output_fmt = HPSJAM_TYPE_AUDIO_SILENCE;
 		gain = 1.0f;
 		pan = 0.0f;
+		eq_data = 0;
+		eq_size = 0;
 		out_peak = 0.0f;
 		valid = false;
 		allow_mixer_access = false;
@@ -99,6 +103,7 @@ public:
 	void audio_import();
 	void audio_mixing();
 	void send_welcome_message();
+	void send_mixer_parameters();
 
 	hpsjam_server_peer() {
 		init();
