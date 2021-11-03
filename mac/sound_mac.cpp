@@ -172,9 +172,12 @@ hpsjam_audio_callback(AudioDeviceID deviceID,
 
 	/* sanity check */
 	for (size_t x = 0; x != n_out; x++) {
-		if (outData->mBuffers[x].mDataByteSize !=
+		if (outData->mBuffers[x].mDataByteSize <
 		    (audioBufferSamples * audioOutputChannels * sizeof(float)))
 			goto error;
+		/* set correct number of output bytes */
+		outData->mBuffers[x].mDataByteSize =
+		    audioBufferSamples * audioOutputChannels * sizeof(float);
 	}
 
 	/* sanity check */
