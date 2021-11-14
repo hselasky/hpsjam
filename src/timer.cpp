@@ -28,17 +28,13 @@
 
 #include <QThread>
 
-#if defined(__APPLE__) || defined(__MACOSX)
-#include <mach/mach.h>
-#include <mach/mach_error.h>
-#include <mach/mach_time.h>
-#elif defined(_WIN32)
+#ifdef _WIN32
 #include <QElapsedTimer>
 static int16_t hpsjam_timer_remainder;
 static int16_t hpsjam_timer_next;
 static QElapsedTimer hpsjam_timer;
 #else
-#include <sys/time.h>
+#include <time.h>
 #endif
 
 #include "hpsjam.h"
@@ -69,19 +65,8 @@ static void *
 hpsjam_timer_loop(void *)
 {
 	hpsjam_timer_set_priority();
-#if defined(__APPLE__) || defined(__MACOSX)
-	struct mach_timebase_info time_base_info;
-	uint64_t next;
 
-	mach_timebase_info(&time_base_info);
-
-	const uint64_t delay[3] = {
-	    ( 999000ULL * (uint64_t)time_base_info.denom) / (uint64_t)time_base_info.numer,
-	    (1000000ULL * (uint64_t)time_base_info.denom) / (uint64_t)time_base_info.numer,
-	    (1001000ULL * (uint64_t)time_base_info.denom) / (uint64_t)time_base_info.numer,
-	};
-	next = mach_absolute_time();
-#elif defined(_WIN32)
+#ifdef _WIN32
 	hpsjam_timer.start();
 	hpsjam_timer.restart();
 #else
@@ -91,21 +76,13 @@ hpsjam_timer_loop(void *)
 	    1001000L,
 	};
 	struct timespec next;
+	struct timespec temp;
 
 	clock_gettime(CLOCK_MONOTONIC, &next);
 #endif
 
 	while (1) {
-#if defined(__APPLE__) || defined(__MACOSX)
-		if (hpsjam_timer_adjust < 0)
-			next += delay[0];
-		else if (hpsjam_timer_adjust > 0)
-			next += delay[2];
-		else
-			next += delay[1];
-
-		mach_wait_until(next);
-#elif defined(_WIN32)
+#ifdef _WIN32
 		hpsjam_timer_remainder += hpsjam_timer_adjust;
 
 		if (hpsjam_timer_remainder <= -1000) {
@@ -135,7 +112,18 @@ hpsjam_timer_loop(void *)
 			next.tv_nsec -= 1000000000L;
 		}
 
-		clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next, 0);
+		while (1) {
+			usleep(500);	/* timing trick */
+			clock_gettime(CLOCK_MONOTONIC, &temp);
+			temp.tv_sec = next.tv_sec - temp.tv_sec;
+			temp.tv_nsec = next.tv_nsec - temp.tv_nsec;
+			if (temp.tv_nsec < 0) {
+				temp.tv_sec--;
+				temp.tv_nsec += 1000000000L;
+			}
+			if (temp.tv_sec < 0 || (temp.tv_sec == 0 && temp.tv_nsec <= 0))
+				break;
+		}
 #endif
 		if (hpsjam_num_server_peers == 0) {
 			hpsjam_client_peer->tick();
@@ -145,9 +133,7 @@ hpsjam_timer_loop(void *)
 			} else if (hpsjam_sleep == 0) {
 				/* idle for one second */
 				QThread::msleep(1000);
-#if defined(__APPLE__) || defined(__MACOSX)
-				next = mach_absolute_time();
-#elif defined(_WIN32)
+#ifdef _WIN32
 				hpsjam_timer.restart();
 #else
 				clock_gettime(CLOCK_MONOTONIC, &next);
