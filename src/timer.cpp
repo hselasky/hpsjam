@@ -113,7 +113,6 @@ hpsjam_timer_loop(void *)
 		}
 
 		while (1) {
-			usleep(500);	/* timing trick */
 			clock_gettime(CLOCK_MONOTONIC, &temp);
 			temp.tv_sec = next.tv_sec - temp.tv_sec;
 			temp.tv_nsec = next.tv_nsec - temp.tv_nsec;
@@ -121,8 +120,9 @@ hpsjam_timer_loop(void *)
 				temp.tv_sec--;
 				temp.tv_nsec += 1000000000L;
 			}
-			if (temp.tv_sec < 0 || (temp.tv_sec == 0 && temp.tv_nsec <= 0))
+			if (temp.tv_sec < 0 || (temp.tv_sec == 0 && temp.tv_nsec <= 100000))
 				break;
+			usleep(temp.tv_nsec / 1000);
 		}
 #endif
 		if (hpsjam_num_server_peers == 0) {
