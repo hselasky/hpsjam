@@ -42,6 +42,11 @@
 #include <getopt.h>
 #include <err.h>
 
+#ifdef __FreeBSD__
+#include <sys/filio.h>
+#include <sys/rtprio.h>
+#endif
+
 unsigned hpsjam_num_server_peers;
 unsigned hpsjam_udp_buffer_size;
 unsigned hpsjam_num_cpu = 1;
@@ -94,6 +99,9 @@ static const struct option hpsjam_opts[] = {
 	{ "jacknoconnect", no_argument, NULL, 'J' },
 	{ "jackname", required_argument, NULL, 'n' },
 #endif
+#ifdef __FreeBSD__
+	{ "rtprio", required_argument, NULL, 'x' },
+#endif
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -138,6 +146,9 @@ usage(void)
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
 		"	[--ncpu <1,2,3, ... %d, Default is 1>] \\\n"
 		"	[--welcome-msg-file <filename> \\\n"
+#ifdef __FreeBSD__
+		"	[--rtprio <priority>] \\\n"
+#endif
 		"	[--cli-port <portnumber>]\n",
 		HPSJAM_NUM_ICONS - 1,
 		HPSJAM_AUDIO_FORMAT_MAX - 1,
@@ -150,7 +161,7 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	static const char hpsjam_short_opts[] = {
-	    "M:q:p:sP:hBJ:n:K:w:N:i:j:c:U:D:I:O:l:L:r:R:t:T:b:"
+	    "M:q:p:sP:hBJ:n:K:w:N:i:j:c:U:D:I:O:l:L:r:R:t:T:b:x:"
 	};
 	int c;
 	int port = HPSJAM_DEFAULT_PORT;
@@ -319,6 +330,17 @@ main(int argc, char **argv)
 		case ' ':
 			/* ignore */
 			break;
+#ifdef __FreeBSD__
+		case 'x': {
+			struct rtprio rtp;
+			memset(&rtp, 0, sizeof(rtp));
+			rtp.type = RTP_PRIO_REALTIME;
+			rtp.prio = atoi(optarg);
+			if (rtprio(RTP_SET, getpid(), &rtp) != 0)
+				printf("Cannot set realtime priority\n");
+			break;
+		}
+#endif
 		default:
 			usage();
 			break;
