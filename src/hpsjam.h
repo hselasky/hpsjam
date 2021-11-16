@@ -87,6 +87,7 @@ extern struct hpsjam_socket_address hpsjam_v6;
 extern struct hpsjam_socket_address hpsjam_cli;
 extern const char *hpsjam_welcome_message_file;
 extern int hpsjam_profile_index;
+extern bool hpsjam_mute_peer_audio;
 
 extern void hpsjam_socket_init(unsigned short port, unsigned short cliport);
 

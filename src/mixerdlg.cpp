@@ -520,6 +520,10 @@ HpsJamMixer :: handle_fader_self(uint8_t mix, uint8_t index)
 	switch (mix) {
 	case 0:
 		my_peer = peer_strip + index;
+		if (hpsjam_mute_peer_audio) {
+			my_peer->show();
+			my_peer->b_mute.animateClick();
+		}
 		break;
 	default:
 		break;

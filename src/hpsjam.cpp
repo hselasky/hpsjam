@@ -52,6 +52,7 @@ unsigned hpsjam_udp_buffer_size;
 unsigned hpsjam_num_cpu = 1;
 uint64_t hpsjam_server_passwd;
 uint64_t hpsjam_mixer_passwd;
+bool hpsjam_mute_peer_audio;
 class hpsjam_server_peer *hpsjam_server_peers;
 class hpsjam_client_peer *hpsjam_client_peer;
 class HpsJamClient *hpsjam_client;
@@ -68,7 +69,8 @@ static const struct option hpsjam_opts[] = {
 	{ "cli-port", required_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "ncpu", required_argument, NULL, 'j' },
-	{ "platform", required_argument, NULL, 'g' },
+	{ "platform", required_argument, NULL, ' ' },
+	{ "mute-peer-audio", no_argument, NULL, 'g' },
 #ifdef HAVE_HTTPD
 	{ "httpd", required_argument, NULL, 't' },
 	{ "httpd-conns", required_argument, NULL, 'T' },
@@ -147,6 +149,7 @@ usage(void)
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
 		"	[--ncpu <1,2,3, ... %d, Default is 1>] \\\n"
 		"	[--platform offscreen] \\\n"
+		"	[--mute-peer-audio] \\\n"
 		"	[--welcome-msg-file <filename> \\\n"
 #ifdef __FreeBSD__
 		"	[--rtprio <priority>] \\\n"
@@ -163,7 +166,7 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	static const char hpsjam_short_opts[] = {
-	    "M:q:p:sP:hBJ:n:K:w:N:g:i:j:c:U:D:I:O:l:L:r:R:t:T:b:x:"
+	    "M:q:p:sP:hBJ:n:K:w:N:gi:j:c:U:D:I:O:l:L:r:R:t:T:b:x:"
 	};
 	int c;
 	int port = HPSJAM_DEFAULT_PORT;
@@ -295,8 +298,6 @@ main(int argc, char **argv)
 			do_fork = 1;
 			break;
 #endif
-		case 'g':
-			break;
 		case 'J':
 			jackconnect = false;
 			break;
@@ -330,6 +331,9 @@ main(int argc, char **argv)
 			break;
 		case 'c':
 			connect_to = optarg;
+			break;
+		case 'g':
+			hpsjam_mute_peer_audio = true;
 			break;
 		case ' ':
 			/* ignore */
