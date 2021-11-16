@@ -68,6 +68,7 @@ static const struct option hpsjam_opts[] = {
 	{ "cli-port", required_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "ncpu", required_argument, NULL, 'j' },
+	{ "platform", required_argument, NULL, 'g' },
 #ifdef HAVE_HTTPD
 	{ "httpd", required_argument, NULL, 't' },
 	{ "httpd-conns", required_argument, NULL, 'T' },
@@ -145,6 +146,7 @@ usage(void)
 #endif
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
 		"	[--ncpu <1,2,3, ... %d, Default is 1>] \\\n"
+		"	[--platform offscreen] \\\n"
 		"	[--welcome-msg-file <filename> \\\n"
 #ifdef __FreeBSD__
 		"	[--rtprio <priority>] \\\n"
@@ -161,7 +163,7 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	static const char hpsjam_short_opts[] = {
-	    "M:q:p:sP:hBJ:n:K:w:N:i:j:c:U:D:I:O:l:L:r:R:t:T:b:x:"
+	    "M:q:p:sP:hBJ:n:K:w:N:g:i:j:c:U:D:I:O:l:L:r:R:t:T:b:x:"
 	};
 	int c;
 	int port = HPSJAM_DEFAULT_PORT;
@@ -293,6 +295,8 @@ main(int argc, char **argv)
 			do_fork = 1;
 			break;
 #endif
+		case 'g':
+			break;
 		case 'J':
 			jackconnect = false;
 			break;
