@@ -117,15 +117,17 @@ public:
 
 	/* getLowWater() returns one of 0,1 or 2. */
 	uint8_t getLowWater() const {
+		const uint8_t average = 4;	/* ms */
 		uint8_t x;
+
 		for (x = 0; x != HPSJAM_SEQ_MAX * 2; x++) {
 			if (stats[x] >= 0.5f)
 				break;
 		}
-		/* try to keep the low water level around 2ms */
-		if (x < 2)
+		/* try to keep the low water level around the average */
+		if (x < average)
 			return (0);	/* low data - go slower */
-		else if (x > 2)
+		else if (x > average)
 			return (2);	/* high data - go faster */
 		else
 			return (1);	/* normal */
