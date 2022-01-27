@@ -91,104 +91,72 @@ class hpsjam_audio_buffer {
 	enum { fadeSamples = HPSJAM_DEF_SAMPLES };
 public:
 	float samples[HPSJAM_MAX_SAMPLES];
-	float stats[HPSJAM_SEQ_MAX * 2];
 	float last_sample;
 	size_t consumer;
 	size_t total;
-	uint16_t limit;
 	uint16_t fade_in;
+	uint16_t low_water;
+	uint16_t high_water;
+
+	void doWater() {
+		if (low_water > total)
+			low_water = total;
+		if (high_water < total)
+			high_water = total;
+	};
 
 	void clear() {
 		memset(samples, 0, sizeof(samples));
-		memset(stats, 0, sizeof(stats));
 		last_sample = 0;
 		consumer = 0;
 		total = 0;
-		limit = 3;	/* minimum value for handling one packet loss */
 		fade_in = fadeSamples;
-	};
-	void set_jitter_limit_in_ms(uint16_t _limit) {
-		limit = _limit + 3;
+		low_water = 65535;
+		high_water = 0;
 	};
 
 	hpsjam_audio_buffer() {
 		clear();
 	};
 
+	int getWaterRef() const {
+		if (low_water > high_water)
+			return (0);	/* normal */
+		size_t diff = high_water - low_water;
+		ssize_t middle = low_water + (diff / 2) - (HPSJAM_MAX_SAMPLES / 2);
+		return (middle / (4 * HPSJAM_DEF_SAMPLES));
+	};
+
 	/* getLowWater() returns one of 0,1 or 2. */
 	uint8_t getLowWater() const {
-		const uint8_t average = 4;	/* ms */
-		uint8_t x;
+		const int ref = getWaterRef();
 
-		for (x = 0; x != HPSJAM_SEQ_MAX * 2; x++) {
-			if (stats[x] >= 0.5f)
-				break;
-		}
-		/* try to keep the low water level around the average */
-		if (x < average)
+		if (ref < 0)
 			return (0);	/* low data - go slower */
-		else if (x > average)
+		else if (ref > 0)
 			return (2);	/* high data - go faster */
 		else
 			return (1);	/* normal */
 	};
 
-	/* getHighWater() returns one of 0,1 or 2. */
-	uint8_t getHighWater() const {
-		uint8_t x;
-		for (x = 0; x != HPSJAM_SEQ_MAX * 2; x++) {
-			if (stats[x] >= 0.5f)
-				break;
-		}
-		/* try to keep the high water level down */
-		if (x < limit)
-			return (0);
-		else if (x > limit)
-			return (2);
-		else
-			return (1);
-	};
-
 	/* remove samples from buffer, must be called periodically */
 	void remSamples(float *dst, size_t num) {
-		size_t fwd = HPSJAM_MAX_SAMPLES - consumer;
-		bool underrun = (num > total);
+		size_t fwd;
 
-		/* fill missing samples with last value */
-		if (underrun) {
+		doWater();
+
+		/* fill missing samples with last value, if any */
+		if (num > total) {
 			for (size_t x = total; x != num; x++) {
 				last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
 				dst[x] = last_sample;
 			}
-			fade_in = fadeSamples;
 			num = total;
+			fade_in = fadeSamples;
 		}
 
-		/* keep track of low water mark */
-		uint8_t index = (total - num) / HPSJAM_DEF_SAMPLES;
-
-		/* shouldn't trigger, but just in case */
-		if (index > (HPSJAM_SEQ_MAX * 2 - 1))
-			index = (HPSJAM_SEQ_MAX * 2 - 1);
-
-		stats[index] += 1.0f;
-
-		if (stats[index] >= 256.0f) {
-			for (uint8_t x = 0; x != HPSJAM_SEQ_MAX * 2; x++)
-				stats[x] /= 2.0f;
-
-			const uint8_t high = getHighWater();
-
-			/*
-			 * Shrink the buffer depending on the amount
-			 * of supplied data:
-			 */
-			if (total >= num + HPSJAM_DEF_SAMPLES && high > 1) {
-				shrink();
-				/* need to update FWD now consumer is changed */
-				fwd = HPSJAM_MAX_SAMPLES - consumer;
-			}
-		}
+		/* setup forward size */
+		fwd = HPSJAM_MAX_SAMPLES - consumer;
 
 		/* copy samples from ring-buffer */
 		while (num != 0) {
@@ -205,19 +173,6 @@ public:
 			} else {
 				assert(num == 0);
 				break;
-			}
-		}
-
-		/*
-		 * Fill in some samples on underrun, to avoid
-		 * multiple jitters:
-		 */
-		if (underrun) {
-			while (total < HPSJAM_DEF_SAMPLES) {
-				const size_t producer = (consumer + total) % HPSJAM_MAX_SAMPLES;
-				last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
-				samples[producer] = last_sample;
-				total++;
 			}
 		}
 	};
@@ -296,43 +251,7 @@ public:
 			}
 		}
 	};
-
-	/* grow ring-buffer */
-	void grow() {
-		const size_t p[2] =
-		  { (consumer + total + HPSJAM_MAX_SAMPLES - 1) % HPSJAM_MAX_SAMPLES,
-		    (consumer + total + HPSJAM_MAX_SAMPLES - 2) % HPSJAM_MAX_SAMPLES };
-		if (total > 1) {
-			const float append = samples[p[0]];
-			samples[p[0]] = (samples[p[0]] + samples[p[1]]) / 2.0f;
-			addSamples(&append, 1);
-		}
-	};
-
-	/* shrink ring-buffer */
-	void shrink() {
-		if (total < HPSJAM_DEF_SAMPLES)
-			return;
-		/* merge two millisecond buffers */
-		for (size_t x = 0; x != HPSJAM_DEF_SAMPLES; x++) {
-			const float factor = x * (1.0f / HPSJAM_DEF_SAMPLES);
-			const size_t p[2] = {
-			    consumer,
-			    (consumer + HPSJAM_DEF_SAMPLES) % HPSJAM_MAX_SAMPLES,
-			};
-			samples[p[1]] = samples[p[0]] * (1.0f - factor) +
-			  samples[p[1]] * factor;
-			/* reduce one sample */
-			consumer++;
-			total--;
-			if (consumer == HPSJAM_MAX_SAMPLES)
-				consumer = 0;
-		}
-		/* shift stats down */
-		for (uint8_t x = 0; x != (HPSJAM_SEQ_MAX * 2 - 1); x++)
-			stats[x] = stats[x + 1];
-		stats[HPSJAM_SEQ_MAX * 2 - 1] = 0.0f;
-	};
+	void adjustBuffer();
 };
 
 #endif		/* _HPSJAM_AUDIOBUFFER_H_ */

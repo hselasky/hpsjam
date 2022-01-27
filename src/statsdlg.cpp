@@ -42,7 +42,7 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 	uint16_t ping_time;
 	uint16_t jitter_time;
 	QRect frame(16, 16, width() - 32, height() - 32);
-	float stats[2][N] = {};
+	float stats[N] = {};
 	float fMax;
 	int height = frame.height();
 	int width = frame.width();
@@ -53,10 +53,8 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 	if (1) {
 		QMutexLocker locker(&hpsjam_client_peer->lock);
 
-		assert(sizeof(stats[0]) >= sizeof(hpsjam_client_peer->in_audio[0].stats));
-		assert(sizeof(stats[1]) >= sizeof(hpsjam_client_peer->input_pkt.jitter.stats));
-		memcpy(stats[0], hpsjam_client_peer->input_pkt.jitter.stats, sizeof(stats[0]));
-		memcpy(stats[1], hpsjam_client_peer->in_audio[0].stats, sizeof(stats[1]));
+		assert(sizeof(stats) >= sizeof(hpsjam_client_peer->input_pkt.jitter.stats));
+		memcpy(stats, hpsjam_client_peer->input_pkt.jitter.stats, sizeof(stats));
 		packet_loss = hpsjam_client_peer->input_pkt.jitter.packet_loss;
 		packet_damage = hpsjam_client_peer->input_pkt.jitter.packet_damage;
 		ping_time = hpsjam_client_peer->output_pkt.ping_time;
@@ -80,43 +78,41 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 	l_status.setText(QString("%1 packets lost and %2 damaged. Round trip time is %3ms+%4ms")
 	    .arg(packet_loss).arg(packet_damage).arg(ping_time).arg(jitter_time));
 
-	for (unsigned x = 0; x != 2; x++) {
-		for (unsigned i = xmax = 0; i != N; i++) {
-			if (stats[x][xmax] < stats[x][i]) {
-				xmax = i;
-			}
+	for (unsigned i = xmax = 0; i != N; i++) {
+		if (stats[xmax] < stats[i]) {
+			xmax = i;
 		}
-		fMax = stats[x][xmax];
+	}
+	fMax = stats[xmax];
 
-		if (fMax > 1.0f) {
-			for (unsigned i = 0; i != N; i++) {
-				stats[x][i] /= fMax;
-			}
-		} else {
-			memset(stats[x], 0, sizeof(stats[x]));
-		}
-
-		float dX = (float)width / (float)N;
-
-		QPoint lastPoint;
-
+	if (fMax > 1.0f) {
 		for (unsigned i = 0; i != N; i++) {
-			const QPoint nextPoint(
-			    frame.x() + static_cast < int >(dX * i + dX / 2.0f),
-			    frame.y() + 2 * fsize + (height / 2) * (x + 1) - 1 -
-			    (int)(stats[x][i] * (height / 2 - fsize)));
-
-			if (i == 0)
-				lastPoint = nextPoint;
-
-			paint.setPen(QPen(QBrush(fg), fsize, Qt::SolidLine, Qt::RoundCap));
-			paint.drawPoint(nextPoint);
-
-			paint.setPen(QPen(QBrush(fg), 2));
-			paint.drawLine(lastPoint, nextPoint);
-
-			lastPoint = nextPoint;
+			stats[i] /= fMax;
 		}
+	} else {
+		memset(stats, 0, sizeof(stats));
+	}
+
+	float dX = (float)width / (float)N;
+
+	QPoint lastPoint;
+
+	for (unsigned i = 0; i != N; i++) {
+		const QPoint nextPoint(
+		    frame.x() + static_cast < int >(dX * i + dX / 2.0f),
+		    frame.y() + 2 * fsize + height - 1 -
+		    (int)(stats[i] * (height - fsize)));
+
+		if (i == 0)
+			lastPoint = nextPoint;
+
+		paint.setPen(QPen(QBrush(fg), fsize, Qt::SolidLine, Qt::RoundCap));
+		paint.drawPoint(nextPoint);
+
+		paint.setPen(QPen(QBrush(fg), 2));
+		paint.drawLine(lastPoint, nextPoint);
+
+		lastPoint = nextPoint;
 	}
 
 	paint.setPen(QPen(QBrush(fg), 4));

@@ -715,7 +715,6 @@ hpsjam_server_peer :: audio_export()
 	const struct hpsjam_packet *ptr;
 	struct hpsjam_packet_entry *pres;
 	float temp[HPSJAM_MAX_PKT];
-	uint16_t jitter;
 	size_t num;
 
 	QMutexLocker locker(&lock);
@@ -726,11 +725,6 @@ hpsjam_server_peer :: audio_export()
 	}
 
 	input_pkt.recovery();
-
-	/* update jitter */
-	jitter = input_pkt.jitter.get_jitter_in_ms();
-	in_audio[0].set_jitter_limit_in_ms(jitter);
-	in_audio[1].set_jitter_limit_in_ms(jitter);
 
 	while ((pkt = input_pkt.first_pkt())) {
 		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {
@@ -1350,6 +1344,20 @@ hpsjam_server_tick()
 		hpsjam_timer_adjust = -1;	/* go faster */
 	}
 
+	/* Adjust all buffers every 8 seconds approximately. */
+	unsigned y = (hpsjam_ticks & 8191);
+	if (y < hpsjam_num_server_peers) {
+		hpsjam_server_peer &peer = hpsjam_server_peers[y];
+
+		QMutexLocker locker(&peer.lock);
+		if (peer.valid) {
+			peer.out_buffer[0].adjustBuffer();
+			peer.out_buffer[1].adjustBuffer();
+			peer.in_audio[0].adjustBuffer();
+			peer.in_audio[1].adjustBuffer();
+		}
+	}
+
 	for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
 		hpsjam_server_peer &peer = hpsjam_server_peers[x];
 
@@ -1391,14 +1399,8 @@ hpsjam_client_peer :: tick()
 		float audio[2][HPSJAM_DEF_SAMPLES];
 	};
 	size_t num;
-	uint16_t jitter;
 
 	input_pkt.recovery();
-
-	/* update jitter */
-	jitter = input_pkt.jitter.get_jitter_in_ms();
-	out_audio[0].set_jitter_limit_in_ms(jitter);
-	out_audio[1].set_jitter_limit_in_ms(jitter);
 
 	/* read one packet, if any */
 	if ((pkt = input_pkt.first_pkt()) != 0) {
@@ -1591,6 +1593,14 @@ hpsjam_client_peer :: tick()
 	/* send a packet */
 	HpsJamSendPacket
 	    <class hpsjam_client_peer>(*this);
+
+	/* Adjust all buffers every 8 seconds approximately. */
+	if ((hpsjam_ticks & 8191) == 0) {
+		out_audio[0].adjustBuffer();
+		out_audio[1].adjustBuffer();
+		in_audio[0].adjustBuffer();
+		in_audio[1].adjustBuffer();
+	}
 }
 
 void
