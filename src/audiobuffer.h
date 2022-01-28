@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -124,7 +124,7 @@ public:
 			return (0);	/* normal */
 		size_t diff = high_water - low_water;
 		ssize_t middle = low_water + (diff / 2) - (HPSJAM_MAX_SAMPLES / 2);
-		return (middle / (4 * HPSJAM_DEF_SAMPLES));
+		return (middle);
 	};
 
 	/* getLowWater() returns one of 0,1 or 2. */

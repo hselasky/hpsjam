@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -60,18 +60,20 @@ hpsjam_audio_buffer :: adjustBuffer()
 		fade_in = fadeSamples;
 	}
 
-	int missing = getWaterRef() * 4 * HPSJAM_DEF_SAMPLES;
+	int missing = getWaterRef();
 
-	if (missing == 0) {
+	/* Adjust buffer if outside 4 ms window. */
+	int missing_aligned = missing - (missing % (2 * HPSJAM_DEF_SAMPLES));
+
+	if (missing_aligned == 0) {
 		memcpy(samples, buffer, sizeof(samples[0]) * total);
-	} else if (missing > 0) {
+	} else if (missing_aligned > 0) {
 		size_t to = total - missing;
 		if (to == 0 || to > HPSJAM_MAX_SAMPLES)
 			to = 1;
 		for (size_t x = 0; x != to; x++)
 			samples[x] = buffer[(total * x) / to];
 		total = to;
-		low_water = high_water = (HPSJAM_MAX_SAMPLES / 2);
 	} else {
 		size_t to = total - missing;
 		if (to == 0 || to > HPSJAM_MAX_SAMPLES)
@@ -79,6 +81,8 @@ hpsjam_audio_buffer :: adjustBuffer()
 		for (size_t x = 0; x != to; x++)
 			samples[x] = buffer[(total * x) / to];
 		total = to;
-		low_water = high_water = (HPSJAM_MAX_SAMPLES / 2);
 	}
+
+	/* Reset the water level after filling samples. */
+	low_water = high_water = (HPSJAM_MAX_SAMPLES / 2);
 }
