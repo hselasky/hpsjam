@@ -41,6 +41,9 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 	uint64_t packet_damage;
 	uint16_t ping_time;
 	uint16_t jitter_time;
+	uint16_t low_water[2];
+	uint16_t high_water[2];
+	int adjust[2];
 	QRect frame(16, 16, width() - 32, height() - 32);
 	float stats[N] = {};
 	float fMax;
@@ -59,6 +62,12 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 		packet_damage = hpsjam_client_peer->input_pkt.jitter.packet_damage;
 		ping_time = hpsjam_client_peer->output_pkt.ping_time;
 		jitter_time = hpsjam_client_peer->input_pkt.jitter.get_jitter_in_ms();
+		low_water[0] = hpsjam_client_peer->in_audio[0].low_water;
+		low_water[1] = hpsjam_client_peer->out_audio[0].low_water;
+		high_water[0] = hpsjam_client_peer->in_audio[0].high_water;
+		high_water[1] = hpsjam_client_peer->out_audio[0].high_water;
+		adjust[0] = hpsjam_client_peer->in_audio[0].getWaterRef();
+		adjust[1] = hpsjam_client_peer->out_audio[0].getWaterRef();
 	}
 
 	/* make room for text */
@@ -75,8 +84,12 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 
 	paint.fillRect(frame, bg);
 
-	l_status.setText(QString("%1 packets lost and %2 damaged. Round trip time is %3ms+%4ms")
+	l_status[0].setText(QString("Network :: %1 packets lost and %2 damaged. Round trip time is %3ms+%4ms")
 	    .arg(packet_loss).arg(packet_damage).arg(ping_time).arg(jitter_time));
+	l_status[1].setText(QString("Audio input :: Low water is %1 and high water is %2, adjusting %3 samples.")
+	    .arg(low_water[0]).arg(high_water[0]).arg(adjust[0]));
+	l_status[2].setText(QString("Audio output :: Low water is %1 and high water is %2, adjusting %3 samples.")
+	    .arg(low_water[1]).arg(high_water[1]).arg(adjust[1]));
 
 	for (unsigned i = xmax = 0; i != N; i++) {
 		if (stats[xmax] < stats[i]) {
