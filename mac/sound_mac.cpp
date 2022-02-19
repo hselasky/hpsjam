@@ -170,12 +170,8 @@ hpsjam_audio_callback(AudioDeviceID deviceID,
 	size_t n_in = inData->mNumberBuffers;
 	size_t n_out = outData->mNumberBuffers;
 
-	/* sanity check */
+	/* set correct number of output bytes */
 	for (size_t x = 0; x != n_out; x++) {
-		if (outData->mBuffers[x].mDataByteSize <
-		    (audioBufferSamples * audioOutputChannels * sizeof(float)))
-			goto error;
-		/* set correct number of output bytes */
 		outData->mBuffers[x].mDataByteSize =
 		    audioBufferSamples * audioOutputChannels * sizeof(float);
 	}
@@ -230,10 +226,6 @@ hpsjam_audio_callback(AudioDeviceID deviceID,
 			for (uint32_t x = 0; x != audioBufferSamples; x++)
 				((float *)outData->mBuffers[0].mData)[x * audioOutputChannels + ch] = src[x];
 		}
-
-		/* clear old buffer, just in case there is no input */
-		memset(audioInputBuffer[0], 0, audioBufferSamples * sizeof(float));
-		memset(audioInputBuffer[1], 0, audioBufferSamples * sizeof(float));
 	}
 	return (kAudioHardwareNoError);
 error:
