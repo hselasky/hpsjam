@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +34,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QSpinBox>
-#include <QComboBox>
+#include <QListWidget>
 
 struct hpsjam_audio_format {
 	uint8_t format;
@@ -102,10 +102,10 @@ public:
 		handle_toggle_buffer_samples(0);
 	};
 	QGridLayout gl;
-	QComboBox b_input_device;
+	QListWidget b_input_device;
 	QSpinBox s_input_left;
 	QSpinBox s_input_right;
-	QComboBox b_output_device;
+	QListWidget b_output_device;
 	QSpinBox s_output_left;
 	QSpinBox s_output_right;
 	QLabel l_input;

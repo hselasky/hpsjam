@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -250,6 +250,18 @@ Q_DECL_EXPORT int
 hpsjam_sound_set_output_device(int)
 {
 	return (0);
+}
+
+Q_DECL_EXPORT bool
+hpsjam_sound_is_input_device(int)
+{
+	return (true);
+}
+
+Q_DECL_EXPORT bool
+hpsjam_sound_is_output_device(int)
+{
+	return (true);
 }
 
 Q_DECL_EXPORT int

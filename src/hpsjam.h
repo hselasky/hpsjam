@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -104,6 +104,8 @@ extern int hpsjam_sound_set_input_device(int);
 extern int hpsjam_sound_set_output_device(int);
 extern int hpsjam_sound_set_input_channel(int, int);
 extern int hpsjam_sound_set_output_channel(int, int);
+extern bool hpsjam_sound_is_input_device(int);
+extern bool hpsjam_sound_is_output_device(int);
 extern int hpsjam_sound_max_input_channel();
 extern int hpsjam_sound_max_output_channel();
 extern int hpsjam_sound_max_devices();

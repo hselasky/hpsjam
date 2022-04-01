@@ -38,6 +38,7 @@
 
 static uint32_t audioDevicesMax;
 static QString *audioDeviceDescription;
+static uint32_t *audioDeviceIOStatus;
 static AudioDeviceID *audioDevicesID;
 
 static AudioDeviceID audioOutputDevice;
@@ -715,6 +716,9 @@ hpsjam_sound_rescan()
 	delete [] audioDeviceDescription;
 	audioDeviceDescription = 0;
 
+	delete [] audioDeviceIOStatus;
+	audioDeviceIOStatus = 0;
+
 	delete [] audioDevicesID;
 	audioDevicesID = 0;
 
@@ -743,6 +747,27 @@ hpsjam_sound_rescan()
 		    &address, 0, 0, &size, &cfstring);
 		audioDeviceDescription[x] = QString::fromCFString(cfstring);
 	}
+
+	audioDeviceIOStatus = new uint32_t [audioDevicesMax];
+	audioDeviceIOStatus[0] = 3;	/* both is supported */
+
+	for (uint32_t x = 1; x != audioDevicesMax; x++) {
+		audioDeviceIOStatus[x] = 0;
+		size = 0;
+		address.mSelector = kAudioDevicePropertyStreams;
+		address.mScope = kAudioObjectPropertyScopeInput;
+		AudioObjectGetPropertyDataSize(audioDevicesID[x - 1],
+		    &address, 0, 0, &size);
+		if (size != 0)
+			audioDeviceIOStatus[x] |= 1;	/* input supported */
+		size = 0;
+		address.mSelector = kAudioDevicePropertyStreams;
+		address.mScope = kAudioObjectPropertyScopeOutput;
+		AudioObjectGetPropertyDataSize(audioDevicesID[x - 1],
+		    &address, 0, 0, &size);
+		if (size != 0)
+			audioDeviceIOStatus[x] |= 2;	/* output supported */
+	}
 }
 
 Q_DECL_EXPORT int
@@ -758,4 +783,22 @@ hpsjam_sound_get_device_name(int index)
 		return (QString("Unknown"));
 	else
 		return (audioDeviceDescription[index]);
+}
+
+Q_DECL_EXPORT bool
+hpsjam_sound_is_input_device(int index)
+{
+	if (index < 0 || (unsigned)index >= audioDevicesMax)
+		return (false);
+	else
+		return (audioDeviceIOStatus[index] & 1);
+}
+
+Q_DECL_EXPORT bool
+hpsjam_sound_is_output_device(int index)
+{
+	if (index < 0 || (unsigned)index >= audioDevicesMax)
+		return (false);
+	else
+		return (audioDeviceIOStatus[index] & 2);
 }

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,6 +25,7 @@
 
 #include <QMutexLocker>
 #include <QKeyEvent>
+#include <QListWidgetItem>
 
 #include "protocol.h"
 #include "peer.h"
@@ -71,18 +72,32 @@ HpsJamDeviceSelection :: handle_rescan_device(bool forced)
 
 	for (int x = 0; x < max; x++) {
 		QString name = hpsjam_sound_get_device_name(x);
-		HPSJAM_NO_SIGNAL(b_input_device,addItem(name));
-		HPSJAM_NO_SIGNAL(b_output_device,addItem(name));
+		QListWidgetItem item(name);
+
+		if (hpsjam_sound_is_input_device(x)) {
+			item.setFlags(item.flags() | Qt::ItemIsSelectable);
+			HPSJAM_NO_SIGNAL(b_input_device,addItem(new QListWidgetItem(item)));
+		} else {
+			item.setFlags(item.flags() & ~Qt::ItemIsSelectable);
+			HPSJAM_NO_SIGNAL(b_input_device,addItem(new QListWidgetItem(item)));
+		}
+		if (hpsjam_sound_is_output_device(x)) {
+			item.setFlags(item.flags() | Qt::ItemIsSelectable);
+			HPSJAM_NO_SIGNAL(b_output_device,addItem(new QListWidgetItem(item)));
+		} else {
+			item.setFlags(item.flags() & ~Qt::ItemIsSelectable);
+			HPSJAM_NO_SIGNAL(b_output_device,addItem(new QListWidgetItem(item)));
+		}
 	}
 
 	if (max > 0 && in_index > -1 && in_index < max) {
-		HPSJAM_NO_SIGNAL(b_input_device,setCurrentIndex(in_index));
+		HPSJAM_NO_SIGNAL(b_input_device,setCurrentRow(in_index));
 		if (forced)
 			hpsjam_sound_set_input_device(in_index);
 	}
 
 	if (max > 0 && out_index > -1 && out_index < max) {
-		HPSJAM_NO_SIGNAL(b_output_device,setCurrentIndex(out_index));
+		HPSJAM_NO_SIGNAL(b_output_device,setCurrentRow(out_index));
 		if (forced)
 			hpsjam_sound_set_output_device(out_index);
 	}
@@ -91,9 +106,13 @@ HpsJamDeviceSelection :: handle_rescan_device(bool forced)
 int
 HpsJamDeviceSelection :: handle_set_input_device(int value)
 {
-	const int input = hpsjam_sound_set_input_device(value);
-	refreshStatus();
-	return (input);
+	if (hpsjam_sound_is_input_device(value)) {
+		const int input = hpsjam_sound_set_input_device(value);
+		refreshStatus();
+		return (input);
+	} else {
+		return (-1);
+	}
 }
 
 int
@@ -113,9 +132,13 @@ HpsJamDeviceSelection :: handle_set_input_right(int value)
 int
 HpsJamDeviceSelection :: handle_set_output_device(int value)
 {
-	const int output = hpsjam_sound_set_output_device(value);
-	refreshStatus();
-	return (output);
+	if (hpsjam_sound_is_output_device(value)) {
+		const int output = hpsjam_sound_set_output_device(value);
+		refreshStatus();
+		return (output);
+	} else {
+		return (-1);
+	}
 }
 
 int
