@@ -49,7 +49,9 @@ static uint32_t audioBufferDefSamples = 2 * HPSJAM_DEF_SAMPLES;
 static uint32_t audioBufferSamples;
 static uint32_t audioInputChannels;
 static uint32_t audioOutputChannels;
-static float *audioInputBuffer[3];
+static float *audioInputBuffer[5];
+static uint32_t audioInputCount;
+static uint32_t audioOutputCount;
 static QMutex audioMutex;
 static uint32_t audioInputDeviceSelection;
 static uint32_t audioOutputDeviceSelection;
@@ -185,47 +187,69 @@ hpsjam_audio_callback(AudioDeviceID deviceID,
 
 	if (n_in > 1 || n_out > 1 || (n_in == 0 && n_out == 0) ||
 	    audioInputBuffer[0] == 0 || audioInputBuffer[1] == 0 ||
-	    audioInputBuffer[2] == 0)
+	    audioInputBuffer[2] == 0 || audioInputBuffer[3] == 0 ||
+	    audioInputBuffer[4] == 0)
 		goto error;
 
 	/* copy input to buffer */
 	if (n_in == 1 && deviceID == audioInputDevice) {
+		const unsigned map[2] = {
+		    (audioInputCount & 1) ? 0 : 3,
+		    (audioInputCount & 1) ? 1 : 4
+		};
+
 		for (unsigned ch = 0; ch != 2; ch++) {
 			for (uint32_t x = 0; x != audioBufferSamples; x++) {
-				audioInputBuffer[ch][x] = ((float *)inData->mBuffers[0].mData)
+				audioInputBuffer[map[ch]][x] = ((float *)inData->mBuffers[0].mData)
 				    [x * audioInputChannels + audioInputSelection[ch]];
 			}
 		}
-	}
 
-	/* process audio on output */
-	if (n_out == 1) {
-		if (deviceID != audioOutputDevice)
-			goto error;
-
-		hpsjam_client_peer->sound_process(audioInputBuffer[0],
-		    audioInputBuffer[1], audioBufferSamples);
+		hpsjam_client_peer->sound_process(audioInputBuffer[map[0]],
+		    audioInputBuffer[map[1]], audioBufferSamples);
 
 		/* Move MIDI data, if any */
 		hpsjam_midi_write_event();
 
+		audioInputCount++;
+	}
+
+	/* process audio on output */
+	if (n_out == 1) {
+		const uint32_t delta = audioInputCount - audioOutputCount;
+
+		if (deviceID != audioOutputDevice || delta == 0)
+			goto error;
+
+		if (delta > 2) {
+			/* too far behind - skip a buffer */
+			audioOutputCount++;
+		}
+
+		const unsigned map[2] = {
+		    (audioOutputCount & 1) ? 0 : 3,
+		    (audioOutputCount & 1) ? 1 : 4
+		};
+
 		/* check for mono output */
 		if (audioInputSelection[0] == audioInputSelection[1]) {
 			for (uint32_t x = 0; x != audioBufferSamples; x++) {
-				audioInputBuffer[0][x] =
-				    (audioInputBuffer[0][x] + audioInputBuffer[1][x]) / 2.0f;
+				audioInputBuffer[map[0]][x] =
+				    (audioInputBuffer[map[0]][x] + audioInputBuffer[map[1]][x]) / 2.0f;
 			}
 		}
 
 		/* fill in audio output data */
 		for (uint32_t ch = 0; ch != audioOutputChannels; ch++) {
 			const float *src = audioInputBuffer[
-			    (ch == audioOutputSelection[0]) ? 0 :
-			   ((ch == audioOutputSelection[1]) ? 1 : 2)];
+			    (ch == audioOutputSelection[0]) ? map[0] :
+			   ((ch == audioOutputSelection[1]) ? map[1] : 2)];
 
 			for (uint32_t x = 0; x != audioBufferSamples; x++)
 				((float *)outData->mBuffers[0].mData)[x * audioOutputChannels + ch] = src[x];
 		}
+
+		audioOutputCount++;
 	}
 	return (kAudioHardwareNoError);
 error:
@@ -440,8 +464,13 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	audioInputBuffer[0] = new float [audioBufferSamples];
 	audioInputBuffer[1] = new float [audioBufferSamples];
 	audioInputBuffer[2] = new float [audioBufferSamples];
+	audioInputBuffer[3] = new float [audioBufferSamples];
+	audioInputBuffer[4] = new float [audioBufferSamples];
 
 	memset(audioInputBuffer[2], 0, sizeof(float) * audioBufferSamples);
+
+	audioInputCount = 0;
+	audioOutputCount = 0;
 
 	audioInit = true;
 
@@ -513,9 +542,15 @@ hpsjam_sound_uninit()
 
 	delete [] audioInputBuffer[0];
 	delete [] audioInputBuffer[1];
+	delete [] audioInputBuffer[2];
+	delete [] audioInputBuffer[3];
+	delete [] audioInputBuffer[4];
 
 	audioInputBuffer[0] = 0;
 	audioInputBuffer[1] = 0;
+	audioInputBuffer[2] = 0;
+	audioInputBuffer[3] = 0;
+	audioInputBuffer[4] = 0;
 }
 
 Q_DECL_EXPORT int
