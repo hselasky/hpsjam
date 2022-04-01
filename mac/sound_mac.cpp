@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -194,8 +194,8 @@ hpsjam_audio_callback(AudioDeviceID deviceID,
 	/* copy input to buffer */
 	if (n_in == 1 && deviceID == audioInputDevice) {
 		const unsigned map[2] = {
-		    (audioInputCount & 1) ? 0 : 3,
-		    (audioInputCount & 1) ? 1 : 4
+		    (audioInputCount & 1) ? 0U : 3U,
+		    (audioInputCount & 1) ? 1U : 4U
 		};
 
 		for (unsigned ch = 0; ch != 2; ch++) {
@@ -227,8 +227,8 @@ hpsjam_audio_callback(AudioDeviceID deviceID,
 		}
 
 		const unsigned map[2] = {
-		    (audioOutputCount & 1) ? 0 : 3,
-		    (audioOutputCount & 1) ? 1 : 4
+		    (audioOutputCount & 1) ? 0U : 3U,
+		    (audioOutputCount & 1) ? 1U : 4U
 		};
 
 		/* check for mono output */
