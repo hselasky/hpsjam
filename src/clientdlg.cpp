@@ -197,7 +197,10 @@ HpsJamClient :: closeEvent(QCloseEvent *event)
 	handle_connect();
 	w_connect->handle_disconnect();
 
+	/* save settings before stopping audio device */
 	saveSettings();
+
+	hpsjam_sound_uninit();
 
 	QCoreApplication::exit(0);
 }

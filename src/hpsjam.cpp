@@ -409,9 +409,6 @@ main(int argc, char **argv)
 		}
 
 		hpsjam_client->w_config->audio_dev.refreshStatus();
-
-		/* register exit hook for audio */
-		atexit(&hpsjam_sound_uninit);
 #endif
 
 #ifdef HAVE_MAC_AUDIO
@@ -444,9 +441,6 @@ main(int argc, char **argv)
 			hpsjam_client->w_config->audio_dev.handle_set_input_right(input_right + 1);
 
 		hpsjam_client->w_config->audio_dev.refreshStatus();
-
-		/* register exit hook for audio */
-		atexit(&hpsjam_sound_uninit);
 #endif
 
 #ifdef HAVE_ASIO_AUDIO
@@ -473,9 +467,6 @@ main(int argc, char **argv)
 			hpsjam_client->w_config->audio_dev.handle_set_input_right(input_right + 1);
 
 		hpsjam_client->w_config->audio_dev.refreshStatus();
-
-		/* register exit hook for audio */
-		atexit(&hpsjam_sound_uninit);
 #endif
 
 		/* use settings passed from the command line, if any */
