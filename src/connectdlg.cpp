@@ -41,7 +41,14 @@ void
 HpsJamConnectList :: updateSelection(const QString &other)
 {
 	QString temp = toPlainText();
-	QStringList list = temp.split(QString("\n"), QString::SkipEmptyParts);
+	QStringList list = temp.split(QString("\n"));
+
+	for (int x = 0; x != list.length(); ) {
+		if (list[x].isEmpty())
+			list.removeAt(x);
+		else
+			x++;
+	}
 
 	for (int x = 0; x != list.length(); x++) {
 		if (list[x] == other) {
