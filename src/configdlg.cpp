@@ -106,7 +106,7 @@ HpsJamDeviceSelection :: handle_rescan_device(bool forced)
 int
 HpsJamDeviceSelection :: handle_set_input_device(int value)
 {
-	if (hpsjam_sound_is_input_device(value)) {
+	if (value < 0 || hpsjam_sound_is_input_device(value)) {
 		const int input = hpsjam_sound_set_input_device(value);
 		refreshStatus();
 		return (input);
@@ -132,7 +132,7 @@ HpsJamDeviceSelection :: handle_set_input_right(int value)
 int
 HpsJamDeviceSelection :: handle_set_output_device(int value)
 {
-	if (hpsjam_sound_is_output_device(value)) {
+	if (value < 0 || hpsjam_sound_is_output_device(value)) {
 		const int output = hpsjam_sound_set_output_device(value);
 		refreshStatus();
 		return (output);
