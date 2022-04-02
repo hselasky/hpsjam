@@ -75,17 +75,17 @@ HpsJamDeviceSelection :: handle_rescan_device(bool forced)
 		QListWidgetItem item(name);
 
 		if (hpsjam_sound_is_input_device(x)) {
-			item.setFlags(item.flags() | Qt::ItemIsSelectable);
+			item.setFlags(item.flags() | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 			HPSJAM_NO_SIGNAL(b_input_device,addItem(new QListWidgetItem(item)));
 		} else {
-			item.setFlags(item.flags() & ~Qt::ItemIsSelectable);
+			item.setFlags(item.flags() & ~(Qt::ItemIsSelectable | Qt::ItemIsEnabled));
 			HPSJAM_NO_SIGNAL(b_input_device,addItem(new QListWidgetItem(item)));
 		}
 		if (hpsjam_sound_is_output_device(x)) {
-			item.setFlags(item.flags() | Qt::ItemIsSelectable);
+			item.setFlags(item.flags() | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 			HPSJAM_NO_SIGNAL(b_output_device,addItem(new QListWidgetItem(item)));
 		} else {
-			item.setFlags(item.flags() & ~Qt::ItemIsSelectable);
+			item.setFlags(item.flags() & ~(Qt::ItemIsSelectable | Qt::ItemIsEnabled));
 			HPSJAM_NO_SIGNAL(b_output_device,addItem(new QListWidgetItem(item)));
 		}
 	}
