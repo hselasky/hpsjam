@@ -166,24 +166,13 @@ hpsjam_audio_callback(AudioDeviceID deviceID,
 {
 	QMutexLocker locker(&audioMutex);
 
-	/* sanity check */
-	if (inData == 0 || outData == 0)
-		return (kAudioHardwareNoError);
-
-	size_t n_in = inData->mNumberBuffers;
-	size_t n_out = outData->mNumberBuffers;
+	const size_t n_in = (inData != 0) ? inData->mNumberBuffers : 0;
+	const size_t n_out = (outData != 0) ? outData->mNumberBuffers : 0;
 
 	/* set correct number of output bytes */
 	for (size_t x = 0; x != n_out; x++) {
 		outData->mBuffers[x].mDataByteSize =
 		    audioBufferSamples * audioOutputChannels * sizeof(float);
-	}
-
-	/* sanity check */
-	for (size_t x = 0; x != n_in; x++) {
-		if (inData->mBuffers[x].mDataByteSize !=
-		    (audioBufferSamples * audioInputChannels * sizeof(float)))
-			goto error;
 	}
 
 	if (n_in > 1 || n_out > 1 || (n_in == 0 && n_out == 0) ||
