@@ -87,8 +87,8 @@ public:
 
 		gl.setColumnStretch(3,1);
 
-		connect(&b_input_device, SIGNAL(currentIndexChanged(int)), this, SLOT(handle_set_input_device(int)));
-		connect(&b_output_device, SIGNAL(currentIndexChanged(int)), this, SLOT(handle_set_output_device(int)));
+		connect(&b_input_device, SIGNAL(currentRowChanged(int)), this, SLOT(handle_set_input_device(int)));
+		connect(&b_output_device, SIGNAL(currentRowChanged(int)), this, SLOT(handle_set_output_device(int)));
 
 		connect(&s_input_left, SIGNAL(valueChanged(int)), this, SLOT(handle_set_input_left(int)));
 		connect(&s_output_left, SIGNAL(valueChanged(int)), this, SLOT(handle_set_output_left(int)));
