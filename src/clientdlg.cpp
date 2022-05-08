@@ -239,6 +239,8 @@ HpsJamClient :: saveSettings()
 	settings.setValue("input_right", w_config->audio_dev.handle_set_input_right(-1));
 	settings.setValue("output_right", w_config->audio_dev.handle_set_output_right(-1));
 	settings.setValue("buffer_samples", w_config->audio_dev.handle_toggle_buffer_samples(0));
+	settings.setValue("output_jitter", w_config->audio_dev.s_jitter_output.value());
+	settings.setValue("input_jitter", w_config->audio_dev.s_jitter_input.value());
 	settings.endGroup();
 }
 
@@ -269,6 +271,9 @@ HpsJamClient :: loadSettings()
 	input_right = settings.value("config/input_right", QString("-1")).toInt();
 	output_right = settings.value("config/output_right", QString("-1")).toInt();
 	buffer_samples = settings.value("config/buffer_samples", QString("96")).toInt();
+
+	w_config->audio_dev.s_jitter_output.setValue(settings.value("config/output_jitter", QString("8")).toInt());
+	w_config->audio_dev.s_jitter_input.setValue(settings.value("config/input_jitter", QString("8")).toInt());
 }
 
 void

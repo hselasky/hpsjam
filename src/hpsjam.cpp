@@ -102,6 +102,8 @@ static const struct option hpsjam_opts[] = {
 	{ "jacknoconnect", no_argument, NULL, 'J' },
 	{ "jackname", required_argument, NULL, 'n' },
 #endif
+	{ "audio-input-jitter", required_argument, NULL, 'v'},
+	{ "audio-output-jitter", required_argument, NULL, 'V'},
 #ifdef __FreeBSD__
 	{ "rtprio", required_argument, NULL, 'x' },
 #endif
@@ -136,6 +138,8 @@ usage(void)
 #endif
 		"	[--audio-uplink-format <0..%u>] \\\n"
 		"	[--audio-downlink-format <0..%u>] \\\n"
+		"	[--audio-input-jitter <0..99 milliseconds, Default is 8 ms> \\\n"
+		"	[--audio-output-jitter <0..99 milliseconds, Default is 8 ms> \\\n"
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 		"	[--audio-input-device <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-output-device <0,1,2,3 ... , Default is 0>] \\\n"
@@ -166,7 +170,7 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	static const char hpsjam_short_opts[] = {
-	    "M:q:p:sP:hBJ:n:K:w:N:gi:j:c:U:D:I:O:l:L:r:R:t:T:b:x:"
+	    "M:q:p:sP:hBJ:n:K:w:N:gi:j:c:U:D:I:O:l:L:r:R:t:T:v:V:b:x:"
 	};
 	int c;
 	int port = HPSJAM_DEFAULT_PORT;
@@ -191,6 +195,8 @@ main(int argc, char **argv)
 	int output_right = -1;
 	int buffer_samples = -1;
 #endif
+	int input_jitter = -1;
+	int output_jitter = -1;
 
 	while ((c = getopt_long_only(argc, argv, hpsjam_short_opts, hpsjam_opts, NULL)) != -1) {
 		switch (c) {
@@ -335,6 +341,16 @@ main(int argc, char **argv)
 		case 'g':
 			hpsjam_mute_peer_audio = true;
 			break;
+		case 'v':
+			input_jitter = atoi(optarg);
+			if (input_jitter < 0)
+				usage();
+			break;
+		case 'V':
+			output_jitter = atoi(optarg);
+			if (output_jitter < 0)
+				usage();
+			break;
 		case ' ':
 			/* ignore */
 			break;
@@ -382,6 +398,11 @@ main(int argc, char **argv)
 
 		/* load current settings, if any */
 		hpsjam_client->loadSettings();
+
+		if (input_jitter > -1)
+			hpsjam_client->w_config->audio_dev.s_jitter_input.setValue(input_jitter);
+		if (output_jitter > -1)
+			hpsjam_client->w_config->audio_dev.s_jitter_output.setValue(output_jitter);
 
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 		if (input_device < 0)
@@ -507,6 +528,17 @@ main(int argc, char **argv)
 
 		hpsjam_default_midi = new hpsjam_midi_buffer[hpsjam_num_cpu];
 		hpsjam_server_peers = new class hpsjam_server_peer [hpsjam_num_server_peers];
+
+		for (unsigned x = 0; x != hpsjam_num_server_peers; x++) {
+			if (output_jitter > -1) {
+				hpsjam_server_peers[x].out_buffer[0].setWaterTarget(output_jitter);
+				hpsjam_server_peers[x].out_buffer[1].setWaterTarget(output_jitter);
+			}
+			if (input_jitter > -1) {
+				hpsjam_server_peers[x].in_audio[0].setWaterTarget(input_jitter);
+				hpsjam_server_peers[x].in_audio[1].setWaterTarget(input_jitter);
+			}
+		}
 
 		/* set a valid UDP buffer size */
 		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX * hpsjam_num_server_peers;

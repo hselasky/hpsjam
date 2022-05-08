@@ -33,7 +33,7 @@
 #include "protocol.h"
 
 #define	HPSJAM_MAX_SAMPLES \
-	(16 * HPSJAM_DEF_SAMPLES) /* 16 ms */
+	(32 * HPSJAM_DEF_SAMPLES) /* 32 ms */
 
 static inline float
 level_encode(float value)
@@ -97,6 +97,7 @@ public:
 	uint16_t fade_in;
 	uint16_t low_water;
 	uint16_t high_water;
+	uint16_t target_water;
 
 	void doWater() {
 		if (low_water > total)
@@ -117,13 +118,29 @@ public:
 
 	hpsjam_audio_buffer() {
 		clear();
+		target_water = HPSJAM_MAX_SAMPLES / 2;
+	};
+
+	int setWaterTarget(int value) {
+
+		value *= HPSJAM_DEF_SAMPLES;
+
+		/* range check */
+		if (value > (HPSJAM_MAX_SAMPLES / 2))
+			value = HPSJAM_MAX_SAMPLES / 2;
+		else if (value < (4 * HPSJAM_DEF_SAMPLES))
+			value = 4 * HPSJAM_DEF_SAMPLES;
+		/* set new value */
+		target_water = value;
+
+		return (value / HPSJAM_DEF_SAMPLES);
 	};
 
 	int getWaterRef() const {
 		if (low_water > high_water)
 			return (0);	/* normal */
 		size_t diff = high_water - low_water;
-		ssize_t middle = low_water + (diff / 2) - (HPSJAM_MAX_SAMPLES / 2);
+		ssize_t middle = low_water + (diff / 2) - (ssize_t)target_water;
 		return (middle);
 	};
 

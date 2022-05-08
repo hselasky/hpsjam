@@ -50,6 +50,8 @@ public:
 	HpsJamDeviceSelection() : gl(this),
 	    b_input_device(),
 	    b_output_device(),
+	    l_jitter_input(tr("Local audio input jitter buffer")),
+	    l_jitter_output(tr("Local audio output jitter buffer")),
 	    b_toggle_buffer_samples(tr("Toggle buffer size")),
 	    b_rescan_device("Rescan devices") {
 		setTitle("Audio device configuration");
@@ -66,32 +68,45 @@ public:
 		s_output_right.setAccessibleDescription("Set right output channel index");
 		s_output_right.setPrefix(QString("R-OUT "));
 
-		gl.addWidget(&b_input_device, 0,0);
-		gl.addWidget(&s_input_left, 0,1);
-		gl.addWidget(&s_input_right, 0,2);
-		gl.addWidget(&l_input, 0,3);
+		s_jitter_input.setAccessibleDescription("Set local audio input jitter buffer in milliseconds");
+		s_jitter_input.setSuffix(QString(" ms"));
+		s_jitter_input.setRange(0,99);
+
+		s_jitter_output.setAccessibleDescription("Set local audio output jitter buffer in milliseconds");
+		s_jitter_output.setSuffix(QString(" ms"));
+		s_jitter_output.setRange(0,99);
+
+		gl.addWidget(&s_jitter_input, 0,1);
+		gl.addWidget(&l_jitter_input, 0,2,1,2);
+		gl.addWidget(&b_input_device, 0,0,2,1);
+		gl.addWidget(&s_input_left, 1,1);
+		gl.addWidget(&s_input_right, 1,2);
+		gl.addWidget(&l_input, 1,3);
+
+		gl.addWidget(&s_jitter_output, 2,1);
+		gl.addWidget(&l_jitter_output, 2,2,1,2);
+#if !defined(HAVE_ASIO_AUDIO)
+		gl.addWidget(&b_output_device, 2,0,2,1);
+#endif
+		gl.addWidget(&s_output_left, 3,1);
+		gl.addWidget(&s_output_right, 3,2);
 
 #if !defined(HAVE_ASIO_AUDIO)
-		gl.addWidget(&b_output_device, 1,0);
-#endif
-		gl.addWidget(&s_output_left, 1,1);
-		gl.addWidget(&s_output_right, 1,2);
-
-#if !defined(HAVE_ASIO_AUDIO)
-		gl.addWidget(&l_output, 1,3);
+		gl.addWidget(&l_output, 3,3);
 #endif
 
-		gl.addWidget(&b_toggle_buffer_samples, 2,1);
-		gl.addWidget(&l_buffer_samples, 2,2,1,2);
-		gl.addWidget(&b_rescan_device, 2,0,1,1);
-
-		gl.setColumnStretch(3,1);
+		gl.addWidget(&b_toggle_buffer_samples, 4,1);
+		gl.addWidget(&l_buffer_samples, 4,2,1,2);
+		gl.addWidget(&b_rescan_device, 4,0,1,1);
 
 		connect(&b_input_device, SIGNAL(currentRowChanged(int)), this, SLOT(handle_set_input_device(int)));
 		connect(&b_output_device, SIGNAL(currentRowChanged(int)), this, SLOT(handle_set_output_device(int)));
 
 		connect(&s_input_left, SIGNAL(valueChanged(int)), this, SLOT(handle_set_input_left(int)));
 		connect(&s_output_left, SIGNAL(valueChanged(int)), this, SLOT(handle_set_output_left(int)));
+
+		connect(&s_jitter_input, SIGNAL(valueChanged(int)), this, SLOT(handle_set_input_jitter(int)));
+		connect(&s_jitter_output, SIGNAL(valueChanged(int)), this, SLOT(handle_set_output_jitter(int)));
 
 		connect(&s_input_right, SIGNAL(valueChanged(int)), this, SLOT(handle_set_input_right(int)));
 		connect(&s_output_right, SIGNAL(valueChanged(int)), this, SLOT(handle_set_output_right(int)));
@@ -105,11 +120,15 @@ public:
 	QListWidget b_input_device;
 	QSpinBox s_input_left;
 	QSpinBox s_input_right;
+	QSpinBox s_jitter_input;
+	QSpinBox s_jitter_output;
 	QListWidget b_output_device;
 	QSpinBox s_output_left;
 	QSpinBox s_output_right;
 	QLabel l_input;
 	QLabel l_output;
+	QLabel l_jitter_input;
+	QLabel l_jitter_output;
 	QPushButton b_toggle_buffer_samples;
 	QPushButton b_rescan_device;
 	QLabel l_buffer_samples;
@@ -125,6 +144,8 @@ public slots:
 	int handle_set_input_right(int);
 	int handle_set_output_right(int);
 	int handle_toggle_buffer_samples(int = -1);
+	void handle_set_input_jitter(int);
+	void handle_set_output_jitter(int);
 };
 
 class HpsJamConfigFormat : public QGroupBox {

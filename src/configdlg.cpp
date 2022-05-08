@@ -182,6 +182,36 @@ HpsJamDeviceSelection :: handle_toggle_buffer_samples(int value)
 }
 
 void
+HpsJamDeviceSelection :: handle_set_input_jitter(int value)
+{
+	int temp[2];
+
+	do {
+		QMutexLocker locker(&hpsjam_client_peer->lock);
+		temp[0] = hpsjam_client_peer->out_audio[0].setWaterTarget(value);
+		temp[1] = hpsjam_client_peer->out_audio[1].setWaterTarget(value);
+	} while (0);
+
+	if (temp[0] != value || temp[1] != value)
+		HPSJAM_NO_SIGNAL(s_jitter_input,setValue(temp[0]));
+}
+
+void
+HpsJamDeviceSelection :: handle_set_output_jitter(int value)
+{
+	int temp[2];
+
+	do {
+		QMutexLocker locker(&hpsjam_client_peer->lock);
+		temp[0] = hpsjam_client_peer->in_audio[0].setWaterTarget(value);
+		temp[1] = hpsjam_client_peer->in_audio[1].setWaterTarget(value);
+	} while (0);
+
+	if (temp[0] != value || temp[1] != value)
+		HPSJAM_NO_SIGNAL(s_jitter_output,setValue(temp[0]));
+}
+
+void
 HpsJamDeviceSelection :: refreshStatus()
 {
 	QString status;
