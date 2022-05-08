@@ -138,8 +138,8 @@ usage(void)
 #endif
 		"	[--audio-uplink-format <0..%u>] \\\n"
 		"	[--audio-downlink-format <0..%u>] \\\n"
-		"	[--audio-input-jitter <0..%u milliseconds, Default is 8 ms> \\\n"
-		"	[--audio-output-jitter <0..%u milliseconds, Default is 8 ms> \\\n"
+		"	[--audio-input-jitter <0..%u milliseconds, Default is 8 ms>] \\\n"
+		"	[--audio-output-jitter <0..%u milliseconds, Default is 8 ms>] \\\n"
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 		"	[--audio-input-device <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-output-device <0,1,2,3 ... , Default is 0>] \\\n"
