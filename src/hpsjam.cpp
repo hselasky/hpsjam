@@ -138,8 +138,8 @@ usage(void)
 #endif
 		"	[--audio-uplink-format <0..%u>] \\\n"
 		"	[--audio-downlink-format <0..%u>] \\\n"
-		"	[--audio-input-jitter <0..99 milliseconds, Default is 8 ms> \\\n"
-		"	[--audio-output-jitter <0..99 milliseconds, Default is 8 ms> \\\n"
+		"	[--audio-input-jitter <0..%u milliseconds, Default is 8 ms> \\\n"
+		"	[--audio-output-jitter <0..%u milliseconds, Default is 8 ms> \\\n"
 #if defined(HAVE_MAC_AUDIO) || defined(HAVE_ASIO_AUDIO)
 		"	[--audio-input-device <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-output-device <0,1,2,3 ... , Default is 0>] \\\n"
@@ -162,6 +162,8 @@ usage(void)
 		HPSJAM_NUM_ICONS - 1,
 		HPSJAM_AUDIO_FORMAT_MAX - 1,
 		HPSJAM_AUDIO_FORMAT_MAX - 1,
+		HPSJAM_MAX_SAMPLES / HPSJAM_DEF_SAMPLES / 2,
+		HPSJAM_MAX_SAMPLES / HPSJAM_DEF_SAMPLES / 2,
 		HPSJAM_CPU_MAX);
         exit(1);
 }
