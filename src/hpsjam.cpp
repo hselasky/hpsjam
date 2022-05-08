@@ -533,10 +533,17 @@ main(int argc, char **argv)
 			if (output_jitter > -1) {
 				hpsjam_server_peers[x].out_buffer[0].setWaterTarget(output_jitter);
 				hpsjam_server_peers[x].out_buffer[1].setWaterTarget(output_jitter);
+			} else {
+				hpsjam_server_peers[x].out_buffer[0].setWaterTarget(8);
+				hpsjam_server_peers[x].out_buffer[1].setWaterTarget(8);
 			}
+
 			if (input_jitter > -1) {
 				hpsjam_server_peers[x].in_audio[0].setWaterTarget(input_jitter);
 				hpsjam_server_peers[x].in_audio[1].setWaterTarget(input_jitter);
+			} else {
+				hpsjam_server_peers[x].in_audio[0].setWaterTarget(8);
+				hpsjam_server_peers[x].in_audio[1].setWaterTarget(8);
 			}
 		}
 
