@@ -84,5 +84,5 @@ hpsjam_audio_buffer :: adjustBuffer()
 	}
 
 	/* Reset the water level after filling samples. */
-	low_water = high_water = (HPSJAM_MAX_SAMPLES / 2);
+	low_water = high_water = target_water;
 }

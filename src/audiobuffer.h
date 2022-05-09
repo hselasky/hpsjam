@@ -112,7 +112,7 @@ public:
 		consumer = 0;
 		total = 0;
 		fade_in = fadeSamples;
-		low_water = 65535;
+		low_water = HPSJAM_MAX_SAMPLES;
 		high_water = 0;
 	};
 
@@ -139,8 +139,9 @@ public:
 	int getWaterRef() const {
 		if (low_water > high_water)
 			return (0);	/* normal */
-		size_t diff = high_water - low_water;
-		ssize_t middle = low_water + (diff / 2) - (ssize_t)target_water;
+		ssize_t diff = high_water - low_water;
+		ssize_t middle = low_water + (diff / 2) -
+		    (ssize_t)target_water;
 		return (middle);
 	};
 
