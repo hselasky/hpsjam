@@ -86,10 +86,10 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 
 	l_status[0].setText(QString("Network :: %1 packets lost and %2 damaged. Round trip time is %3ms+%4ms")
 	    .arg(packet_loss).arg(packet_damage).arg(ping_time).arg(jitter_time));
-	l_status[1].setText(QString("Local audio output :: Low and high water is %1 and %2, adjusting %3 samples, %4 ms jitter.")
+	l_status[2].setText(QString("Local audio output :: Low and high water is %1 and %2, adjusting %3 samples, %4 ms jitter.")
 	    .arg(low_water[0]).arg(high_water[0]).arg(adjust[0])
 	    .arg((high_water[0] - low_water[0] + HPSJAM_DEF_SAMPLES - 1) / HPSJAM_DEF_SAMPLES));
-	l_status[2].setText(QString("Local audio input :: Low and high water is %1 and %2, adjusting %3 samples, %4 ms jitter.")
+	l_status[1].setText(QString("Local audio input :: Low and high water is %1 and %2, adjusting %3 samples, %4 ms jitter.")
 	    .arg(low_water[1]).arg(high_water[1]).arg(adjust[1])
 	    .arg((high_water[1] - low_water[1] + HPSJAM_DEF_SAMPLES - 1) / HPSJAM_DEF_SAMPLES));
 
