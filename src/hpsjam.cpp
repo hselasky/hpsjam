@@ -36,6 +36,7 @@
 #include <QApplication>
 #include <QCoreApplication>
 #include <QMessageBox>
+#include <QThread>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -523,6 +524,9 @@ main(int argc, char **argv)
 
 		/* show window */
 		hpsjam_client->show();
+
+		/* run graphics at lower priority */
+		QThread::currentThread()->setPriority(QThread::LowPriority);
 
 		return (app.exec());
 	} else {
