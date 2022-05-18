@@ -61,6 +61,7 @@
   a.b;					\
   a.blockSignals(false);		\
 } while (0)
+
 #define	HPSJAM_SWAP(a,b) do {		\
 	typeof(a) __temp = (b);		\
 	(b) = (a);			\
