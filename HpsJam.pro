@@ -5,6 +5,10 @@ TEMPLATE	= app
 CONFIG		+= qt release
 QT		+= core gui svg widgets
 
+isEmpty(PREFIX) {
+PREFIX		= /usr/local
+}
+
 HEADERS		+= src/audiobuffer.h
 HEADERS		+= src/chatdlg.h
 HEADERS		+= src/clientdlg.h
