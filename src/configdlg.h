@@ -137,12 +137,12 @@ public:
 
 public slots:
 	void handle_rescan_device(bool = true);
-	int handle_set_input_device(int);
-	int handle_set_output_device(int);
-	int handle_set_input_left(int);
-	int handle_set_output_left(int);
-	int handle_set_input_right(int);
-	int handle_set_output_right(int);
+	int handle_set_input_device(int = -1);
+	int handle_set_output_device(int = -1);
+	int handle_set_input_left(int = 0);
+	int handle_set_output_left(int = 0);
+	int handle_set_input_right(int = 0);
+	int handle_set_output_right(int = 0);
 	int handle_toggle_buffer_samples(int = -1);
 	void handle_set_input_jitter(int);
 	void handle_set_output_jitter(int);
