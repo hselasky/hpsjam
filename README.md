@@ -22,38 +22,47 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
   <li>low latency MIDI event routing</li>
 </ul>
 
-## How to build
+## How to build client and server under FreeBSD
 <ul>
-  <li>qmake PREFIX=/usr # Linux</li>
-  <li>qmake PREFIX=/usr/local # FreeBSD</li>
+  <li>qmake PREFIX=/usr/local</li>
   <li>make all</li>
   <li>make install</li>
 </ul>
 
-## Dependencies
+## How to build server under Ubuntu Linux
 <ul>
-  <li> QT core</li>
-  <li> QT GUI</li>
-  <li> QT widgets</li>
-  <li> QT SVG renderer</li>
-  <li> <A HREF="http://www.fftw.org">FFTW3</A> </li>
-  <li> <A HREF="https://jackaudio.org">JACK</A> </li>
-  <li> <A HREF="http://www.asio4all.org">ASIO</A> </li>
+  <li>sudo apt-get install git build-essential qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5svg5-dev libqt5webenginewidgets5 libqt5webchannel5-dev qtwebengine5-dev libfftw3-dev libjack-dev jackd</li>
+  <li>qmake PREFIX=/usr WITHOUT_AUDIO=YES QMAKE_CFLAGS_ISYSTEM="-I"</li>
+  <li>make all</li>
+  <li>make install</li>
 </ul>
 
-<b>NOTE:</b> for those on Linux that have Jamulus already installed, you need to install additionally:
+NOTE 1) By giving qmake the "WITHOUT_AUDIO=YES" flag you can skip the jack dependency for the server side.
+NOTE 2) By giving qmake the "QMAKE_CFLAGS_ISYSTEM=-I" flag you can fix the following compile error "fatal error: stdlib.h: No such file or directory"
+
+## Dependencies
 <ul>
-  <li>libfftw3-dev</li>
-  <li>libqt5svg5-dev</li>
+<li><A HREF="http://www.fftw.org">libfftw3-dev</A></li>
+<li><A HREF="https://jackaudio.org">jackd libjack-dev</A></li>
+<li><A HREF="http://www.asio4all.org">ASIO</A></li>
+<li>build-essential</li>
+<li>qt5-qmake</li>
+<li>qtbase5-dev</li>
+<li>qtbase5-dev-tools</li>
+<li>libqt5svg5-dev</li>
+<li>libqt5webenginewidgets5</li>
+<li>libqt5webchannel5-dev</li>
+<li>qtwebengine5-dev</li>
 </ul>
-This command should do the trick:
-<pre>
-sudo apt-get install libfftw3-dev libqt5svg5-dev
-</pre>
 
 ## Example how to start the client
 <pre>
-HpsJam
+HpsJam &
+</pre>
+
+## Example how to start the server in foreground mode, to see errors
+<pre>
+HpsJam --server --port 22124 --peers 16
 </pre>
 
 ## Example how to start the server
