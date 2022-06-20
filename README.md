@@ -70,6 +70,54 @@ HpsJam --server --port 22124 --peers 16
 HpsJam --server --port 22124 --peers 16 --daemon
 </pre>
 
+## Example of a Ubuntu service file
+<pre>
+[Unit]
+Description=Jamulus headless server
+After=network.target
+StartLimitIntervalSec=0
+
+
+[Service]
+Type=simple
+User=jamulus
+Group=nogroup
+NoNewPrivileges=true
+ProtectSystem=true
+ProtectHome=true
+Nice=-20
+IOSchedulingClass=realtime
+IOSchedulingPriority=0
+
+#### Change this to publish this server, set genre, location and other parameters.
+ExecStart=/bin/sh -c 'exec /usr/bin/HpsJam --server \
+--port 22126 \
+--peers 16 \
+--welcome-msg-file /private-backup/hps-server_welcome.txt'
+
+#	[--profile <positive value, Default is 0>] \
+#	[--password <64_bit_hexadecimal_password>] \
+#	[--mixer-password <64_bit_hexadecimal_password>] \
+#	[--ncpu <1,2,3, ... 64, Default is 1>] \
+#	[--platform offscreen] \
+#	[--mute-peer-audio] \
+#	[--ncpu <1,2,3, ... 64, Default is 1>] \
+#      [--httpd <servername:port, Default is [--httpd 127.0.0.1:80>] \
+#	[--httpd-conns <max number of connections, Default is 1> \
+#	[--cli-port <portnumber>]
+
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=inherit
+SyslogIdentifier=jamulus
+
+[Install]
+WantedBy=multi-user.target
+#
+
+</pre>
+
 ## Example how to use ffmpeg to stream from HpsJam to icecast
 <pre>
 HpsJam --server --port 22124 --peers 16 --httpd 127.0.0.1:8080 --daemon
