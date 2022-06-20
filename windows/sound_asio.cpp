@@ -688,7 +688,7 @@ hpsjam_sound_set_input_channel(int ch, int which)
 	if (audioInit == false)
 		return (-1);
 
-	if (which < 0)
+	if (which > -1)
 		audioInputSelection[ch] = which;
 
 	if (audioInputChannels != 0)
@@ -705,7 +705,7 @@ hpsjam_sound_set_output_channel(int ch, int which)
 	if (audioInit == false)
 		return (-1);
 
-	if (which < 0)
+	if (which > -1)
 		audioOutputSelection[ch] = which;
 
 	if (audioOutputChannels != 0)
