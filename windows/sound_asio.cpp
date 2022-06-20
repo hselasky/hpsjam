@@ -777,19 +777,24 @@ hpsjam_sound_rescan()
 	for (unsigned x = 0; x != MAX_DRIVERS; x++)
 		audioDeviceNames[x] = new char[32];
 
-	loadAsioDriver(dummy);
-	audioMaxSelection = asioDrivers->getDriverNames(audioDeviceNames, MAX_DRIVERS);
+	for (int timeout = 0;; timeout++) {
+		loadAsioDriver(dummy);
+		audioMaxSelection = asioDrivers->getDriverNames(audioDeviceNames, MAX_DRIVERS);
+		asioDrivers->removeCurrentDriver();
 
-	asioDrivers->removeCurrentDriver();
+		if (audioMaxSelection == 0) {
+			if (timeout == 0)
+				ASIOControlPanel();
+			else
+				break;
+		} else {
+			break;
+		}
+	}
 
 	for (unsigned x = audioMaxSelection; x < MAX_DRIVERS; x++) {
 		delete[] audioDeviceNames[x];
 		audioDeviceNames[x] = 0;
-	}
-
-	if (audioMaxSelection == 0) {
-		ASIOControlPanel();
-		return;
 	}
 
 	audioCallbacks.bufferSwitch = &hpsjam_asio_buffer_switch;
