@@ -24,7 +24,7 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
 
 ## How to build
 <ul>
-  <li>qmake PREFIX=/usr # Linux</li>
+  <li>qmake PREFIX=/usr # Linux</li> Also see more detailed instruction below.
   <li>qmake PREFIX=/usr/local # FreeBSD</li>
   <li>make all</li>
   <li>make install</li>
@@ -41,15 +41,63 @@ An online audio collaboration tool for low latency audio with lyrics and chat su
   <li> <A HREF="http://www.asio4all.org">ASIO</A> </li>
 </ul>
 
-<b>NOTE:</b> for those on Linux that have Jamulus already installed, you need to install additionally:
+## SERVER COMPILE AND INSTALL ON UBUNTU LINUX
+
+In the hope that my experiences with the compilation issues might help others down the line, here comes my (probably very imperfect How2)
+
 <ul>
-  <li>libfftw3-dev</li>
-  <li>libqt5svg5-dev</li>
+
+----
+> IMPORTANT PREVIOUS NOTES:
+1) By giving qmake this flag: qmake WITHOUT_AUDIO=YES
+You can skip the jack dependency for the server side.
+
+2) By giving qmake this flag: 'QMAKE_CFLAGS_ISYSTEM=-I'
+You can avoid the error "/usr/include/c++/9/cstdlib:75:15: fatal error: stdlib.h: No such file or directory
+75 | #include_next <stdlib.h>"
+----
+
+> STEPS TO COMPILE AND INSTALL
+
+sudo apt-get install git build-essential qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5svg5-dev libqt5webenginewidgets5 libqt5webchannel5-dev qtwebengine5-dev libfftw3-dev libjack-dev jackd
+
+cd /home/YOUR_USERNAME
+clone https://github.com/hselasky/hpsjam
+cd hpsjam
+qmake 'QMAKE_CFLAGS_ISYSTEM=-I' 'WITHOUT_AUDIO=YES' PREFIX=/usr
+(wait to compile. This can take some time. Ignore any warnings)
+make all
+sudo make install
+
+> NOW TO START THE SERVER:
+
+1) First start it without daemon, to be able to see any messages
+HpsJam --server --port 22124 --peers 16 --httpd 127.0.0.1:8080
+
+If you happen to see this error message: "HpsJam: Cannot bind to IP port: Address already in use", try to change the port e.g. "--port 22125"
+
+2) If all good, start it daemonized
+HpsJam --server --port 22125 --peers 16 --httpd 127.0.0.1:8080 --daemon
+
+3) For details on server parameters, issue "HpsJam --help"
+
+-------------------------------------------------------
+-------------------------------------------------------
+
+CLIENT COMPILE AND INSTALL ON UBUNTU LINUX
+
+sudo apt install git build-essential qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5svg5-dev libqt5webenginewidgets5 libqt5webchannel5-dev qtwebengine5-dev libfftw3-dev libjack-dev jackd
+
+
+clone https://github.com/hselasky/hpsjam
+cd hpsjam
+qmake 'QMAKE_CFLAGS_ISYSTEM=-I' PREFIX=/usr
+(wait to compile. This can take some time. Ignore any warnings)
+make all
+sudo make install
+
 </ul>
-This command should do the trick:
-<pre>
-sudo apt-get install libfftw3-dev libqt5svg5-dev
-</pre>
+
 
 ## Example how to start the client
 <pre>
@@ -87,3 +135,4 @@ HPS JAM does not collect any information from its users.
   <li>Windows (64-bit) <A HREF="http://home.selasky.org/privat/hpsjam-binary-win64.zip">Binary build here</A></li>
   <li>Raspberry-Pi <A HREF="https://github.com/kdoren/jambox-pi-gen">JamBox</A></li>
 </ul>
+
