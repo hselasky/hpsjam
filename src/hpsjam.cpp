@@ -439,20 +439,24 @@ main(int argc, char **argv)
 		/* setup MIDI first */
 		hpsjam_midi_init(jackname);
 
-		if (hpsjam_sound_init(0, 0)) {
-			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
-				QObject::tr("Cannot connect to audio subsystem.\n"
-					    "Check that you have an audio device connected and\n"
-					    "that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
+		if (input_device > -1 || output_device > -1) {
+			if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_set_input_device(input_device) < 0) {
+				QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+				    QObject::tr("Cannot find the specified audio input device"));
+			}
+			if (output_device > -1 && hpsjam_client->w_config->audio_dev.handle_set_output_device(output_device) < 0) {
+				QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+				    QObject::tr("Cannot find the specified audio output device"));
+			}
+		} else {
+			if (hpsjam_sound_init(0, 0)) {
+				QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+				    QObject::tr("Cannot connect to audio subsystem.\n"
+						"Check that you have an audio device connected and\n"
+						"that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
+			}
 		}
-		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_set_input_device(input_device) < 0) {
-			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
-				QObject::tr("Cannot find the specified audio input device"));
-		}
-		if (output_device > -1 && hpsjam_client->w_config->audio_dev.handle_set_output_device(output_device) < 0) {
-			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
-				QObject::tr("Cannot find the specified audio output device"));
-		}
+
 		if (buffer_samples > 0)
 			hpsjam_client->w_config->audio_dev.handle_toggle_buffer_samples(buffer_samples);
 		if (output_left > -1)
@@ -468,17 +472,19 @@ main(int argc, char **argv)
 #endif
 
 #ifdef HAVE_ASIO_AUDIO
-		if (hpsjam_sound_init(0, 0)) {
-			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+		if (input_device > -1) {
+			if (hpsjam_client->w_config->audio_dev.handle_set_input_device(input_device) < 0) {
+				QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
+				    QObject::tr("Cannot find the specified audio device"));
+			}
+		} else {
+			if (hpsjam_sound_init(0, 0)) {
+				QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
 				    QObject::tr("Cannot connect to ASIO subsystem or \n"
-						"sample rate is different from %1Hz or \n"
-						"buffer size is different from 96 samples.").arg(HPSJAM_SAMPLE_RATE));
+						"sample rate is different from %1Hz.").arg(HPSJAM_SAMPLE_RATE));
+			}
 		}
 
-		if (input_device > -1 && hpsjam_client->w_config->audio_dev.handle_set_input_device(input_device) < 0) {
-			QMessageBox::information(hpsjam_client, QObject::tr("NO AUDIO"),
-				QObject::tr("Cannot find the specified audio device"));
-		}
 		if (buffer_samples > 0)
 			hpsjam_client->w_config->audio_dev.handle_toggle_buffer_samples(buffer_samples);
 		if (output_left > -1)
