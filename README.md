@@ -88,12 +88,11 @@ Nice=-20
 IOSchedulingClass=realtime
 IOSchedulingPriority=0
 
-#### Change this to publish this server, set genre, location and other parameters.
+#### Change this parameters to your liking
 ExecStart=/bin/sh -c 'exec /usr/bin/HpsJam --server \
 --port 22126 \
---peers 16 \
---welcome-msg-file /private-backup/hps-server_welcome.txt'
-
+--peers 16'
+# [--welcome-msg-file /yourPath/yourFile
 #	[--password <64_bit_hexadecimal_password>] \
 #	[--mixer-password <64_bit_hexadecimal_password>] \
 #	[--ncpu <1,2,3, ... 64, Default is 1>] \
