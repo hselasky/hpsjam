@@ -36,6 +36,7 @@
 #include <QPushButton>
 #include <QByteArray>
 #include <QKeySequence>
+#include <QComboBox>
 
 class HpsJamConnectList : public QPlainTextEdit {
 	Q_OBJECT;
@@ -133,6 +134,8 @@ public:
 	    b_reset(tr("&Reset server list")),
 	    b_connect(tr("C&onnect")),
 	    b_disconnect(tr("&Disconnect")) {
+		l_multi_port.addItem(QString("Multiport ON"));
+		l_multi_port.addItem(QString("Multiport OFF"));
 
 #if defined(Q_OS_MACX)
 		b_reset.setShortcut(QKeySequence(Qt::ALT + Qt::Key_R));
@@ -141,13 +144,16 @@ public:
 #endif
 		gl.addWidget(&b_reset, 0,0);
 		gl.setColumnStretch(1,1);
-		gl.addWidget(&b_connect, 0,2);
-		gl.addWidget(&b_disconnect, 0,3);
+		gl.addWidget(&l_multi_port, 0,2);
+		gl.setColumnStretch(3,1);
+		gl.addWidget(&b_connect, 0,4);
+		gl.addWidget(&b_disconnect, 0,5);
 	};
 	QGridLayout gl;
 	QPushButton b_reset;
 	QPushButton b_connect;
 	QPushButton b_disconnect;
+	QComboBox l_multi_port;
 };
 
 class HpsJamConnect : public QWidget {

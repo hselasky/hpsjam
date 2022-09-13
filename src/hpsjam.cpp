@@ -57,16 +57,18 @@ bool hpsjam_mute_peer_audio;
 class hpsjam_server_peer *hpsjam_server_peers;
 class hpsjam_client_peer *hpsjam_client_peer;
 class HpsJamClient *hpsjam_client;
-struct hpsjam_socket_address hpsjam_v4;
-struct hpsjam_socket_address hpsjam_v6;
+struct hpsjam_socket_address hpsjam_v4[HPSJAM_SEQ_MAX];
+struct hpsjam_socket_address hpsjam_v6[HPSJAM_SEQ_MAX];
 struct hpsjam_socket_address hpsjam_cli;
 const char *hpsjam_welcome_message_file;
 int hpsjam_profile_index;
+bool hpsjam_no_multi_port;
 
 static const struct option hpsjam_opts[] = {
 	{ "NSDocumentRevisionsDebugMode", required_argument, NULL, ' ' },
 	{ "profile", required_argument, NULL, 'f' },
 	{ "port", required_argument, NULL, 'p' },
+	{ "no-multi-port", no_argument, NULL, 'm' },
 	{ "cli-port", required_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "ncpu", required_argument, NULL, 'j' },
@@ -121,6 +123,7 @@ usage(void)
 		stderr,
 #endif
 		"HpsJam [--server --peers <1..256>] [--port " HPSJAM_DEFAULT_PORT_STR "] \\\n"
+		"	[--no-multi-port] \\\n"
 #ifndef _WIN32
 		"	[--daemon] \\\n"
 #endif
@@ -173,7 +176,7 @@ Q_DECL_EXPORT int
 main(int argc, char **argv)
 {
 	static const char hpsjam_short_opts[] = {
-	    "M:q:p:sP:hBJ:n:K:w:N:gi:j:c:U:D:I:O:l:L:r:R:t:T:v:V:b:x:"
+	    "M:q:p:sP:hBJ:n:K:w:mN:gi:j:c:U:D:I:O:l:L:r:R:t:T:v:V:b:x:"
 	};
 	int c;
 	int port = HPSJAM_DEFAULT_PORT;
@@ -354,6 +357,9 @@ main(int argc, char **argv)
 			if (output_jitter < 0)
 				usage();
 			break;
+		case 'm':
+			hpsjam_no_multi_port = true;
+			break;
 		case ' ':
 			/* ignore */
 			break;
@@ -512,6 +518,9 @@ main(int argc, char **argv)
 			hpsjam_client->w_config->up_fmt.setIndex(uplink_format);
 		if (downlink_format > -1)
 			hpsjam_client->w_config->down_fmt.setIndex(downlink_format);
+
+		hpsjam_client->w_connect->buttons.l_multi_port.setCurrentIndex(
+			hpsjam_no_multi_port ? 1 : 0);
 
 		/* set a valid UDP buffer size */
 		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX;

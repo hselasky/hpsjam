@@ -231,24 +231,29 @@ struct hpsjam_packet {
 		putS8(3, 0);
 	};
 
-	bool getPing(uint16_t &packets, uint16_t &time_ms, uint64_t &passwd) const {
+	bool getPing(uint16_t &packets, uint16_t &time_ms, uint64_t &passwd, uint32_t &features) const {
 		if (length >= 4) {
 			packets = getS16(0);
 			time_ms = getS16(2);
 			passwd = ((uint64_t)(uint32_t)getS32(4)) | (((uint64_t)(uint32_t)getS32(8)) << 32);
+			if (length >= 5)
+				features = getS32(12);
+			else
+				features = 0;
 			return (true);
 		}
 		return (false);
 	};
 
-	void setPing(uint16_t packets, uint16_t time_ms, uint64_t passwd) {
-		length = 4;
+	void setPing(uint16_t packets, uint16_t time_ms, uint64_t passwd, uint32_t features) {
+		length = 5;
 		sequence[0] = 0;
 		sequence[1] = 0;
 		putS16(0, packets);
 		putS16(2, time_ms);
 		putS32(4, (uint32_t)passwd);
 		putS32(8, (uint32_t)(passwd >> 32));
+		putS32(12, features);
 	};
 };
 
@@ -317,6 +322,7 @@ public:
 	bool send_ack;
 	size_t offset;	/* current data offset */
 	size_t d_len;	/* maximum XOR frame length */
+	uint8_t nextqueue;
 
 	hpsjam_output_packetizer() {
 		TAILQ_INIT(&head);
@@ -359,6 +365,7 @@ public:
 
 		delete pending;
 		pending = 0;
+		nextqueue = 0;
 	};
 
 	bool append_pkt(const struct hpsjam_packet_entry &entry)
@@ -456,6 +463,8 @@ public:
 				d_len = offset;
 			offset = 0;
 		}
+		nextqueue++;
+		nextqueue &= (HPSJAM_SEQ_MAX - 1);
 	};
 signals:
 	void pendingWatchdog();

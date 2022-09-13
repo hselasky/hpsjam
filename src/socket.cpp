@@ -194,13 +194,19 @@ hpsjam_socket_init(unsigned short port, unsigned short cliport)
 	pthread_t pt;
 	int ret;
 
-	hpsjam_v4.init(AF_INET, port);
-	ret = pthread_create(&pt, NULL, &hpsjam_socket_receive, &hpsjam_v4);
-	assert(ret == 0);
+	for (unsigned int x = 0; x != HPSJAM_SEQ_MAX; x++) {
+		hpsjam_v4[x].init(AF_INET, port + x);
+		ret = pthread_create(&pt, NULL, &hpsjam_socket_receive, &hpsjam_v4[x]);
+		assert(ret == 0);
 
-	hpsjam_v6.init(AF_INET6, port);
-	ret = pthread_create(&pt, NULL, &hpsjam_socket_receive, &hpsjam_v6);
-	assert(ret == 0);
+		hpsjam_v6[x].init(AF_INET6, port + x);
+		ret = pthread_create(&pt, NULL, &hpsjam_socket_receive, &hpsjam_v6[x]);
+		assert(ret == 0);
+
+		/* one port is enough for the client */
+		if (hpsjam_num_server_peers == 0 || hpsjam_no_multi_port == true)
+			break;
+	}
 
 	if (cliport != 0) {
 		hpsjam_cli.init(AF_INET, cliport);

@@ -49,7 +49,7 @@ HpsJamChatLyrics :: handle_send_lyrics()
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 
 	/* check if we are not connected */
-	if (hpsjam_client_peer->address.valid() == false)
+	if (hpsjam_client_peer->address[0].valid() == false)
 		return;
 
 	/* send text */
@@ -70,7 +70,7 @@ HpsJamChatBox :: handle_send_chat()
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 
 	/* check if we are not connected */
-	if (hpsjam_client_peer->address.valid() == false)
+	if (hpsjam_client_peer->address[0].valid() == false)
 		return;
 
 	/* send text */

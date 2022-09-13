@@ -91,7 +91,7 @@ hpsjam_sound_process_cb(jack_nframes_t nframes, void *arg)
 
 			QMutexLocker lock(&hpsjam_client_peer->lock);
 			/* Only buffer up MIDI data when connected. */
-			if (hpsjam_client_peer->address.valid())
+			if (hpsjam_client_peer->address[0].valid())
 				hpsjam_default_midi[0].addData(event.buffer, event.size);
 		}
 

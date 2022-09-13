@@ -281,7 +281,7 @@ HpsJamConfig :: handle_up_config()
 {
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 
-	if (hpsjam_client_peer->address.valid())
+	if (hpsjam_client_peer->address[0].valid())
 		hpsjam_client_peer->output_fmt = up_fmt.format;
 }
 
@@ -290,7 +290,7 @@ HpsJamConfig :: handle_down_config()
 {
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 
-	if (hpsjam_client_peer->address.valid()) {
+	if (hpsjam_client_peer->address[0].valid()) {
 		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
 		pkt->packet.setConfigure(down_fmt.format);
 		pkt->packet.type = HPSJAM_TYPE_CONFIGURE_REQUEST;

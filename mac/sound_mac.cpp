@@ -82,7 +82,7 @@ hpsjam_midi_read_event(const MIDIPacketList * pktList, void *refCon, void *connR
 	QMutexLocker lock(&hpsjam_client_peer->lock);
 
 	/* Only buffer up MIDI data when connected. */
-	if (hpsjam_client_peer->address.valid()) {
+	if (hpsjam_client_peer->address[0].valid()) {
 		const MIDIPacket *packet = &pktList->packet[0];
 
 		for (unsigned n = 0; n != pktList->numPackets; n++) {

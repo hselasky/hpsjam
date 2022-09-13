@@ -208,6 +208,7 @@ HpsJamConnect :: handle_connect()
 	QByteArray port;
 	QByteArray temp;
 	QByteArray idata;
+	bool multiPort = (buttons.l_multi_port.currentIndex() == 0);
 
 	auto parts = text.split(QString(":"));
 
@@ -250,8 +251,8 @@ HpsJamConnect :: handle_connect()
 		return;
 	}
 
-	if (hpsjam_v4.resolve(host.constData(), port.constData(), address) == false) {
-		if (hpsjam_v6.resolve(host.constData(), port.constData(), address) == false) {
+	if (hpsjam_v4[0].resolve(host.constData(), port.constData(), address) == false) {
+		if (hpsjam_v6[0].resolve(host.constData(), port.constData(), address) == false) {
 			QMessageBox::information(this, tr("CONNECT"),
 			    tr("Could not resolve server at: %1").arg(text));
 			return;
@@ -265,11 +266,24 @@ HpsJamConnect :: handle_connect()
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 
 	/* set destination address */
-	hpsjam_client_peer->address = address;
+	for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++) {
+		hpsjam_client_peer->address[i] = address;
+		switch (address.v4.sin_family) {
+		case AF_INET:
+			address.v4.sin_port += i;
+			break;
+		case AF_INET6:
+			address.v6.sin6_port += i;
+			break;
+		default:
+			break;
+		}
+	}
 
 	/* send initial ping */
 	pkt = new struct hpsjam_packet_entry;
-	pkt->packet.setPing(0, hpsjam_ticks, key);
+	pkt->packet.setPing(0, hpsjam_ticks, key,
+	    multiPort ? HPSJAM_FEATURE_16_PORT : 0);
 	pkt->packet.type = HPSJAM_TYPE_PING_REQUEST;
 	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
 

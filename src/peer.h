@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,6 +40,8 @@
 
 #include <stdbool.h>
 
+#define	HPSJAM_ALL_PORTS ((1 << HPSJAM_SEQ_MAX) - 1)
+
 struct hpsjam_server_default_mix {
 	float out_audio[2][64];
 };
@@ -48,7 +50,7 @@ class hpsjam_server_peer : public QObject {
 	Q_OBJECT;
 public:
 	QMutex lock;
-	struct hpsjam_socket_address address;
+	struct hpsjam_socket_address address[HPSJAM_SEQ_MAX];
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;
 	class hpsjam_midi_buffer in_midi;
@@ -72,9 +74,12 @@ public:
 	uint8_t output_fmt;
 	bool valid;
 	bool allow_mixer_access;
+	bool multi_port;
 
 	void init() {
-		address.clear();
+		for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++)
+			address[i].clear();
+		multi_port = false;
 		input_pkt.init();
 		output_pkt.init();
 		in_audio[0].clear();
@@ -153,7 +158,7 @@ class hpsjam_client_peer : public QObject {
 	Q_OBJECT;
 public:
 	QMutex lock;
-	struct hpsjam_socket_address address;
+	struct hpsjam_socket_address address[HPSJAM_SEQ_MAX];
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;
 	struct hpsjam_midi_parse in_midi_parse;
@@ -177,9 +182,11 @@ public:
 	int self_index;
 	uint8_t bits;
 	uint8_t output_fmt;
+	bool multi_port;
 
 	void init() {
-		address.clear();
+		for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++)
+			address[i].clear();
 		input_pkt.init();
 		output_pkt.init();
 		in_midi_parse.clear();
@@ -204,6 +211,7 @@ public:
 		local_peak = 0.0f;
 		memset(in_midi_escaped, 0, sizeof(in_midi_escaped));
 		output_fmt = HPSJAM_TYPE_AUDIO_SILENCE;
+		multi_port = false;
 		bits = 0;
 		eq.cleanup();
 		local_eq.cleanup();
@@ -221,7 +229,7 @@ public:
 	void tick();
 	void send_single_pkt(struct hpsjam_packet_entry *pkt) {
 		QMutexLocker locker(&lock);
-		if (address.valid()) {
+		if (address[0].valid()) {
 			struct hpsjam_packet_entry *ptr =
 			    output_pkt.find(pkt->packet.type);
 

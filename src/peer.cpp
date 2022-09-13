@@ -44,9 +44,14 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 	if (hpsjam_num_server_peers == 0) {
 		QMutexLocker locker(&hpsjam_client_peer->lock);
 
-		if (hpsjam_client_peer->address.valid() &&
-		    hpsjam_client_peer->address == src)
-			hpsjam_client_peer->input_pkt.receive(frame);
+		if (hpsjam_client_peer->address[0].valid()) {
+			for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++) {
+				if (hpsjam_client_peer->address[i] == src) {
+					hpsjam_client_peer->input_pkt.receive(frame);
+					break;
+				}
+			}
+		}
 	} else {
 		const struct hpsjam_packet *ptr;
 
@@ -55,7 +60,7 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 
 			QMutexLocker locker(&peer.lock);
 
-			if (peer.valid && peer.address == src) {
+			if (peer.valid && peer.address[0] == src) {
 				peer.input_pkt.receive(frame);
 				return;
 			}
@@ -77,10 +82,11 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 
 		uint16_t packets;
 		uint16_t time_ms;
+		uint32_t features;
 		uint64_t passwd;
 
 		/* check if ping message is valid */
-		if (ptr->getPing(packets, time_ms, passwd) == false)
+		if (ptr->getPing(packets, time_ms, passwd, features) == false)
 			return;
 
 		/* don't respond if password is invalid */
@@ -97,10 +103,23 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 			if (peer.valid == true)
 				continue;
 
+			peer.multi_port = (features & HPSJAM_FEATURE_16_PORT) ? true : false;
 			peer.allow_mixer_access =
 			    (hpsjam_mixer_passwd == 0 || hpsjam_mixer_passwd == passwd);
 			peer.valid = true;
-			peer.address = src;
+			for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++) {
+				peer.address[i] = src;
+				switch (src.v4.sin_family) {
+				case AF_INET:
+					peer.address[i].fd = hpsjam_v4[i].fd;
+					break;
+				case AF_INET6:
+					peer.address[i].fd = hpsjam_v6[i].fd;
+					break;
+				default:
+					break;
+				}
+			}
 			peer.gain = 1.0f;
 			peer.pan = 0.0f;
 			delete [] peer.eq_data;
@@ -342,7 +361,7 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 {
 	QMutexLocker locker(&lock);
 
-	if (address.valid() == false) {
+	if (address[0].valid() == false) {
 		if (audio_effects.isActive()) {
 			for (size_t x = 0; x != samples; x++) {
 				float temp = audio_effects.getSample();
@@ -495,9 +514,9 @@ hpsjam_server_peer :: handle_pending_watchdog()
 {
 	QMutexLocker locker(&lock);
 
-	if (address.valid() && output_pkt.empty()) {
+	if (address[0].valid() && output_pkt.empty()) {
 		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
-		pkt->packet.setPing(0, hpsjam_ticks, 0);
+		pkt->packet.setPing(0, hpsjam_ticks, 0, 0);
 		pkt->packet.type = HPSJAM_TYPE_PING_REQUEST;
 		pkt->insert_tail(&output_pkt.head);
 	}
@@ -611,7 +630,10 @@ void HpsJamSendPacket(T &s)
 	}
 done:
 	/* send a packet */
-	s.output_pkt.send(s.address);
+	if (s.multi_port)
+		s.output_pkt.send(s.address[s.output_pkt.nextqueue]);
+	else
+		s.output_pkt.send(s.address[0]);
 }
 
 template <typename T>
@@ -745,6 +767,7 @@ hpsjam_server_peer :: audio_export()
 			switch (ptr->type) {
 			uint16_t packets;
 			uint16_t time_ms;
+			uint32_t features;
 			uint64_t passwd;
 			uint8_t mix;
 			uint8_t index;
@@ -757,12 +780,19 @@ hpsjam_server_peer :: audio_export()
 				output_fmt = HPSJAM_TYPE_AUDIO_SILENCE;
 				break;
 			case HPSJAM_TYPE_PING_REQUEST:
-				if (ptr->getPing(packets, time_ms, passwd) &&
+				if (ptr->getPing(packets, time_ms, passwd, features) &&
 				    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
+
+					if (hpsjam_no_multi_port)
+						features &= ~HPSJAM_FEATURE_16_PORT;
+
 					pres = new struct hpsjam_packet_entry;
-					pres->packet.setPing(0, time_ms, 0);
+					pres->packet.setPing(0, time_ms, 0, features & HPSJAM_FEATURE_16_PORT);
 					pres->packet.type = HPSJAM_TYPE_PING_REPLY;
 					pres->insert_tail(&output_pkt.head);
+
+					if (features & HPSJAM_FEATURE_16_PORT)
+						multi_port = true;
 				}
 				break;
 			case HPSJAM_TYPE_ICON_REQUEST:
@@ -974,7 +1004,7 @@ hpsjam_server_peer :: audio_export()
 	/* send a ping, if idle */
 	if (output_pkt.empty()) {
 		pres = new struct hpsjam_packet_entry;
-		pres->packet.setPing(0, hpsjam_ticks, 0);
+		pres->packet.setPing(0, hpsjam_ticks, 0, 0);
 		pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
 		pres->insert_tail(&output_pkt.head);
 	}
@@ -1375,9 +1405,9 @@ hpsjam_client_peer :: handle_pending_watchdog()
 {
 	QMutexLocker locker(&lock);
 
-	if (address.valid() && output_pkt.empty()) {
+	if (address[0].valid() && output_pkt.empty()) {
 		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
-		pkt->packet.setPing(0, hpsjam_ticks, 0);
+		pkt->packet.setPing(0, hpsjam_ticks, 0, 0);
 		pkt->packet.type = HPSJAM_TYPE_PING_REQUEST;
 		pkt->insert_tail(&output_pkt.head);
 	}
@@ -1388,7 +1418,7 @@ hpsjam_client_peer :: tick()
 {
 	QMutexLocker locker(&lock);
 
-	if (address.valid() == false)
+	if (address[0].valid() == false)
 		return;
 
 	const union hpsjam_frame *pkt;
@@ -1422,18 +1452,25 @@ hpsjam_client_peer :: tick()
 			switch (ptr->type) {
 			uint16_t packets;
 			uint16_t time_ms;
+			uint32_t features;
 			uint64_t passwd;
 			const char *data;
 			uint8_t mix;
 			uint8_t index;
 
 			case HPSJAM_TYPE_PING_REQUEST:
-				if (ptr->getPing(packets, time_ms, passwd) &&
+				if (ptr->getPing(packets, time_ms, passwd, features) &&
 				    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
 					pres = new struct hpsjam_packet_entry;
-					pres->packet.setPing(0, time_ms, 0);
+					pres->packet.setPing(0, time_ms, 0, features & HPSJAM_FEATURE_16_PORT);
 					pres->packet.type = HPSJAM_TYPE_PING_REPLY;
 					pres->insert_tail(&output_pkt.head);
+				}
+				break;
+			case HPSJAM_TYPE_PING_REPLY:
+				if (ptr->getPing(packets, time_ms, passwd, features)) {
+					if (features & HPSJAM_FEATURE_16_PORT)
+						multi_port = true;
 				}
 				break;
 			case HPSJAM_TYPE_LYRICS_REPLY:
@@ -1555,7 +1592,7 @@ hpsjam_client_peer :: tick()
 	/* send a ping, if idle */
 	if (output_pkt.empty()) {
 		pres = new struct hpsjam_packet_entry;
-		pres->packet.setPing(0, hpsjam_ticks, 0);
+		pres->packet.setPing(0, hpsjam_ticks, 0, 0);
 		pres->packet.type = HPSJAM_TYPE_PING_REQUEST;
 		pres->insert_tail(&output_pkt.head);
 	}
@@ -1633,7 +1670,7 @@ hpsjam_cli_process(const struct hpsjam_socket_address &addr, const char *data, s
 		if (hpsjam_num_server_peers == 0) {
 			QMutexLocker locker(&hpsjam_client_peer->lock);
 
-			if (hpsjam_client_peer->address.valid()) {
+			if (hpsjam_client_peer->address[0].valid()) {
 				/* send text */
 				pkt = new struct hpsjam_packet_entry;
 				pkt->packet.setRawData(temp.constData() + 16, temp.length() - 16);
