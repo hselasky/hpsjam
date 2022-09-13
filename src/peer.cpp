@@ -796,10 +796,6 @@ hpsjam_server_peer :: audio_export()
 			case HPSJAM_TYPE_PING_REQUEST:
 				if (ptr->getPing(packets, time_ms, passwd, features) &&
 				    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
-
-					if (hpsjam_no_multi_port)
-						features &= ~HPSJAM_FEATURE_16_PORT;
-
 					pres = new struct hpsjam_packet_entry;
 					pres->packet.setPing(0, time_ms, 0, features & HPSJAM_FEATURE_16_PORT);
 					pres->packet.type = HPSJAM_TYPE_PING_REPLY;
@@ -1481,7 +1477,7 @@ hpsjam_client_peer :: tick()
 			case HPSJAM_TYPE_PING_REPLY:
 				if (ptr->getPing(packets, time_ms, passwd, features)) {
 					if (features & HPSJAM_FEATURE_16_PORT)
-						multi_port = true;
+						multi_port = HPSJAM_ALL_PORTS;
 				}
 				break;
 			case HPSJAM_TYPE_LYRICS_REPLY:

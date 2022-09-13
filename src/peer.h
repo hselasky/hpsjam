@@ -182,7 +182,7 @@ public:
 	int self_index;
 	uint8_t bits;
 	uint8_t output_fmt;
-	bool multi_port;
+	uint32_t multi_port;
 
 	void init() {
 		for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++)
@@ -211,7 +211,7 @@ public:
 		local_peak = 0.0f;
 		memset(in_midi_escaped, 0, sizeof(in_midi_escaped));
 		output_fmt = HPSJAM_TYPE_AUDIO_SILENCE;
-		multi_port = false;
+		multi_port = 1;
 		bits = 0;
 		eq.cleanup();
 		local_eq.cleanup();
