@@ -66,6 +66,7 @@ public:
 	QString name;
 	QByteArray icon;
 	uint8_t bits[HPSJAM_PEERS_MAX];
+	uint32_t multi_port;
 	float gain;
 	float pan;
 	char *eq_data;
@@ -74,12 +75,11 @@ public:
 	uint8_t output_fmt;
 	bool valid;
 	bool allow_mixer_access;
-	bool multi_port;
 
 	void init() {
 		for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++)
 			address[i].clear();
-		multi_port = false;
+		multi_port = 1;
 		input_pkt.init();
 		output_pkt.init();
 		in_audio[0].clear();
@@ -266,7 +266,7 @@ extern hpsjam_midi_buffer *hpsjam_default_midi;
 
 extern void hpsjam_cli_process(const struct hpsjam_socket_address &, const char *, size_t);
 extern void hpsjam_peer_receive(const struct hpsjam_socket_address &,
-    const union hpsjam_frame &);
+    const struct hpsjam_socket_address &, const union hpsjam_frame &);
 extern bool hpsjam_server_tick();
 
 #endif		/* _HPSJAM_PEER_H_ */

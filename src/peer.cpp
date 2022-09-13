@@ -39,7 +39,7 @@
 
 Q_DECL_EXPORT void
 hpsjam_peer_receive(const struct hpsjam_socket_address &src,
-    const union hpsjam_frame &frame)
+    const struct hpsjam_socket_address &dst, const union hpsjam_frame &frame)
 {
 	if (hpsjam_num_server_peers == 0) {
 		QMutexLocker locker(&hpsjam_client_peer->lock);
@@ -54,6 +54,19 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 		}
 	} else {
 		const struct hpsjam_packet *ptr;
+		uint16_t port_index;
+
+		switch (dst.v4.sin_family) {
+		case AF_INET:
+			port_index = ntohs(dst.v4.sin_port) - ntohs(hpsjam_v4[0].v4.sin_port);
+			break;
+		case AF_INET6:
+			port_index = ntohs(dst.v6.sin6_port) - ntohs(hpsjam_v6[0].v6.sin6_port);
+			break;
+		default:
+			port_index = 0;
+			break;
+		}
 
 		for (unsigned x = hpsjam_num_server_peers; x--; ) {
 			class hpsjam_server_peer &peer = hpsjam_server_peers[x];
@@ -61,6 +74,8 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 			QMutexLocker locker(&peer.lock);
 
 			if (peer.valid && peer.address[0] == src) {
+				if (hpsjam_no_multi_port == false)
+					peer.multi_port |= 1U << port_index;
 				peer.input_pkt.receive(frame);
 				return;
 			}
@@ -629,7 +644,7 @@ void HpsJamSendPacket(T &s)
 	}
 done:
 	/* send a packet */
-	if (s.multi_port)
+	if ((s.multi_port >> s.output_pkt.nextqueue) & 1)
 		s.output_pkt.send(s.address[s.output_pkt.nextqueue]);
 	else
 		s.output_pkt.send(s.address[0]);
@@ -789,9 +804,6 @@ hpsjam_server_peer :: audio_export()
 					pres->packet.setPing(0, time_ms, 0, features & HPSJAM_FEATURE_16_PORT);
 					pres->packet.type = HPSJAM_TYPE_PING_REPLY;
 					pres->insert_tail(&output_pkt.head);
-
-					if (features & HPSJAM_FEATURE_16_PORT)
-						multi_port = true;
 				}
 				break;
 			case HPSJAM_TYPE_ICON_REQUEST:
