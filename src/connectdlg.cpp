@@ -270,10 +270,12 @@ HpsJamConnect :: handle_connect()
 		hpsjam_client_peer->address[i] = address;
 		switch (address.v4.sin_family) {
 		case AF_INET:
-			address.v4.sin_port += i;
+			address.v4.sin_port =
+			    htons(ntohs(address.v4.sin_port) + 1);
 			break;
 		case AF_INET6:
-			address.v6.sin6_port += i;
+			address.v6.sin6_port =
+			    htons(ntohs(address.v6.sin6_port) + 1);
 			break;
 		default:
 			break;

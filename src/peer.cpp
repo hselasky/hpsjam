@@ -103,7 +103,6 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 			if (peer.valid == true)
 				continue;
 
-			peer.multi_port = (features & HPSJAM_FEATURE_16_PORT) ? true : false;
 			peer.allow_mixer_access =
 			    (hpsjam_mixer_passwd == 0 || hpsjam_mixer_passwd == passwd);
 			peer.valid = true;
