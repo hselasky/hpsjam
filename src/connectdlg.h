@@ -172,6 +172,7 @@ public:
 		icon.setEnabled(state);
 		buttons.b_connect.setEnabled(state);
 		buttons.b_disconnect.setEnabled(!state);
+		buttons.l_multi_port.setEnabled(state);
 		name.edit.setEnabled(state);
 		password.edit.setEnabled(state);
 		server.edit.setEnabled(state);
