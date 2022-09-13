@@ -40,8 +40,6 @@
 
 #include <stdbool.h>
 
-#define	HPSJAM_ALL_PORTS ((1 << HPSJAM_SEQ_MAX) - 1)
-
 struct hpsjam_server_default_mix {
 	float out_audio[2][64];
 };
@@ -66,7 +64,8 @@ public:
 	QString name;
 	QByteArray icon;
 	uint8_t bits[HPSJAM_PEERS_MAX];
-	uint32_t multi_port;
+	bool multi_port;
+	uint32_t multi_wait;
 	float gain;
 	float pan;
 	char *eq_data;
@@ -79,7 +78,8 @@ public:
 	void init() {
 		for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++)
 			address[i].clear();
-		multi_port = 1;
+		multi_port = false;
+		multi_wait = 1000;
 		input_pkt.init();
 		output_pkt.init();
 		in_audio[0].clear();
@@ -182,7 +182,8 @@ public:
 	int self_index;
 	uint8_t bits;
 	uint8_t output_fmt;
-	uint32_t multi_port;
+	bool multi_port;
+	uint32_t multi_wait;
 
 	void init() {
 		for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++)
@@ -211,7 +212,8 @@ public:
 		local_peak = 0.0f;
 		memset(in_midi_escaped, 0, sizeof(in_midi_escaped));
 		output_fmt = HPSJAM_TYPE_AUDIO_SILENCE;
-		multi_port = 1;
+		multi_port = false;
+		multi_wait = 0;
 		bits = 0;
 		eq.cleanup();
 		local_eq.cleanup();

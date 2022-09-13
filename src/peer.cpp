@@ -54,19 +54,6 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 		}
 	} else {
 		const struct hpsjam_packet *ptr;
-		uint16_t port_index;
-
-		switch (dst.v4.sin_family) {
-		case AF_INET:
-			port_index = ntohs(dst.v4.sin_port) - ntohs(hpsjam_v4[0].v4.sin_port);
-			break;
-		case AF_INET6:
-			port_index = ntohs(dst.v6.sin6_port) - ntohs(hpsjam_v6[0].v6.sin6_port);
-			break;
-		default:
-			port_index = 0;
-			break;
-		}
 
 		for (unsigned x = hpsjam_num_server_peers; x--; ) {
 			class hpsjam_server_peer &peer = hpsjam_server_peers[x];
@@ -74,8 +61,6 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 			QMutexLocker locker(&peer.lock);
 
 			if (peer.valid && peer.address[0] == src) {
-				if (hpsjam_no_multi_port == false)
-					peer.multi_port |= 1U << port_index;
 				peer.input_pkt.receive(frame);
 				return;
 			}
@@ -644,7 +629,7 @@ void HpsJamSendPacket(T &s)
 	}
 done:
 	/* send a packet */
-	if ((s.multi_port >> s.output_pkt.nextqueue) & 1)
+	if (s.multi_port && (s.multi_wait == 0 || s.multi_wait-- == 0))
 		s.output_pkt.send(s.address[s.output_pkt.nextqueue]);
 	else
 		s.output_pkt.send(s.address[0]);
@@ -796,10 +781,16 @@ hpsjam_server_peer :: audio_export()
 			case HPSJAM_TYPE_PING_REQUEST:
 				if (ptr->getPing(packets, time_ms, passwd, features) &&
 				    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
+					if (hpsjam_no_multi_port)
+						features &= ~HPSJAM_FEATURE_16_PORT;
+
 					pres = new struct hpsjam_packet_entry;
 					pres->packet.setPing(0, time_ms, 0, features & HPSJAM_FEATURE_16_PORT);
 					pres->packet.type = HPSJAM_TYPE_PING_REPLY;
 					pres->insert_tail(&output_pkt.head);
+
+					if (features & HPSJAM_FEATURE_16_PORT)
+						multi_port = true;
 				}
 				break;
 			case HPSJAM_TYPE_ICON_REQUEST:
@@ -1477,7 +1468,7 @@ hpsjam_client_peer :: tick()
 			case HPSJAM_TYPE_PING_REPLY:
 				if (ptr->getPing(packets, time_ms, passwd, features)) {
 					if (features & HPSJAM_FEATURE_16_PORT)
-						multi_port = HPSJAM_ALL_PORTS;
+						multi_port = true;
 				}
 				break;
 			case HPSJAM_TYPE_LYRICS_REPLY:
