@@ -483,7 +483,7 @@ struct hpsjam_input_packetizer {
 		uint64_t start;
 		unsigned num;
 		unsigned min_x;
-		unsigned last_x;
+		unsigned sumbits;
 		unsigned delta;
 top:
 		mask = 0;
@@ -519,18 +519,15 @@ top:
 			}
 		}
 
-		last_x = 0;
+		sumbits = NMAX;
 		for (unsigned x = 1; x != BMAX; x++) {
 			if ((start >> x) & 1)
-				last_x = x;
+				sumbits += NMAX;
 		}
 
-		/* compute how many units the data spawns */
-		last_x = (last_x + 1) * NMAX;
-
-		/* allow up to 1 of 3 packets to get lost */
-		if ((3 * num) < (2 * last_x))
-			return (NULL);	/* too few packets */
+		/* wait for half of space to be filled */
+		if ((2 * num) < sumbits)
+			return (NULL);
 
 		for (unsigned x = min_x * NMAX; x != (min_x + 1) * NMAX; x++) {
 			if (valid[x] & HPSJAM_MASK_PROCESSED)
