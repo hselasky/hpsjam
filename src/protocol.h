@@ -572,6 +572,9 @@ top:
 				}
 				break;
 			default:
+				valid[x - 2] &= ~HPSJAM_MASK_VALID;
+				valid[x - 1] &= ~HPSJAM_MASK_VALID;
+				valid[x - 0] &= ~HPSJAM_MASK_VALID;
 				break;
 			}
 		}
