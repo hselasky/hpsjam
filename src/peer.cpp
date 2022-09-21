@@ -45,7 +45,7 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 		QMutexLocker locker(&hpsjam_client_peer->lock);
 
 		if (hpsjam_client_peer->address[0].valid()) {
-			for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++) {
+			for (unsigned i = 0; i != HPSJAM_PORTS_MAX; i++) {
 				if (hpsjam_client_peer->address[i] == src) {
 					hpsjam_client_peer->input_pkt.receive(frame);
 					break;
@@ -106,7 +106,7 @@ hpsjam_peer_receive(const struct hpsjam_socket_address &src,
 			peer.allow_mixer_access =
 			    (hpsjam_mixer_passwd == 0 || hpsjam_mixer_passwd == passwd);
 			peer.valid = true;
-			for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++) {
+			for (unsigned i = 0; i != HPSJAM_PORTS_MAX; i++) {
 				peer.address[i] = src;
 				switch (src.v4.sin_family) {
 				case AF_INET:
@@ -630,7 +630,7 @@ void HpsJamSendPacket(T &s)
 done:
 	/* send a packet */
 	if (s.multi_port && (s.multi_wait == 0 || s.multi_wait-- == 0))
-		s.output_pkt.send(s.address[s.output_pkt.nextqueue]);
+		s.output_pkt.send(s.address[s.output_pkt.seqno % HPSJAM_PORTS_MAX]);
 	else
 		s.output_pkt.send(s.address[0]);
 }
@@ -745,8 +745,6 @@ hpsjam_server_peer :: audio_export()
 		return;
 	}
 
-	input_pkt.recovery();
-
 	while ((pkt = input_pkt.first_pkt())) {
 		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {
 			/* check for unsequenced packets */
@@ -782,14 +780,14 @@ hpsjam_server_peer :: audio_export()
 				if (ptr->getPing(packets, time_ms, passwd, features) &&
 				    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
 					if (hpsjam_no_multi_port)
-						features &= ~HPSJAM_FEATURE_16_PORT;
+						features &= ~HPSJAM_FEATURE_MULTI_PORT;
 
 					pres = new struct hpsjam_packet_entry;
-					pres->packet.setPing(0, time_ms, 0, features & HPSJAM_FEATURE_16_PORT);
+					pres->packet.setPing(0, time_ms, 0, features & HPSJAM_FEATURE_MULTI_PORT);
 					pres->packet.type = HPSJAM_TYPE_PING_REPLY;
 					pres->insert_tail(&output_pkt.head);
 
-					if (features & HPSJAM_FEATURE_16_PORT)
+					if (features & HPSJAM_FEATURE_MULTI_PORT)
 						multi_port = true;
 				}
 				break;
@@ -1428,8 +1426,6 @@ hpsjam_client_peer :: tick()
 	};
 	size_t num;
 
-	input_pkt.recovery();
-
 	/* read one packet, if any */
 	if ((pkt = input_pkt.first_pkt()) != 0) {
 		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {
@@ -1460,14 +1456,14 @@ hpsjam_client_peer :: tick()
 				if (ptr->getPing(packets, time_ms, passwd, features) &&
 				    output_pkt.find(HPSJAM_TYPE_PING_REPLY) == 0) {
 					pres = new struct hpsjam_packet_entry;
-					pres->packet.setPing(0, time_ms, 0, features & HPSJAM_FEATURE_16_PORT);
+					pres->packet.setPing(0, time_ms, 0, features & HPSJAM_FEATURE_MULTI_PORT);
 					pres->packet.type = HPSJAM_TYPE_PING_REPLY;
 					pres->insert_tail(&output_pkt.head);
 				}
 				break;
 			case HPSJAM_TYPE_PING_REPLY:
 				if (ptr->getPing(packets, time_ms, passwd, features)) {
-					if (features & HPSJAM_FEATURE_16_PORT)
+					if (features & HPSJAM_FEATURE_MULTI_PORT)
 						multi_port = true;
 				}
 				break;

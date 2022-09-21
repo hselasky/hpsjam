@@ -31,7 +31,7 @@
 #include "hpsjam.h"
 #include "timer.h"
 
-#define	HPSJAM_MAX_JITTER (2 * HPSJAM_SEQ_MAX)	/* ms */
+#define	HPSJAM_MAX_JITTER (2U * 16U)	/* ms */
 
 #if (HPSJAM_MAX_JITTER & (HPSJAM_MAX_JITTER - 1))
 #error "HPSJAM_MAX_JITTER must be power of two."

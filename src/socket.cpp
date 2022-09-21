@@ -194,7 +194,7 @@ hpsjam_socket_init(unsigned short port, unsigned short cliport)
 	pthread_t pt;
 	int ret;
 
-	for (unsigned int x = 0; x != HPSJAM_SEQ_MAX; x++) {
+	for (unsigned int x = 0; x != HPSJAM_PORTS_MAX; x++) {
 		hpsjam_v4[x].init(AF_INET, port + x);
 		ret = pthread_create(&pt, NULL, &hpsjam_socket_receive, &hpsjam_v4[x]);
 		assert(ret == 0);

@@ -266,7 +266,7 @@ HpsJamConnect :: handle_connect()
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 
 	/* set destination address */
-	for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++) {
+	for (unsigned i = 0; i != HPSJAM_PORTS_MAX; i++) {
 		hpsjam_client_peer->address[i] = address;
 		switch (address.v4.sin_family) {
 		case AF_INET:
@@ -285,7 +285,7 @@ HpsJamConnect :: handle_connect()
 	/* send initial ping */
 	pkt = new struct hpsjam_packet_entry;
 	pkt->packet.setPing(0, hpsjam_ticks, key,
-	    multiPort ? HPSJAM_FEATURE_16_PORT : 0);
+	    multiPort ? HPSJAM_FEATURE_MULTI_PORT : 0);
 	pkt->packet.type = HPSJAM_TYPE_PING_REQUEST;
 	pkt->insert_tail(&hpsjam_client_peer->output_pkt.head);
 

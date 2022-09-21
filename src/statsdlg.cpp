@@ -36,7 +36,7 @@
 void
 HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 {
-	constexpr unsigned N = 2 * HPSJAM_SEQ_MAX;
+	constexpr unsigned N = HPSJAM_MAX_JITTER;
 	uint64_t packet_loss;
 	uint64_t packet_damage;
 	uint16_t ping_time;

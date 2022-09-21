@@ -40,7 +40,9 @@
 #define	HPSJAM_VERSION_STRING "v1.0.25"
 #define	HPSJAM_ICON_FILE ":/HpsJam.png"
 #define	HPSJAM_PEERS_MAX 256
-#define	HPSJAM_SEQ_MAX 16
+#define	HPSJAM_RED_MAX 3
+#define	HPSJAM_SEQ_MAX (17 * HPSJAM_PORTS_MAX)
+#define	HPSJAM_PORTS_MAX (5 * HPSJAM_RED_MAX)
 #define	HPSJAM_NUM_ICONS 14
 #define	HPSJAM_AUDIO_FORMAT_MAX 9
 #define	HPSJAM_AUDIO_LEVELS_MAX 5
@@ -55,7 +57,7 @@
 #define	HPSJAM_BIT_GAIN_GET(x) (((x) >> 3) & 31)
 #define	HPSJAM_SERVER_LIST_MAX 100
 #define	HPSJAM_CPU_MAX 64
-#define	HPSJAM_FEATURE_16_PORT (1 << 0)
+#define	HPSJAM_FEATURE_MULTI_PORT (1 << 1)
 
 #define	HPSJAM_NO_SIGNAL(a,b) do {	\
   a.blockSignals(true);			\
@@ -84,8 +86,8 @@ extern unsigned hpsjam_udp_buffer_size;
 extern class hpsjam_server_peer *hpsjam_server_peers;
 extern class hpsjam_client_peer *hpsjam_client_peer;
 extern class HpsJamClient *hpsjam_client;
-extern struct hpsjam_socket_address hpsjam_v4[HPSJAM_SEQ_MAX];
-extern struct hpsjam_socket_address hpsjam_v6[HPSJAM_SEQ_MAX];
+extern struct hpsjam_socket_address hpsjam_v4[HPSJAM_PORTS_MAX];
+extern struct hpsjam_socket_address hpsjam_v6[HPSJAM_PORTS_MAX];
 extern struct hpsjam_socket_address hpsjam_cli;
 extern const char *hpsjam_welcome_message_file;
 extern int hpsjam_profile_index;

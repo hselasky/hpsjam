@@ -57,8 +57,8 @@ bool hpsjam_mute_peer_audio;
 class hpsjam_server_peer *hpsjam_server_peers;
 class hpsjam_client_peer *hpsjam_client_peer;
 class HpsJamClient *hpsjam_client;
-struct hpsjam_socket_address hpsjam_v4[HPSJAM_SEQ_MAX];
-struct hpsjam_socket_address hpsjam_v6[HPSJAM_SEQ_MAX];
+struct hpsjam_socket_address hpsjam_v4[HPSJAM_PORTS_MAX];
+struct hpsjam_socket_address hpsjam_v6[HPSJAM_PORTS_MAX];
 struct hpsjam_socket_address hpsjam_cli;
 const char *hpsjam_welcome_message_file;
 int hpsjam_profile_index;
@@ -523,7 +523,7 @@ main(int argc, char **argv)
 			hpsjam_no_multi_port ? 1 : 0);
 
 		/* set a valid UDP buffer size */
-		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX;
+		hpsjam_udp_buffer_size = 2000 * HPSJAM_PORTS_MAX;
 
 		/* create sockets, if any */
 		hpsjam_socket_init(port, cliport);
@@ -569,7 +569,7 @@ main(int argc, char **argv)
 		}
 
 		/* set a valid UDP buffer size */
-		hpsjam_udp_buffer_size = 2000 * HPSJAM_SEQ_MAX * hpsjam_num_server_peers;
+		hpsjam_udp_buffer_size = 2000 * HPSJAM_PORTS_MAX;
 
 		/* create sockets, if any */
 		hpsjam_socket_init(port, cliport);

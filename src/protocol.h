@@ -86,15 +86,11 @@ struct hpsjam_header {
 	void clear() {
 		sequence = 0;
 	};
-	uint8_t getSeqNo() const {
+	uint8_t getSequence() const {
 		return (sequence % HPSJAM_SEQ_MAX);
 	};
-	uint8_t getRedNo() const {
-		return ((sequence / HPSJAM_SEQ_MAX) % HPSJAM_SEQ_MAX);
-	};
-	void setSequence(uint8_t seq, uint8_t red) {
-		sequence = (seq % HPSJAM_SEQ_MAX) +
-		  ((red % HPSJAM_SEQ_MAX) * HPSJAM_SEQ_MAX);
+	void setSequence(uint8_t seq) {
+		sequence = seq;
 	};
 };
 
@@ -316,13 +312,10 @@ public:
 	uint16_t pend_count; /* pending timeout counter */
 	uint8_t pend_seqno; /* pending sequence number */
 	uint8_t peer_seqno; /* peer sequence number */
-	uint8_t d_cur;	/* current distance between XOR frames */
-	uint8_t d_max;	/* maximum distance between XOR frames */
 	uint8_t seqno;	/* current sequence number */
 	bool send_ack;
 	size_t offset;	/* current data offset */
 	size_t d_len;	/* maximum XOR frame length */
-	uint8_t nextqueue;
 
 	hpsjam_output_packetizer() {
 		TAILQ_INIT(&head);
@@ -343,10 +336,8 @@ public:
 		return (0);
 	};
 
-	void init(uint8_t distance = 2) {
+	void init() {
 		struct hpsjam_packet_entry *pkt;
-		d_cur = 0;
-		d_max = distance % HPSJAM_SEQ_MAX;
 		start_time = 0;
 		ping_time = 0;
 		pend_count = 65535;
@@ -365,7 +356,6 @@ public:
 
 		delete pending;
 		pending = 0;
-		nextqueue = 0;
 	};
 
 	bool append_pkt(const struct hpsjam_packet_entry &entry)
@@ -407,16 +397,15 @@ public:
 	};
 
 	bool isXorFrame() const {
-		return (d_cur == d_max);
+		return ((seqno % HPSJAM_RED_MAX) == HPSJAM_RED_MAX - 1);
 	};
 
 	void send(const struct hpsjam_socket_address &addr) {
-		if (d_cur == d_max) {
+		if (isXorFrame()) {
 			/* finalize XOR packet */
-			mask.hdr.setSequence(seqno, d_max);
+			mask.hdr.setSequence(seqno);
 			addr.sendto((const char *)&mask, d_len + sizeof(mask.hdr));
 			mask.clear();
-			d_cur = 0;
 			d_len = 0;
 		} else {
 			/* add a control packet, if possible */
@@ -452,19 +441,17 @@ public:
 			/* check if we need to send an ACK */
 			if (send_ack && append_ack())
 				send_ack = false;
-			current.hdr.setSequence(seqno, 0);
+			current.hdr.setSequence(seqno);
 			addr.sendto((const char *)&current, offset + sizeof(current.hdr));
 			mask.do_xor(current);
 			current.clear();
-			seqno++;
-			d_cur++;
 			/* keep track of maximum XOR length */
 			if (d_len < offset)
 				d_len = offset;
 			offset = 0;
 		}
-		nextqueue++;
-		nextqueue &= (HPSJAM_SEQ_MAX - 1);
+		seqno++;
+		seqno %= HPSJAM_SEQ_MAX;
 	};
 signals:
 	void pendingWatchdog();
@@ -474,156 +461,128 @@ signals:
 struct hpsjam_input_packetizer {
 	struct hpsjam_jitter jitter;
 	union hpsjam_frame current[HPSJAM_SEQ_MAX];
-	union hpsjam_frame mask[HPSJAM_SEQ_MAX];
-#define	HPSJAM_V_GOT_PACKET 1
-#define	HPSJAM_V_GOT_XOR_MASK 2
-#define	HPSJAM_V_GOT_RECEIVED 4
 	uint8_t valid[HPSJAM_SEQ_MAX];
-	uint8_t last_red;
+#define	HPSJAM_MASK_VALID 1
+#define	HPSJAM_MASK_PROCESSED 2
 
 	void init() {
 		jitter.clear();
-		for (size_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
+		for (size_t x = 0; x != HPSJAM_SEQ_MAX; x++)
 			current[x].clear();
-			mask[x].clear();
-		}
 		memset(valid, 0, sizeof(valid));
-		last_red = 2;
 	};
 
 	const union hpsjam_frame *first_pkt() {
-		unsigned mask = 0;
-		unsigned red;
-		unsigned start;
-		uint8_t min_x;
+		enum {
+			NMAX = 5,
+			BMAX = HPSJAM_SEQ_MAX / NMAX
+		};
+		uint64_t mask;
+		uint64_t start;
+		unsigned num;
+		unsigned min_x;
+		unsigned last_x;
+top:
+		mask = 0;
+		num = 0;
+		for (unsigned x = 0; x != HPSJAM_SEQ_MAX; x++) {
+			if (valid[x] == HPSJAM_MASK_VALID) {
+				mask |= 1ULL << (x / NMAX);
+				num++;
+			}
+		}
 
-		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++)
-			mask |= (valid[x] & HPSJAM_V_GOT_PACKET) << x;
+		/* check if no packets can be received */
+		if (num == 0)
+			return (NULL);
 
 		/*
 		 * Figure out the rotation which gives the smallest
-		 * value aligned to the redundancy packet:
+		 * value. This gives an indication where to start
+		 * reading the frames:
 		 */
 		start = mask;
 		min_x = 0;
-		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x++) {
-			if (start > mask && (x % last_red) == 0) {
+		for (unsigned x = 0; x != BMAX; x++) {
+			if (start > mask) {
 				start = mask;
 				min_x = x;
 			}
 			if (mask & 1) {
 				mask >>= 1;
-				mask |= 1U << (HPSJAM_SEQ_MAX - 1);
+				mask |= 1ULL << (BMAX - 1);
 			} else {
 				mask >>= 1;
 			}
 		}
 
-		/* compute the redundancy mask */
-		red = (1U << last_red) - 1U;
+		last_x = 0;
+		for (unsigned x = 1; x != BMAX; x++) {
+			if ((start >> x) & 1)
+				last_x = x;
+		}
 
-		/*
-		 * Start processing if all packets are present in a
-		 * redundancy sequence or packets are received beyond
-		 * the redundancy mask.
-		 */
-		while ((start & red) == red || (start & ~red) != 0) {
-			/* account for RX loss */
-			if ((valid[min_x] & HPSJAM_V_GOT_RECEIVED) == 0 &&
-			    (valid[min_x] & HPSJAM_V_GOT_XOR_MASK) == 0) {
-				/* account for RX loss */
-				jitter.rx_loss();
-			}
+		/* compute how many units the data spawns */
+		last_x = (last_x + 1) * NMAX;
 
-			/* check if we can consume packet(s) */
-			for (uint8_t x = 0; x != last_red; x++) {
-				const uint8_t z = (min_x + x) % HPSJAM_SEQ_MAX;
-				if (valid[z] & HPSJAM_V_GOT_RECEIVED)
-					continue;
-				if (~valid[z] & HPSJAM_V_GOT_PACKET) {
-					/* fill frame with silence */
-					current[z].clear();
-					current[z].start[0].putSilence(HPSJAM_NOM_SAMPLES);
-					/* account for RX loss */
+		/* allow up to 1 of 3 packets to get lost */
+		if ((3 * num) < (2 * last_x))
+			return (NULL);	/* too few packets */
+
+		for (unsigned x = min_x * NMAX; x != (min_x + 1) * NMAX; x++) {
+			if (valid[x] & HPSJAM_MASK_PROCESSED)
+				continue;
+			valid[x] |= HPSJAM_MASK_PROCESSED;
+
+			switch (x % HPSJAM_RED_MAX) {
+			case 0:
+				if (valid[x] & HPSJAM_MASK_VALID) {
+					/* got frame */
+					return (current + x);
+				} else if (valid[x + 1] & valid[x + 2] & HPSJAM_MASK_VALID) {
+					/* can recover */
+					current[x + 2].do_xor(current[x + 1]);
 					jitter.rx_loss();
-					/* account for RX damage */
+					return (current + x + 2);
+				} else {
+					jitter.rx_loss();
 					jitter.rx_damage();
+					/* fill frame with silence */
+					current[x].clear();
+					current[x].start[0].putSilence(HPSJAM_NOM_SAMPLES);
+					return (current + x);
 				}
-				/* mark this entry received */
-				valid[z] |= HPSJAM_V_GOT_RECEIVED;
-				/* clear received flag halfway through */
-				valid[(z + (HPSJAM_SEQ_MAX / 2)) % HPSJAM_SEQ_MAX] &= ~HPSJAM_V_GOT_RECEIVED;
-				return (current + z);
-			}
-
-			for (uint8_t x = 0; x != last_red; x++) {
-				const uint8_t z = (min_x + x) % HPSJAM_SEQ_MAX;
-				/* only keep the received flag */
-				valid[z] &= HPSJAM_V_GOT_RECEIVED;
-			}
-
-			/* see if there is more data */
-			min_x = (min_x + last_red) % HPSJAM_SEQ_MAX;
-			start >>= last_red;
-		}
-
-		/* no packets can be received */
-		return (0);
-	};
-
-	void recovery() {
-		if (last_red <= 1)
-			return;
-		for (uint8_t x = 0; x != HPSJAM_SEQ_MAX; x += last_red) {
-			if (~valid[x] & HPSJAM_V_GOT_XOR_MASK)
-				continue;
-			if (mask[x].hdr.getRedNo() != last_red)
-				continue;
-			uint8_t rx_missing = 0;
-			for (uint8_t y = 0; y != last_red; y++) {
-				const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
-				rx_missing += (~valid[z] & HPSJAM_V_GOT_PACKET);
-			}
-			if (rx_missing == 1) {
-				/* one frame missing */
-				for (uint8_t y = 0; y != last_red; y++) {
-					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
-					if (valid[z] & HPSJAM_V_GOT_PACKET)
-						mask[x].do_xor(current[z]);
+				break;
+			case 1:
+				if (valid[x] & HPSJAM_MASK_VALID) {
+					/* got frame */
+					return (current + x);
+				} else if (valid[x - 1] & valid[x + 1] & HPSJAM_MASK_VALID) {
+					/* can recover */
+					current[x + 1].do_xor(current[x - 1]);
+					jitter.rx_loss();
+					return (current + x + 1);
+				} else {
+					jitter.rx_loss();
+					jitter.rx_damage();
+					/* fill frame with silence */
+					current[x].clear();
+					current[x].start[0].putSilence(HPSJAM_NOM_SAMPLES);
+					return (current + x);
 				}
-				/* recover the missing frame */
-				for (uint8_t y = 0; y != last_red; y++) {
-					const uint8_t z = (HPSJAM_SEQ_MAX + x - y - 1) % HPSJAM_SEQ_MAX;
-					if (~valid[z] & HPSJAM_V_GOT_PACKET) {
-						current[z] = mask[x];
-						/* invalidate headers */
-						mask[x].hdr.clear();
-						current[z].hdr.clear();
-						/* set valid bit */
-						valid[z] |= HPSJAM_V_GOT_PACKET;
-						/* account for RX loss */
-						jitter.rx_loss();
-					}
-				}
+				break;
+			default:
+				break;
 			}
 		}
+		goto top;
 	};
 
 	void receive(const union hpsjam_frame &frame) {
-		const uint8_t rx_seqno = frame.hdr.getSeqNo();
-		const uint8_t rx_red = frame.hdr.getRedNo();
+		const uint8_t rx_seqno = frame.hdr.getSequence();
 
-		if (rx_red != 0) {
-			/* check that the redundancy count is valid */
-			if ((HPSJAM_SEQ_MAX % rx_red) == 0 && (rx_seqno % rx_red) == 0) {
-				last_red = rx_red;
-				mask[rx_seqno] = frame;
-				valid[rx_seqno] |= HPSJAM_V_GOT_XOR_MASK;
-			}
-		} else {
-			current[rx_seqno] = frame;
-			valid[rx_seqno] |= HPSJAM_V_GOT_PACKET;
-		}
+		current[rx_seqno] = frame;
+		valid[rx_seqno] = HPSJAM_MASK_VALID;
 
 		jitter.rx_packet();
 	};

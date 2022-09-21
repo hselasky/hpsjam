@@ -48,7 +48,7 @@ class hpsjam_server_peer : public QObject {
 	Q_OBJECT;
 public:
 	QMutex lock;
-	struct hpsjam_socket_address address[HPSJAM_SEQ_MAX];
+	struct hpsjam_socket_address address[HPSJAM_PORTS_MAX];
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;
 	class hpsjam_midi_buffer in_midi;
@@ -76,7 +76,7 @@ public:
 	bool allow_mixer_access;
 
 	void init() {
-		for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++)
+		for (unsigned i = 0; i != HPSJAM_PORTS_MAX; i++)
 			address[i].clear();
 		multi_port = false;
 		multi_wait = 1000;
@@ -158,7 +158,7 @@ class hpsjam_client_peer : public QObject {
 	Q_OBJECT;
 public:
 	QMutex lock;
-	struct hpsjam_socket_address address[HPSJAM_SEQ_MAX];
+	struct hpsjam_socket_address address[HPSJAM_PORTS_MAX];
 	struct hpsjam_input_packetizer input_pkt;
 	class hpsjam_output_packetizer output_pkt;
 	struct hpsjam_midi_parse in_midi_parse;
@@ -186,7 +186,7 @@ public:
 	uint32_t multi_wait;
 
 	void init() {
-		for (unsigned i = 0; i != HPSJAM_SEQ_MAX; i++)
+		for (unsigned i = 0; i != HPSJAM_PORTS_MAX; i++)
 			address[i].clear();
 		input_pkt.init();
 		output_pkt.init();
