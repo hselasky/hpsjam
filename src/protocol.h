@@ -462,6 +462,7 @@ struct hpsjam_input_packetizer {
 	struct hpsjam_jitter jitter;
 	union hpsjam_frame current[HPSJAM_SEQ_MAX];
 	uint8_t valid[HPSJAM_SEQ_MAX];
+	uint8_t last_seqno;
 #define	HPSJAM_MASK_VALID 1
 #define	HPSJAM_MASK_PROCESSED 2
 
@@ -470,6 +471,7 @@ struct hpsjam_input_packetizer {
 		for (size_t x = 0; x != HPSJAM_SEQ_MAX; x++)
 			current[x].clear();
 		memset(valid, 0, sizeof(valid));
+		last_seqno = (HPSJAM_SEQ_MAX - 1);
 	};
 
 	const union hpsjam_frame *first_pkt() {
@@ -482,6 +484,7 @@ struct hpsjam_input_packetizer {
 		unsigned num;
 		unsigned min_x;
 		unsigned last_x;
+		unsigned delta;
 top:
 		mask = 0;
 		num = 0;
@@ -534,6 +537,14 @@ top:
 				continue;
 			valid[x] |= HPSJAM_MASK_PROCESSED;
 
+			/* check if packet arrived too late */
+			delta = (HPSJAM_SEQ_MAX + x - last_seqno) % HPSJAM_SEQ_MAX;
+			if (delta >= (HPSJAM_SEQ_MAX / 2)) {
+				valid[x] &= ~HPSJAM_MASK_VALID;
+				continue;
+			}
+			last_seqno = x;
+
 			switch (x % HPSJAM_RED_MAX) {
 			case 0:
 				if (valid[x] & HPSJAM_MASK_VALID) {
@@ -572,6 +583,9 @@ top:
 				}
 				break;
 			default:
+				if (~valid[x] & HPSJAM_MASK_VALID)
+					jitter.rx_loss();
+
 				valid[x - 2] &= ~HPSJAM_MASK_VALID;
 				valid[x - 1] &= ~HPSJAM_MASK_VALID;
 				valid[x - 0] &= ~HPSJAM_MASK_VALID;
