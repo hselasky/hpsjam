@@ -471,7 +471,7 @@ struct hpsjam_input_packetizer {
 		for (size_t x = 0; x != HPSJAM_SEQ_MAX; x++)
 			current[x].clear();
 		memset(valid, 0, sizeof(valid));
-		last_seqno = (HPSJAM_SEQ_MAX - 1);
+		last_seqno = 0;
 	};
 
 	const union hpsjam_frame *first_pkt() {
@@ -535,12 +535,15 @@ top:
 			valid[x] |= HPSJAM_MASK_PROCESSED;
 
 			/* check if packet arrived too late */
-			delta = (HPSJAM_SEQ_MAX + x - last_seqno) % HPSJAM_SEQ_MAX;
+			delta = (HPSJAM_SEQ_MAX + x - (unsigned)last_seqno) % HPSJAM_SEQ_MAX;
 			if (delta >= (HPSJAM_SEQ_MAX / 2)) {
-				valid[x] &= ~HPSJAM_MASK_VALID;
+				if (valid[x] & HPSJAM_MASK_VALID) {
+					valid[x] &= ~HPSJAM_MASK_VALID;
+					jitter.rx_loss();
+				}
 				continue;
 			}
-			last_seqno = x;
+			last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 
 			switch (x % HPSJAM_RED_MAX) {
 			case 0:
