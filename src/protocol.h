@@ -484,7 +484,8 @@ struct hpsjam_input_packetizer {
 		unsigned min_x;
 		unsigned sumbits;
 		unsigned delta;
-top:
+		unsigned x;
+
 		mask = 0;
 		num = 0;
 		for (unsigned x = 0; x != HPSJAM_SEQ_MAX; x++) {
@@ -505,7 +506,7 @@ top:
 		 */
 		start = mask;
 		min_x = 0;
-		for (unsigned x = 0; x != BMAX; x++) {
+		for (x = 0; x != BMAX; x++) {
 			if (start > mask) {
 				start = mask;
 				min_x = x;
@@ -524,19 +525,20 @@ top:
 			start &= (start - 1);
 		}
 
-		/* wait for half of space to be filled */
-		if ((2 * num) < sumbits)
+		/* wait for two thirds of space to be filled */
+		if ((3 * num) < (2 * sumbits))
 			return (NULL);
 
-		for (unsigned x = min_x * NMAX; x != (min_x + 1) * NMAX; x++) {
+		for (x = min_x * NMAX;;) {
 			/* check if packet arrived too late */
 			delta = (HPSJAM_SEQ_MAX + x - (unsigned)last_seqno) % HPSJAM_SEQ_MAX;
-			if (delta >= (HPSJAM_SEQ_MAX / 2))
-				continue;
-			last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 
 			switch (x % HPSJAM_RED_MAX) {
 			case 0:
+				if (delta >= (HPSJAM_SEQ_MAX / 2))
+					break;
+				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
+
 				if (valid[x] & HPSJAM_MASK_VALID) {
 					/* got frame */
 					return (current + x);
@@ -555,6 +557,10 @@ top:
 				}
 				break;
 			case 1:
+				if (delta >= (HPSJAM_SEQ_MAX / 2))
+					break;
+				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
+
 				if (valid[x] & HPSJAM_MASK_VALID) {
 					/* got frame */
 					return (current + x);
@@ -573,20 +579,28 @@ top:
 				}
 				break;
 			default:
-				if (~valid[x - 2] & HPSJAM_MASK_VALID)
-					jitter.rx_loss();
-				if (~valid[x - 1] & HPSJAM_MASK_VALID)
-					jitter.rx_loss();
-				if (~valid[x - 0] & HPSJAM_MASK_VALID)
-					jitter.rx_loss();
+				if (delta < (HPSJAM_SEQ_MAX / 2)) {
+					last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 
+					if (~valid[x - 2] & HPSJAM_MASK_VALID)
+						jitter.rx_loss();
+					if (~valid[x - 1] & HPSJAM_MASK_VALID)
+						jitter.rx_loss();
+					if (~valid[x - 0] & HPSJAM_MASK_VALID)
+						jitter.rx_loss();
+				}
 				valid[x - 2] &= ~HPSJAM_MASK_VALID;
 				valid[x - 1] &= ~HPSJAM_MASK_VALID;
 				valid[x - 0] &= ~HPSJAM_MASK_VALID;
 				break;
 			}
+			x++;
+			x %= HPSJAM_SEQ_MAX;
+			/* check if we are back to the start */
+			if (x == (min_x * NMAX))
+				break;
 		}
-		goto top;
+		return (NULL);
 	};
 
 	void receive(const union hpsjam_frame &frame) {
