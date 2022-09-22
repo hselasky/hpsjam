@@ -464,7 +464,6 @@ struct hpsjam_input_packetizer {
 	uint8_t valid[HPSJAM_SEQ_MAX];
 	uint8_t last_seqno;
 #define	HPSJAM_MASK_VALID 1
-#define	HPSJAM_MASK_PROCESSED 2
 
 	void init() {
 		jitter.clear();
@@ -530,19 +529,10 @@ top:
 			return (NULL);
 
 		for (unsigned x = min_x * NMAX; x != (min_x + 1) * NMAX; x++) {
-			if (valid[x] & HPSJAM_MASK_PROCESSED)
-				continue;
-			valid[x] |= HPSJAM_MASK_PROCESSED;
-
 			/* check if packet arrived too late */
 			delta = (HPSJAM_SEQ_MAX + x - (unsigned)last_seqno) % HPSJAM_SEQ_MAX;
-			if (delta >= (HPSJAM_SEQ_MAX / 2)) {
-				if (valid[x] & HPSJAM_MASK_VALID) {
-					valid[x] &= ~HPSJAM_MASK_VALID;
-					jitter.rx_loss();
-				}
+			if (delta >= (HPSJAM_SEQ_MAX / 2))
 				continue;
-			}
 			last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 
 			switch (x % HPSJAM_RED_MAX) {
@@ -583,7 +573,11 @@ top:
 				}
 				break;
 			default:
-				if (~valid[x] & HPSJAM_MASK_VALID)
+				if (~valid[x - 2] & HPSJAM_MASK_VALID)
+					jitter.rx_loss();
+				if (~valid[x - 1] & HPSJAM_MASK_VALID)
+					jitter.rx_loss();
+				if (~valid[x - 0] & HPSJAM_MASK_VALID)
 					jitter.rx_loss();
 
 				valid[x - 2] &= ~HPSJAM_MASK_VALID;
