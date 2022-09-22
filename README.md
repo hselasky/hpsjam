@@ -2,6 +2,11 @@
 # HPS JAM
 An online audio collaboration tool for low latency audio with lyrics and chat support.
 
+# News
+Some non-backwards compatible network protocol changes have been
+introduced as of v1.1.0 to significantly reduce audio jitter.
+Please update both client and server software at the same time!
+
 # Features
 <ul>
   <li>uncompressed audio transmission in 1 channel 8-bit up to 2 channels 32-bit. This results in crystal clear high-end audio over the internet!</li>
