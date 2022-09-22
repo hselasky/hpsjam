@@ -520,9 +520,9 @@ top:
 		}
 
 		sumbits = NMAX;
-		for (unsigned x = 1; x != BMAX; x++) {
-			if ((start >> x) & 1)
-				sumbits += NMAX;
+		while (start & (start - 1)) {
+			sumbits += NMAX;
+			start &= (start - 1);
 		}
 
 		/* wait for half of space to be filled */
