@@ -222,7 +222,7 @@ hpsjam_audio_callback(AudioDeviceID deviceID,
 		};
 
 		/* check for mono output */
-		if (audioInputSelection[0] == audioInputSelection[1]) {
+		if (audioOutputSelection[0] == audioOutputSelection[1]) {
 			for (uint32_t x = 0; x != audioBufferSamples; x++) {
 				audioInputBuffer[map[0]][x] =
 				    (audioInputBuffer[map[0]][x] + audioInputBuffer[map[1]][x]) / 2.0f;

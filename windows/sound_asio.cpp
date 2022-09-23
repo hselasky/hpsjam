@@ -372,7 +372,7 @@ hpsjam_asio_buffer_switch(long index, ASIOBool)
 	    audioInputBuffer[0], audioInputBuffer[1], audioBufferSamples);
 
 	/* check for mono output */
-	if (audioInputSelection[0] == audioInputSelection[1]) {
+	if (audioOutputSelection[0] == audioOutputSelection[1]) {
 		for (uint32_t x = 0; x != audioBufferSamples; x++) {
 			audioInputBuffer[0][x] =
 			    (audioInputBuffer[0][x] + audioInputBuffer[1][x]) / 2.0f;
@@ -520,9 +520,7 @@ hpsjam_asio_check_dev_caps()
 
 		ci.isInput = ASIOFalse;
 		ci.channel = i;
-
 		ASIOGetChannelInfo(&ci);
-
 		if (!hpsjam_check_sample_type_supported(ci.type))
 			return (true);
 	}
