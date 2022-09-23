@@ -383,8 +383,8 @@ hpsjam_asio_buffer_switch(long index, ASIOBool)
 		const unsigned i = audioInputChannels + x;
 		const ASIOBufferInfo &bi = bufferInfo[i];
 		const float *src = audioInputBuffer[
-		     (x == audioOutputSelection[0]) ? 0 :
-		    ((x == audioOutputSelection[1]) ? 1 : 2)];
+		     (x == (long)audioOutputSelection[0]) ? 0 :
+		    ((x == (long)audioOutputSelection[1]) ? 1 : 2)];
 
 		switch (channelInfo[i].type) {
 		case ASIOSTInt16LSB:
