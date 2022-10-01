@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -480,23 +480,25 @@ struct hpsjam_input_packetizer {
 		};
 		uint64_t mask;
 		uint64_t start;
-		unsigned num;
+		unsigned num_total;
+		unsigned num_valid;
+		unsigned last_total;
 		unsigned min_x;
-		unsigned sumbits;
 		unsigned delta;
 		unsigned x;
+		unsigned y;
 
 		mask = 0;
-		num = 0;
-		for (unsigned x = 0; x != HPSJAM_SEQ_MAX; x++) {
-			if (valid[x] == HPSJAM_MASK_VALID) {
-				mask |= 1ULL << (x / NMAX);
-				num++;
+		for (x = 0; x != BMAX; x++) {
+			for (y = 0; y != NMAX; y++) {
+				if (valid[NMAX * x + y] == HPSJAM_MASK_VALID)
+					break;
 			}
+			mask |= ((uint64_t)(y != NMAX)) << x;
 		}
 
 		/* check if no packets can be received */
-		if (num == 0)
+		if (mask == 0)
 			return (NULL);
 
 		/*
@@ -519,14 +521,30 @@ struct hpsjam_input_packetizer {
 			}
 		}
 
-		sumbits = NMAX;
-		while (start & (start - 1)) {
-			sumbits += NMAX;
-			start &= (start - 1);
+		num_valid = last_total = num_total = 0;
+
+		for (x = min_x * NMAX;; ) {
+			/* check if packet arrived too late */
+			delta = (HPSJAM_SEQ_MAX + x - (unsigned)last_seqno) % HPSJAM_SEQ_MAX;
+			if (delta < (HPSJAM_SEQ_MAX / 2)) {
+				if (valid[x] == HPSJAM_MASK_VALID) {
+					num_valid++;
+					num_total ++;
+					last_total = num_total;
+				} else if (num_valid != 0)
+					num_total++;
+			}
+			x++;
+			x %= HPSJAM_SEQ_MAX;
+			if ((x % NMAX) == 0) {
+				if ((start >>= 1) == 0)
+					break;
+			}
 		}
 
-		/* wait for two thirds of space to be filled */
-		if ((3 * num) < (2 * sumbits))
+		/* two thirds must be valid */
+		if (last_total < 3 ||
+		    (3 * num_valid) < (2 * last_total))
 			return (NULL);
 
 		for (x = min_x * NMAX;;) {
