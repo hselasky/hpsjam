@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -23,7 +23,7 @@
  * SUCH DAMAGE.
  */
 
-#include <QFile>
+#include <QResource>
 #include <QTextStream>
 #include <QMutexLocker>
 
@@ -1030,12 +1030,16 @@ hpsjam_server_peer :: audio_import()
 	    <class hpsjam_server_peer>(*this);
 }
 
+#ifndef Q_OS_IOS
+#include <QFile>
+#endif
+
 void
 hpsjam_server_peer :: send_welcome_message()
 {
 	if (hpsjam_welcome_message_file == 0)
 		return;
-
+#ifndef Q_OS_IOS
 	QFile file(hpsjam_welcome_message_file);
 
 	if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -1054,6 +1058,7 @@ hpsjam_server_peer :: send_welcome_message()
 		pres->packet.type = HPSJAM_TYPE_CHAT_REPLY;
 		pres->insert_tail(&output_pkt.head);
 	}
+#endif
 }
 
 static void
@@ -1692,16 +1697,8 @@ hpsjam_cli_process(const struct hpsjam_socket_address &addr, const char *data, s
 static void
 hpsjam_load_float_le32(const char *fname, int &off, int &max, float * &data)
 {
-	QFile file(fname);
-
-	if (!file.open(QIODevice::ReadOnly)) {
-		off = 0;
-		max = 0;
-		data = 0;
-		return;
-	}
-
-	QByteArray *pba = new QByteArray(file.readAll());
+	QResource res(fname);
+	QByteArray *pba = new QByteArray(res.uncompressedData());
 	data = (float *)pba->data();
 	off = max = pba->length() / 4;
 

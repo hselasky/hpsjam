@@ -25,7 +25,7 @@
 
 #include <QMutexLocker>
 #include <QMessageBox>
-#include <QFile>
+#include <QResource>
 
 #include "hpsjam.h"
 #include "peer.h"
@@ -142,19 +142,14 @@ HpsJamConnectIcon :: setEnabled(bool state)
 void
 HpsJamConnectIcon :: loadSelection(QByteArray &ba)
 {
-	QFile file;
+	const QString &fname = icon[selection]->fname;
 
-	if (icon[selection]->fname.isEmpty())
-		goto error;
-
-	file.setFileName(icon[selection]->fname);
-
-	if(!file.open(QIODevice::ReadOnly))
-		goto error;
-	ba = file.readAll();
-	return;
-error:
-	ba = QByteArray();
+	if (fname.isEmpty()) {
+		ba = QByteArray();
+	} else {
+		QResource res(fname);
+		ba = res.uncompressedData();
+	}
 }
 
 void

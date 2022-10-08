@@ -2,7 +2,9 @@
 # QMAKE project file for HPSJAM
 #
 TEMPLATE	= app
+!ios {
 CONFIG		+= qt release
+}
 QT		+= core gui svg widgets
 
 isEmpty(PREFIX) {
@@ -92,8 +94,22 @@ LIBS+=		-framework CoreMIDI
 DEFINES		+= HAVE_MAC_AUDIO
 }
 
+# IOS audio backend
+ios {
+SOURCES		+= ios/sound_ios.cpp
+SOURCES		+= ios/activity.mm
+HEADERS		+= ios/activity.h
+LIBS+=		-framework CoreAudio
+LIBS+=		-framework AudioToolbox
+LIBS+=		-framework CoreMIDI
+DEFINES		+= HAVE_IOS_AUDIO
+Q_ENABLE_BITCODE.name = ENABLE_BITCODE
+Q_ENABLE_BITCODE.value = NO
+QMAKE_MAC_XCODE_SETTINGS += Q_ENABLE_BITCODE
+}
+
 # JACK audio backend
-!macx:!win32 {
+!macx:!win32:!ios {
 SOURCES		+= linux/sound_jack.cpp
 LIBS		+= -L$${PREFIX}/lib -ljack
 DEFINES		+= HAVE_JACK_AUDIO
@@ -131,7 +147,12 @@ macx {
 QMAKE_INFO_PLIST += HpsJamMacOSX.plist
 }
 
-!macx:!win32 {
+ios {
+QMAKE_INFO_PLIST += HpsJamIOS.plist
+INCLUDEPATH	+= ios/include
+}
+
+!macx:!win32:!ios {
 INCLUDEPATH     += $${PREFIX}/include
 }
 
@@ -139,6 +160,13 @@ LIBS		+= -pthread
 
 target.path	= $${PREFIX}/bin
 INSTALLS	+= target
+
+ios {
+QMAKE_ASSET_CATALOGS += ios/Assets.xcassets
+QMAKE_INFO_PLIST= HpsJamIOS.plist
+QMAKE_APPLE_DEVICE_ARCHS= arm64
+QMAKE_IOS_DEPLOYMENT_TARGET= 12.0
+}
 
 macx {
 icons.path= $${DESTDIR}/Contents/Resources
