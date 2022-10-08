@@ -36,7 +36,7 @@ Please update both client and server software at the same time!
 
 ## How to build server under Ubuntu Linux
 <ul>
-  <li>sudo apt-get install git build-essential qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5svg5-dev libqt5webenginewidgets5 libqt5webchannel5-dev qtwebengine5-dev libfftw3-dev libjack-dev jackd</li>
+  <li>sudo apt-get install git build-essential qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5svg5-dev libqt5webenginewidgets5 libqt5webchannel5-dev qtwebengine5-dev libjack-dev jackd</li>
   <li>qmake PREFIX=/usr WITHOUT_AUDIO=YES QMAKE_CFLAGS_ISYSTEM="-I"</li>
   <li>make all</li>
   <li>make install</li>
@@ -47,7 +47,6 @@ NOTE 2) By giving qmake the "QMAKE_CFLAGS_ISYSTEM=-I" flag you can fix the follo
 
 ## Dependencies
 <ul>
-<li><A HREF="http://www.fftw.org">libfftw3-dev</A></li>
 <li><A HREF="https://jackaudio.org">jackd libjack-dev</A></li>
 <li><A HREF="http://www.asio4all.org">ASIO</A></li>
 <li>build-essential</li>

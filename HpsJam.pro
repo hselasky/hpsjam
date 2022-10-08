@@ -51,6 +51,8 @@ SOURCES		+= src/socket.cpp
 SOURCES		+= src/statsdlg.cpp
 SOURCES		+= src/timer.cpp
 
+SOURCES		+= kissfft/kiss_fft.c
+
 macx {
 HEADERS		+= mac/activity.h
 SOURCES		+= mac/activity.mm
@@ -61,6 +63,8 @@ DEFINES         += HAVE_HTTPD
 HEADERS         += src/httpd.h
 SOURCES         += src/httpd.cpp
 }
+
+INCLUDEPATH	+= kissfft
 
 isEmpty(WITHOUT_AUDIO) {
 
@@ -112,8 +116,7 @@ LIBS		+= \
 	-luser32 \
 	-ladvapi32 \
 	-lwinmm \
-	-lws2_32 \
-	-L$${_PRO_FILE_PWD_}/windows/lib -lfftw3-3
+	-lws2_32
 
 QMAKE_CXXFLAGS	+= -include winsock2.h
 QMAKE_CXXFLAGS	+= -include windows.h
@@ -126,13 +129,10 @@ RC_FILE		= windows/mainicon.rc
 
 macx {
 QMAKE_INFO_PLIST += HpsJamMacOSX.plist
-INCLUDEPATH 	+= /opt/local/include
-LIBS		+= /opt/local/lib/libfftw3.a
 }
 
 !macx:!win32 {
 INCLUDEPATH     += $${PREFIX}/include
-LIBS		+= -L$${PREFIX}/lib -lfftw3
 }
 
 LIBS		+= -pthread

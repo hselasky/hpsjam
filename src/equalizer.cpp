@@ -27,7 +27,7 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include <fftw3.h>
+#include <kiss_fft.h>
 #include <math.h>
 
 #include "hpsjam.h"
@@ -87,33 +87,34 @@ struct equalizer {
 	size_t block_size;
 	bool do_normalize;
 
-	/* (block_size * 2) elements, time domain */
-	double *fftw_time;
+	/* block_size elements, time domain */
+	kiss_fft_cpx *kiss_time;
 
-	/* (block_size * 2) elements, half-complex, freq domain */
-	double *fftw_freq;
+	/* block_size elements frequency domain */
+	kiss_fft_cpx *kiss_freq;
 
-	fftw_plan forward;
-	fftw_plan inverse;
+	kiss_fft_cfg forward;
+	kiss_fft_cfg inverse;
 
 	void init(double _rate, size_t _block_size) {
 		rate = _rate;
 		block_size = _block_size;
 
-		fftw_time = new double [block_size];
-		fftw_freq = new double [block_size];
+		kiss_time = new kiss_fft_cpx [block_size];
+		kiss_freq = new kiss_fft_cpx [block_size];
 
-		forward = fftw_plan_r2r_1d(block_size, fftw_time, fftw_freq, FFTW_R2HC, FFTW_MEASURE);
-		inverse = fftw_plan_r2r_1d(block_size, fftw_freq, fftw_time, FFTW_HC2R, FFTW_MEASURE);
+		forward = kiss_fft_alloc(block_size, false, 0, 0);
+		inverse = kiss_fft_alloc(block_size, true, 0, 0);
 	};
 	void cleanup() {
-		fftw_destroy_plan(forward);
-		fftw_destroy_plan(inverse);
-		delete [] fftw_time;
-		delete [] fftw_freq;
+		kiss_fft_free(forward);
+		kiss_fft_free(inverse);
+
+		delete [] kiss_time;
+		delete [] kiss_freq;
 	};
-	double get_window(double x) {
-		return (0.5 + 0.5 * cos(M_PI * x / (block_size / 2))) / block_size;
+	float get_window(float x) {
+		return (0.5 + 0.5 * cosf(M_PI * x / (block_size / 2))) / block_size;
 	};
 	bool load_freq_amps(const char *config) {
 		double prev_f = 0.0;
@@ -159,7 +160,7 @@ struct equalizer {
 				if (prev_f == 0.0)
 					prev_amp = next_amp;
 			}
-			fftw_freq[i] = ((f - prev_f) / (next_f - prev_f)) * (next_amp - prev_amp) + prev_amp;
+			kiss_freq[i].r = ((f - prev_f) / (next_f - prev_f)) * (next_amp - prev_amp) + prev_amp;
 		}
 		return (false);
 	};
@@ -167,40 +168,45 @@ struct equalizer {
 		bool retval;
 		size_t i;
 
-		memset(fftw_freq, 0, sizeof(fftw_freq[0]) * block_size);
+		memset(kiss_freq, 0, sizeof(kiss_freq[0]) * block_size);
 
 		retval = load_freq_amps(config);
 		if (retval)
 			return (retval);
 
-		fftw_execute(inverse);
+		kiss_fft(inverse, kiss_freq, kiss_time);
+
+		/* Clear inverse part */
+		for (i = 0; i != block_size; ++i)
+			kiss_time[i].i = 0;
 
 		/* Multiply by symmetric window and shift */
 		for (i = 0; i != (block_size / 2); ++i) {
-			double weight = get_window(i);
+			float weight = get_window(i);
 
-			fftw_time[block_size / 2 + i] = fftw_time[i] * weight;
+			kiss_time[block_size / 2 + i].r = kiss_time[i].r * weight;
 		}
 
 		for (i = (block_size / 2); i-- > 1; )
-			fftw_time[i] = fftw_time[block_size - i];
+			kiss_time[i] = kiss_time[block_size - i];
 
-		fftw_time[0] = 0;
+		kiss_time[0].r = 0;
+		kiss_time[0].i = 0;
 
-		fftw_execute(forward);
+		kiss_fft(forward, kiss_time, kiss_freq);
 
 		for (i = 0; i != block_size; i++)
-			fftw_freq[i] /= block_size;
+			kiss_freq[i].r /= block_size;
 
 		/* Normalize FIR filter, if any */
 		if (do_normalize) {
 			double sum = 0;
 
 			for (i = 0; i < block_size; ++i)
-				sum += fabs(fftw_time[i]);
+				sum += fabsf(kiss_time[i].r);
 			if (sum != 0.0) {
 				for (i = 0; i < block_size; ++i)
-					fftw_time[i] /= sum;
+					kiss_time[i].r /= sum;
 			}
 		}
 		return (retval);
@@ -296,7 +302,7 @@ hpsjam_equalizer :: init(const char *pfilter)
 
 	if (size != 0) {
 		for (ssize_t x = 0; x != size; x++)
-			filter_data[x] = eq.fftw_time[x];
+			filter_data[x] = eq.kiss_time[x].r;
 
 		eq.cleanup();
 	}
