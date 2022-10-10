@@ -31,6 +31,7 @@
 #include <QWidget>
 #include <QStackedWidget>
 #include <QGridLayout>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QTimer>
 
@@ -42,6 +43,29 @@ class HpsJamConfig;
 class HpsJamStats;
 class HpsJamEqualizer;
 class HpsJamHelp;
+
+class HpsJamMessageBox : QTimer
+{
+	Q_OBJECT
+
+	QWidget *_parent;
+	QString _title;
+	QString _text;
+public:
+	HpsJamMessageBox(QWidget *parent, const QString &title, const QString &text) :
+		_parent(parent), _title(title), _text(text)
+	{
+		connect(this, SIGNAL(timeout()), this, SLOT(handle_timer()));
+		setSingleShot(true);
+		start();
+	}
+public slots:
+	void handle_timer()
+	{
+		QMessageBox::information(_parent, _title, _text);
+		deleteLater();
+	}
+};
 
 class HpsJamClientButton : public QPushButton {
 	Q_OBJECT;
