@@ -144,11 +144,10 @@ RC_FILE		= windows/mainicon.rc
 }
 
 macx {
-QMAKE_INFO_PLIST += HpsJamMacOSX.plist
+QMAKE_INFO_PLIST += mac/HpsJam.plist
 }
 
 ios {
-QMAKE_INFO_PLIST += HpsJamIOS.plist
 INCLUDEPATH	+= ios/include
 }
 
@@ -163,7 +162,7 @@ INSTALLS	+= target
 
 ios {
 QMAKE_ASSET_CATALOGS += ios/Assets.xcassets
-QMAKE_INFO_PLIST= HpsJamIOS.plist
+QMAKE_INFO_PLIST= ios/HpsJam.plist
 QMAKE_APPLE_DEVICE_ARCHS= arm64
 QMAKE_IOS_DEPLOYMENT_TARGET= 12.0
 }
