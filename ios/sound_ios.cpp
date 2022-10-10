@@ -235,6 +235,11 @@ error:
 	return (noErr);
 }
 
+#if 0
+#define	noErr \
+({ printf("%s:%u\n", __FILE__, __LINE__); noErr; })
+#endif
+
 Q_DECL_EXPORT bool
 hpsjam_sound_init(const char *name, bool auto_connect)
 {
@@ -252,6 +257,21 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	if (audioInit == true)
 		return (true);
 
+	static bool sessionInit;
+
+	if (sessionInit == false) {
+		AudioSessionInitialize(NULL, NULL, NULL, NULL);
+		uint32_t sessionCategory = kAudioSessionCategory_PlayAndRecord;
+		result = AudioSessionSetProperty(
+		    kAudioSessionProperty_AudioCategory,
+		    sizeof(sessionCategory),
+		    &sessionCategory);
+		if (result != noErr)
+			return (true);
+		AudioSessionSetActive(true);
+		sessionInit = true;
+	}
+
 	desc.componentType = kAudioUnitType_Output;
 	desc.componentSubType = kAudioUnitSubType_RemoteIO;
 	desc.componentManufacturer = kAudioUnitManufacturer_Apple;
@@ -267,7 +287,7 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	enableIO = 1;
 	result = AudioUnitSetProperty(audioUnit,
 	    kAudioOutputUnitProperty_EnableIO,
-	    kAudioUnitScope_Global,
+	    kAudioUnitScope_Input,
 	    INPUT_ELEMENT,
 	    &enableIO,
 	    sizeof(enableIO));
@@ -276,7 +296,7 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 
 	result = AudioUnitSetProperty(audioUnit,
 	    kAudioOutputUnitProperty_EnableIO,
-	    kAudioUnitScope_Global,
+	    kAudioUnitScope_Output,
 	    OUTPUT_ELEMENT,
 	    &enableIO,
 	    sizeof(enableIO));
