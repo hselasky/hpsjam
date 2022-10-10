@@ -96,11 +96,12 @@ DEFINES		+= HAVE_MAC_AUDIO
 
 # IOS audio backend
 ios {
-SOURCES		+= ios/sound_ios.cpp
+SOURCES		+= ios/sound_ios.mm
 SOURCES		+= ios/activity.mm
 HEADERS		+= ios/activity.h
 LIBS+=		-framework CoreAudio
 LIBS+=		-framework AudioToolbox
+LIBS+=		-framework AVFoundation
 LIBS+=		-framework CoreMIDI
 DEFINES		+= HAVE_IOS_AUDIO
 Q_ENABLE_BITCODE.name = ENABLE_BITCODE

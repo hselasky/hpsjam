@@ -103,6 +103,13 @@ HpsJamDeviceSelection :: handle_rescan_device(bool forced)
 	}
 }
 
+void
+HpsJamDeviceSelection :: handle_reconfigure_audio()
+{
+	handle_set_input_device(0);
+	handle_set_output_device(0);
+}
+
 int
 HpsJamDeviceSelection :: handle_set_input_device(int value)
 {

@@ -114,6 +114,8 @@ public:
 		connect(&b_toggle_buffer_samples, SIGNAL(released()), this, SLOT(handle_toggle_buffer_samples()));
 		connect(&b_rescan_device, SIGNAL(released()), this, SLOT(handle_rescan_device()));
 
+		connect(this, SIGNAL(reconfigure_audio()), this, SLOT(handle_reconfigure_audio()));
+
 		handle_toggle_buffer_samples(0);
 	};
 	QGridLayout gl;
@@ -134,8 +136,11 @@ public:
 	QLabel l_buffer_samples;
 
 	void refreshStatus();
+signals:
+	void reconfigure_audio();
 
 public slots:
+	void handle_reconfigure_audio();
 	void handle_rescan_device(bool = true);
 	int handle_set_input_device(int = -1);
 	int handle_set_output_device(int = -1);

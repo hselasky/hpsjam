@@ -29,10 +29,13 @@
 #include <QString>
 
 #include "../src/peer.h"
+#include "../src/clientdlg.h"
+#include "../src/configdlg.h"
 
 #include <AudioUnit/AudioUnit.h>
 #include <AudioToolbox/AudioToolbox.h>
 #include <CoreMIDI/CoreMIDI.h>
+#include <AVFoundation/AVFoundation.h>
 
 #include <mach/mach_time.h>
 
@@ -143,21 +146,25 @@ hpsjam_midi_init(const char *name)
 
 static OSStatus
 hpsjam_audio_callback(void *,
-    AudioUnitRenderActionFlags *,
-    const AudioTimeStamp *,
+    AudioUnitRenderActionFlags *ioActionFlags,
+    const AudioTimeStamp *inTimeStamp,
     uint32_t inBusNumber,
     uint32_t inNumberFrames,
     AudioBufferList * ioData){
 	QMutexLocker locker(&audioMutex);
 
-	const size_t n_in = (inBusNumber == INPUT_ELEMENT) ? ioData->mNumberBuffers : 0;
-	const size_t n_out = (inBusNumber == OUTPUT_ELEMENT) ? ioData->mNumberBuffers : 0;
+	const size_t n_in = ioData->mNumberBuffers;
+	const size_t n_out = ioData->mNumberBuffers;
 
 	/* set correct number of output bytes */
 	for (size_t x = 0; x != n_out; x++) {
 		ioData->mBuffers[x].mDataByteSize =
 		    audioBufferSamples * audioOutputChannels * sizeof(float);
 	}
+
+	/* render input audio */
+	AudioUnitRender(audioUnit, ioActionFlags, inTimeStamp, 1,
+	    inNumberFrames, ioData);
 
 	if (n_in > 1 || n_out > 1 || (n_in == 0 && n_out == 0) ||
 	    audioInputBuffer[0] == 0 || audioInputBuffer[1] == 0 ||
@@ -235,193 +242,140 @@ error:
 	return (noErr);
 }
 
-#if 0
-#define	noErr \
-({ printf("%s:%u\n", __FILE__, __LINE__); noErr; })
-#endif
+#define	HpsJamCheckErr(cond) \
+({ if (cond) printf("%s:%u result=%d\n", __FILE__, __LINE__, result); (cond); })
 
 Q_DECL_EXPORT bool
 hpsjam_sound_init(const char *name, bool auto_connect)
 {
+	static bool sessionInit;
+	AVAudioSession *sessionInstance;
+	NSTimeInterval bufferDuration;
+	AudioComponent inputComponent;
 	AudioComponentDescription desc = {};
 	AudioComponent comp;
 	AudioStreamBasicDescription desiredFormat = {};
 	AURenderCallbackStruct rcbs = {};
+	NSError *nsErr;
 	OSStatus result;
-	uint32_t in_samples;
-	uint32_t out_samples;
-	uint32_t quality;
 	uint32_t enableIO;
 	uint32_t size;
 
 	if (audioInit == true)
 		return (true);
 
-	static bool sessionInit;
-
 	if (sessionInit == false) {
-		AudioSessionInitialize(NULL, NULL, NULL, NULL);
-		uint32_t sessionCategory = kAudioSessionCategory_PlayAndRecord;
-		result = AudioSessionSetProperty(
-		    kAudioSessionProperty_AudioCategory,
-		    sizeof(sessionCategory),
-		    &sessionCategory);
-		if (result != noErr)
-			return (true);
-		AudioSessionSetActive(true);
+		nsErr = nil;
+		[[AVAudioSession sharedInstance]
+		    setCategory:AVAudioSessionCategoryPlayAndRecord error:&nsErr];
+		[[AVAudioSession sharedInstance] requestRecordPermission:^( BOOL granted ) {}];
+		[[AVAudioSession sharedInstance] setMode:AVAudioSessionModeMeasurement error:&nsErr];
+
+		[[NSNotificationCenter defaultCenter]
+		    addObserverForName:AVAudioSessionRouteChangeNotification object:nil queue:nil
+		    usingBlock:^(NSNotification* notification)
+		{
+		    uint8_t reason = [[notification.userInfo valueForKey:AVAudioSessionRouteChangeReasonKey] intValue];
+		    if (reason == AVAudioSessionRouteChangeReasonNewDeviceAvailable ||
+			reason == AVAudioSessionRouteChangeReasonOldDeviceUnavailable)
+				emit hpsjam_client->w_config->audio_dev.reconfigure_audio();
+		}];
+
 		sessionInit = true;
 	}
+
+	sessionInstance = [AVAudioSession sharedInstance];
+	nsErr = nil;
+
+	[sessionInstance setCategory:AVAudioSessionCategoryPlayAndRecord
+	    withOptions:AVAudioSessionCategoryOptionMixWithOthers |
+	    AVAudioSessionCategoryOptionDefaultToSpeaker |
+	    AVAudioSessionCategoryOptionAllowBluetooth |
+	    AVAudioSessionCategoryOptionAllowBluetoothA2DP |
+	    AVAudioSessionCategoryOptionAllowAirPlay error:&nsErr];
+
+	bufferDuration = (float) audioBufferDefSamples / (float) HPSJAM_SAMPLE_RATE;
+	[sessionInstance setPreferredIOBufferDuration:bufferDuration error:&nsErr];
+
+	[sessionInstance setPreferredSampleRate:HPSJAM_SAMPLE_RATE error:&nsErr];
+	[[AVAudioSession sharedInstance] setActive:YES error:&nsErr];
 
 	desc.componentType = kAudioUnitType_Output;
 	desc.componentSubType = kAudioUnitSubType_RemoteIO;
 	desc.componentManufacturer = kAudioUnitManufacturer_Apple;
 
-	comp = AudioComponentFindNext(NULL, &desc);
-	if (comp == NULL)
-		return (true);
+	inputComponent = AudioComponentFindNext(NULL, &desc);
 
-	result = AudioComponentInstanceNew(comp, &audioUnit);
-	if (result != noErr)
-		return (true);
+	result = AudioComponentInstanceNew(inputComponent, &audioUnit);
+	if (HpsJamCheckErr(result != noErr))
+		goto error;
 
 	enableIO = 1;
-	result = AudioUnitSetProperty(audioUnit,
+	result = AudioUnitSetProperty(
+	    audioUnit,
 	    kAudioOutputUnitProperty_EnableIO,
 	    kAudioUnitScope_Input,
 	    INPUT_ELEMENT,
 	    &enableIO,
 	    sizeof(enableIO));
-	if (result != noErr)
+	if (HpsJamCheckErr(result != noErr))
 		goto error;
 
-	result = AudioUnitSetProperty(audioUnit,
+	result = AudioUnitSetProperty(
+	    audioUnit,
 	    kAudioOutputUnitProperty_EnableIO,
 	    kAudioUnitScope_Output,
 	    OUTPUT_ELEMENT,
 	    &enableIO,
 	    sizeof(enableIO));
-	if (result != noErr)
-		goto error;
-
-	quality = kAudioConverterQuality_High;
-	result = AudioUnitSetProperty(audioUnit,
-	    kAudioUnitProperty_RenderQuality,
-	    kAudioUnitScope_Global,
-	    OUTPUT_ELEMENT,
-	    &quality,
-	    sizeof(quality));
-	if (result != noErr)
+	if (HpsJamCheckErr(result != noErr))
 		goto error;
 
 	desiredFormat.mSampleRate = HPSJAM_SAMPLE_RATE;
 	desiredFormat.mFormatID = kAudioFormatLinearPCM;
-	desiredFormat.mFormatFlags =
-	    kAudioFormatFlagIsFloat |
-	    kAudioFormatFlagsNativeEndian |
-	    kLinearPCMFormatFlagIsPacked;
+	desiredFormat.mFormatFlags = kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked;
 	desiredFormat.mFramesPerPacket = 1;
-	desiredFormat.mBitsPerChannel = sizeof(float) * 8;
-	desiredFormat.mBytesPerPacket = sizeof(float) * 2;
-	desiredFormat.mBytesPerFrame = sizeof(float) * 2;
-	desiredFormat.mChannelsPerFrame = audioOutputChannels = 2;
+	desiredFormat.mChannelsPerFrame = audioInputChannels = audioOutputChannels = 2;
+	desiredFormat.mBitsPerChannel = 8 * sizeof(float);
+	desiredFormat.mBytesPerPacket = 2 * sizeof(float);
+	desiredFormat.mBytesPerFrame = 2 * sizeof(float);
 
-	result = AudioUnitSetProperty(audioUnit,
+	result = AudioUnitSetProperty(
+	    audioUnit,
 	    kAudioUnitProperty_StreamFormat,
-	    kAudioUnitScope_Global,
-	    OUTPUT_ELEMENT,
-	    &desiredFormat,
-	    sizeof(desiredFormat));
-	if (result != noErr)
-		goto error;
-
-	desiredFormat.mBytesPerPacket = sizeof(float) * 2;
-	desiredFormat.mBytesPerFrame = sizeof(float) * 2;
-	desiredFormat.mChannelsPerFrame = audioInputChannels = 2;
-
-	result = AudioUnitSetProperty(audioUnit,
-	    kAudioUnitProperty_StreamFormat,
-	    kAudioUnitScope_Global,
+	    kAudioUnitScope_Output,
 	    INPUT_ELEMENT,
 	    &desiredFormat,
 	    sizeof(desiredFormat));
-	if (result != noErr) {
-		/* try mono */
-		desiredFormat.mBytesPerPacket = sizeof(float) * 1;
-		desiredFormat.mBytesPerFrame = sizeof(float) * 1;
-		desiredFormat.mChannelsPerFrame = audioInputChannels = 1;
+	if (HpsJamCheckErr(result != noErr))
+		goto error;
 
-		result = AudioUnitSetProperty(audioUnit,
-		    kAudioUnitProperty_StreamFormat,
-		    kAudioUnitScope_Global,
-		    INPUT_ELEMENT,
-		    &desiredFormat,
-		    sizeof(desiredFormat));
-		if (result != noErr)
-			goto error;
-	}
-
-	result = AudioUnitSetProperty(audioUnit,
-	    kAudioUnitProperty_MaximumFramesPerSlice,
-	    kAudioUnitScope_Global,
+	result = AudioUnitSetProperty(
+	    audioUnit,
+	    kAudioUnitProperty_StreamFormat,
+	    kAudioUnitScope_Input,
 	    OUTPUT_ELEMENT,
-	    &audioBufferDefSamples,
-	    sizeof(audioBufferDefSamples));
-	if (result != noErr)
+	    &desiredFormat,
+	    sizeof(desiredFormat));
+	if (HpsJamCheckErr(result != noErr))
 		goto error;
 
-	result = AudioUnitSetProperty(audioUnit,
-	    kAudioUnitProperty_MaximumFramesPerSlice,
-	    kAudioUnitScope_Global,
-	    INPUT_ELEMENT,
-	    &audioBufferDefSamples,
-	    sizeof(audioBufferDefSamples));
-	if (result != noErr)
+	bufferDuration = [[AVAudioSession sharedInstance] IOBufferDuration];
+	audioBufferSamples = roundf((float) HPSJAM_SAMPLE_RATE * bufferDuration);
+	if (HpsJamCheckErr(audioBufferSamples == 0))
 		goto error;
-
-	size = sizeof(in_samples);
-	result = AudioUnitGetProperty(audioUnit,
-	    kAudioUnitProperty_MaximumFramesPerSlice,
-	    kAudioUnitScope_Global,
-	    INPUT_ELEMENT,
-	    &in_samples,
-	    &size);
-	if (result != noErr)
-		goto error;
-
-	size = sizeof(out_samples);
-	result = AudioUnitGetProperty(audioUnit,
-	    kAudioUnitProperty_MaximumFramesPerSlice,
-	    kAudioUnitScope_Global,
-	    OUTPUT_ELEMENT,
-	    &out_samples,
-	    &size);
-	if (result != noErr)
-		goto error;
-
-	if (in_samples != out_samples)
-		goto error;
-
-	audioBufferSamples = in_samples;
 
 	rcbs.inputProc = &hpsjam_audio_callback;
 	rcbs.inputProcRefCon = NULL;
 
-	result = AudioUnitSetProperty(audioUnit,
+	result = AudioUnitSetProperty(
+	    audioUnit,
 	    kAudioUnitProperty_SetRenderCallback,
 	    kAudioUnitScope_Global,
 	    OUTPUT_ELEMENT,
 	    &rcbs,
 	    sizeof(rcbs));
-	if (result != noErr)
-		goto error;
-
-	result = AudioUnitSetProperty(audioUnit,
-	    kAudioOutputUnitProperty_SetInputCallback,
-	    kAudioUnitScope_Global,
-	    INPUT_ELEMENT,
-	    &rcbs,
-	    sizeof(rcbs));
-	if (result != noErr)
+	if (HpsJamCheckErr(result != noErr))
 		goto error;
 
 	audioInputBuffer[0] = new float[audioBufferSamples];
@@ -441,7 +395,11 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	hpsjam_sound_set_output_channel(1, 1);
 
 	result = AudioUnitInitialize(audioUnit);
-	if (result != noErr)
+	if (HpsJamCheckErr(result != noErr))
+		goto error;
+
+	result = AudioOutputUnitStart(audioUnit);
+	if (HpsJamCheckErr(result != noErr))
 		goto error;
 
 	audioInit = true;
@@ -475,6 +433,7 @@ hpsjam_sound_uninit()
 
 	audioInit = false;
 
+	AudioOutputUnitStop(audioUnit);
 	AudioComponentInstanceDispose(audioUnit);
 
 	QMutexLocker locker(&audioMutex);
