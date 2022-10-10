@@ -31,7 +31,9 @@
 #include "timer.h"
 #include "httpd.h"
 
-#include "../mac/activity.h"
+#if defined(Q_OS_MACX) || defined(Q_OS_IOS)
+#include <activity.h>
+#endif
 
 #include <QApplication>
 #include <QCoreApplication>
@@ -611,7 +613,7 @@ main(int argc, char **argv)
 		hpsjam_timer_init();
 
 		/* prevent system from sleeping this program */
-#if defined(Q_OS_MACX)
+#if defined(Q_OS_MACX) || defined(Q_OS_IOS)
 		HpsJamBeginActivity();
 #endif
 		return (app.exec());

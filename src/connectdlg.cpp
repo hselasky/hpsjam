@@ -35,7 +35,9 @@
 #include "mixerdlg.h"
 #include "timer.h"
 
-#include "../mac/activity.h"
+#if defined(Q_OS_MACX) || defined(Q_OS_IOS)
+#include <activity.h>
+#endif
 
 void
 HpsJamConnectList :: updateSelection(const QString &other)
@@ -311,7 +313,7 @@ HpsJamConnect :: handle_connect()
 	hpsjam_client->setWindowTitle(
 	    QString(HPSJAM_WINDOW_TITLE " Client " HPSJAM_VERSION_STRING) + QString(" - ") + nick);
 
-#if defined(Q_OS_MACX)
+#if defined(Q_OS_MACX) || defined(Q_OS_IOS)
 	HpsJamBeginActivity();
 #endif
 }
@@ -332,7 +334,7 @@ HpsJamConnect :: handle_disconnect()
 
 	hpsjam_client->w_mixer->init();
 
-#if defined(Q_OS_MACX)
+#if defined(Q_OS_MACX) || defined(Q_OS_IOS)
 	HpsJamEndActivity();
 #endif
 	if (!isVisible()) {

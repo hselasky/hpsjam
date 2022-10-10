@@ -145,10 +145,12 @@ RC_FILE		= windows/mainicon.rc
 
 macx {
 QMAKE_INFO_PLIST += mac/HpsJam.plist
+INCLUDEPATH	+= mac
 }
 
 ios {
 INCLUDEPATH	+= ios/include
+INCLUDEPATH	+= ios
 }
 
 !macx:!win32:!ios {
