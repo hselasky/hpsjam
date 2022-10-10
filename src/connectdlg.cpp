@@ -313,6 +313,9 @@ HpsJamConnect :: handle_connect()
 	hpsjam_client->setWindowTitle(
 	    QString(HPSJAM_WINDOW_TITLE " Client " HPSJAM_VERSION_STRING) + QString(" - ") + nick);
 
+	/* save the settings */
+	hpsjam_client->saveSettings();
+
 #if defined(Q_OS_MACX) || defined(Q_OS_IOS)
 	HpsJamBeginActivity();
 #endif
