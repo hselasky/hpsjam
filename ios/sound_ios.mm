@@ -389,11 +389,6 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 	audioInputCount = 0;
 	audioOutputCount = 0;
 
-	hpsjam_sound_set_input_channel(0, 0);
-	hpsjam_sound_set_input_channel(1, 1);
-	hpsjam_sound_set_output_channel(0, 0);
-	hpsjam_sound_set_output_channel(1, 1);
-
 	result = AudioUnitInitialize(audioUnit);
 	if (HpsJamCheckErr(result != noErr))
 		goto error;
@@ -403,6 +398,11 @@ hpsjam_sound_init(const char *name, bool auto_connect)
 		goto error;
 
 	audioInit = true;
+
+	hpsjam_sound_set_input_channel(0, 0);
+	hpsjam_sound_set_input_channel(1, 1);
+	hpsjam_sound_set_output_channel(0, 0);
+	hpsjam_sound_set_output_channel(1, 1);
 
 	return (false);
 error:
