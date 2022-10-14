@@ -45,7 +45,7 @@ struct hpsjam_audio_format {
 extern const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX];
 
 class HpsJamDeviceSelection : public HpsJamGroupBox {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamDeviceSelection() :
 	    b_input_device(),
@@ -155,7 +155,7 @@ public slots:
 };
 
 class HpsJamConfigFormat : public HpsJamGroupBox {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamConfigFormat() {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_FORMAT_MAX; x++) {
@@ -204,7 +204,7 @@ struct hpsjam_audio_levels {
 extern const struct hpsjam_audio_levels hpsjam_audio_levels[HPSJAM_AUDIO_LEVELS_MAX];
 
 class HpsJamConfigEffects : public HpsJamGroupBox {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamConfigEffects() {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_LEVELS_MAX; x++) {
@@ -241,7 +241,7 @@ signals:
 };
 
 class HpsJamConfigMixer : public HpsJamGroupBox {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamConfigMixer() {
 		setTitle("Mixer configuration");
@@ -267,7 +267,7 @@ public:
 };
 
 class HpsJamConfig : public HpsJamTWidget {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamConfig() : gl(this) {
 		up_fmt.description = tr("Uplink audio format");

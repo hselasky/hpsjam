@@ -39,7 +39,7 @@
 #include <QComboBox>
 
 class HpsJamConnectList : public QPlainTextEdit {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamConnectList() {
 		setReadOnly(true);
@@ -62,7 +62,7 @@ signals:
 
 class HpsJamIcon;
 class HpsJamConnectIcon : public HpsJamGroupBox {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	enum { numIcons = HPSJAM_NUM_ICONS };
 
@@ -79,7 +79,7 @@ public slots:
 };
 
 class HpsJamConnectName : public HpsJamGroupBox {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamConnectName() {
 		setTitle(tr("Select nickname"));
@@ -107,7 +107,7 @@ public:
 };
 
 class HpsJamConnectServer : public HpsJamGroupBox {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamConnectServer() {
 		setTitle(tr("Enter server location"));
@@ -154,7 +154,7 @@ public:
 };
 
 class HpsJamConnect : public QWidget {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamConnect();
 

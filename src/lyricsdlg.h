@@ -55,7 +55,7 @@ public:
 };
 
 class HpsJamLyrics : public HpsJamTWidget {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	enum { maxIndex = 3 };
 

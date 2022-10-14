@@ -43,7 +43,7 @@
 #include "eqdlg.h"
 
 class HpsJamIcon : public HpsJamRWidget {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamIcon(const QString & = QString());
 
@@ -67,7 +67,7 @@ signals:
 };
 
 class HpsJamSlider : public QWidget {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	static constexpr unsigned dsize = 16;	/* dot size in pixels */
 
@@ -97,7 +97,7 @@ signals:
 };
 
 class HpsJamPan : public QObject {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamPushButton b_l;
 	HpsJamPushButton b_r;
@@ -115,7 +115,7 @@ signals:
 };
 
 class HpsJamGain : public QObject {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamPushButton b_inc;
 	HpsJamPushButton b_dec;
@@ -140,7 +140,7 @@ signals:
 };
 
 class HpsJamStrip : public HpsJamGroupBox {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamStrip();
 
@@ -237,7 +237,7 @@ signals:
 };
 
 class HpsJamMixer : public QScrollArea {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamMixer() : gl(&w_main) {
 		my_peer = 0;

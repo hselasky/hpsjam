@@ -41,7 +41,7 @@ public:
 };
 
 class HpsJamStats : public HpsJamTWidget {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	QGridLayout gl;
 

@@ -36,7 +36,7 @@
 
 class HpsJamEqualizer : public HpsJamTWidget
 {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamEqualizer();
 	void keyPressEvent(QKeyEvent *);

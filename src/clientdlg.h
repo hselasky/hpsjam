@@ -70,7 +70,7 @@ public slots:
 };
 
 class HpsJamClientButton : public HpsJamPushButton {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamClientButton(const QString &str) : HpsJamPushButton(str) {
 		flashing = false;
@@ -94,7 +94,7 @@ public slots:
 };
 
 class HpsJamClient : public HpsJamTWidget {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamClient();
 	QGridLayout gl;

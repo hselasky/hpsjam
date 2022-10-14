@@ -45,7 +45,7 @@ struct hpsjam_server_default_mix {
 };
 
 class hpsjam_server_peer : public QObject {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	QMutex lock;
 	struct hpsjam_socket_address address[HPSJAM_PORTS_MAX];
@@ -155,7 +155,7 @@ public:
 };
 
 class hpsjam_client_peer : public QObject {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	QMutex lock;
 	struct hpsjam_socket_address address[HPSJAM_PORTS_MAX];

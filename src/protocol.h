@@ -301,7 +301,7 @@ union hpsjam_frame {
 };
 
 class hpsjam_output_packetizer : public QObject {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	union hpsjam_frame current;
 	union hpsjam_frame mask;

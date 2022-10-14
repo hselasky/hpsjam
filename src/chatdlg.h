@@ -37,7 +37,7 @@
 #include <QPushButton>
 
 class HpsJamChatLyrics : public HpsJamGroupBox {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamChatLyrics() :
 	    b_send(tr("Send a line of l&yrics")) {
@@ -62,7 +62,7 @@ public slots:
 };
 
 class HpsJamChatBox : public HpsJamGroupBox {
-	Q_OBJECT;
+	Q_OBJECT
 public:
 	HpsJamChatBox() :
 	    b_send(tr("SEND")), b_clear(tr("CLEA&R")) {
