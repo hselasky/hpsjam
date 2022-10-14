@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,20 +38,20 @@
 #include <QGroupBox>
 #include <QSizePolicy>
 
-#include "hpsjam.h"
+#include "texture.h"
 
 #include "eqdlg.h"
 
-class HpsJamIcon : public QWidget {
+class HpsJamIcon : public HpsJamRWidget {
 	Q_OBJECT;
 public:
 	HpsJamIcon(const QString & = QString());
 
 	QString fname;
 	QSvgRenderer svg;
-	uint8_t sel;
+	bool sel;
 	bool enabled;
-
+	void updateBackground();
 	void paintEvent(QPaintEvent *);
 	void mouseReleaseEvent(QMouseEvent *);
 	void setSelection(bool);
@@ -59,6 +59,7 @@ public:
 		if (enabled == state)
 			return;
 		enabled = state;
+		updateBackground();
 		update();
 	};
 signals:
@@ -95,19 +96,15 @@ signals:
 	void valueChanged();
 };
 
-class HpsJamPan : public QWidget {
+class HpsJamPan : public QObject {
 	Q_OBJECT;
 public:
-	QGridLayout gl;
-	QPushButton b[2];
+	HpsJamPushButton b_l;
+	HpsJamPushButton b_r;
 
-	HpsJamPan() : gl(this) {
-		b[0].setText(QString(" L "));
-		b[1].setText(QString(" R "));
-		connect(b + 0, SIGNAL(released()), this, SLOT(handle_pan_left()));
-		connect(b + 1, SIGNAL(released()), this, SLOT(handle_pan_right()));
-		gl.addWidget(b + 0,0,0);
-		gl.addWidget(b + 1,0,1);
+	HpsJamPan() : b_l(QString("L")), b_r(QString("R")) {
+		connect(&b_l, SIGNAL(released()), this, SLOT(handle_pan_left()));
+		connect(&b_r, SIGNAL(released()), this, SLOT(handle_pan_right()));
 	};
 
 public slots:
@@ -117,25 +114,22 @@ signals:
 	void valueChanged(int);
 };
 
-class HpsJamGain : public QWidget {
+class HpsJamGain : public QObject {
 	Q_OBJECT;
 public:
-	QGridLayout gl;
-	QPushButton b[2];
+	HpsJamPushButton b_inc;
+	HpsJamPushButton b_dec;
 
-	HpsJamGain() : gl(this) {
+	HpsJamGain() :
+	    b_inc(QString("+")), b_dec(QString("-")) {
 		setValue(0);
-		b[0].setText(QString("+++"));
-		b[1].setText(QString("---"));
-		connect(b + 0, SIGNAL(released()), this, SLOT(handle_gain_up()));
-		connect(b + 1, SIGNAL(released()), this, SLOT(handle_gain_down()));
-		gl.addWidget(b + 0,0,0);
-		gl.addWidget(b + 1,0,1);
+		connect(&b_inc, SIGNAL(released()), this, SLOT(handle_gain_up()));
+		connect(&b_dec, SIGNAL(released()), this, SLOT(handle_gain_down()));
 	};
 
 	void setValue(int x) {
-		b[0].setEnabled(x < 15);
-		b[1].setEnabled(x > -16);
+		b_inc.setEnabled(x < 15);
+		b_dec.setEnabled(x > -16);
 	};
 
 public slots:
@@ -145,24 +139,23 @@ signals:
 	void valueChanged(int);
 };
 
-class HpsJamStrip : public QGroupBox {
+class HpsJamStrip : public HpsJamGroupBox {
 	Q_OBJECT;
 public:
 	HpsJamStrip();
 
 	int id;
 
-	QGridLayout gl;
 	QLabel w_name;
 	HpsJamIcon w_icon;
 	HpsJamGain w_gain;
 	HpsJamPan w_pan;
 	HpsJamSlider w_slider;
 	HpsJamEqualizer w_eq;
-	QPushButton b_eq;
-	QPushButton b_inv;
-	QPushButton b_mute;
-	QPushButton b_solo;
+	HpsJamPushButton b_eq;
+	HpsJamPushButton b_inv;
+	HpsJamPushButton b_mute;
+	HpsJamPushButton b_solo;
 	QString description;
 
 	void init() {
@@ -254,8 +247,9 @@ public:
 		self_strip.description = tr("Balance");
 		self_strip.titleRegen();
 		self_strip.b_solo.setEnabled(false);
-		self_strip.w_gain.b[0].setEnabled(false);
-		self_strip.w_gain.b[1].setEnabled(false);
+		self_strip.w_gain.b_inc.setEnabled(false);
+		self_strip.w_gain.b_dec.setEnabled(false);
+		self_strip.w_icon.setSelection(true);
 
 		connect(&self_strip, SIGNAL(eqChanged(int)), this, SLOT(handle_local_eq_changed()));
 		self_strip.id = 0;
@@ -274,6 +268,8 @@ public:
 			connect(peer_strip + x, SIGNAL(eqChanged(int)), this, SLOT(handle_eq_changed(int)));
 		}
 		setWidget(&w_main);
+		viewport()->setAutoFillBackground(false);
+		w_main.setAutoFillBackground(false);
 	};
 	void keyPressEvent(QKeyEvent *event);
 	QWidget w_main;

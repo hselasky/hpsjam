@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,6 +26,8 @@
 #ifndef _HPSJAM_STATSDLG_H_
 #define	_HPSJAM_STATSDLG_H_
 
+#include "texture.h"
+
 #include <QObject>
 #include <QWidget>
 #include <QGridLayout>
@@ -38,7 +40,7 @@ public:
 	void paintEvent(QPaintEvent *);
 };
 
-class HpsJamStats : public QWidget {
+class HpsJamStats : public HpsJamTWidget {
 	Q_OBJECT;
 public:
 	QGridLayout gl;

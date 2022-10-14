@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2019-2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2019-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,30 +32,28 @@
 #include <QGroupBox>
 #include <QGridLayout>
 
-#include "hpsjam.h"
+#include "texture.h"
 
-class HpsJamEqualizer : public QWidget
+class HpsJamEqualizer : public HpsJamTWidget
 {
 	Q_OBJECT;
 public:
 	HpsJamEqualizer();
 	void keyPressEvent(QKeyEvent *);
 
-	QGroupBox g_spec;
-	QGroupBox g_control;
+	HpsJamGroupBox g_spec;
+	HpsJamGroupBox g_control;
 	QGridLayout gl;
-	QGridLayout gl_spec;
-	QGridLayout gl_control;
 
 	QTextEdit edit;
-	QPushButton b_defaults;
-	QPushButton b_disable;
-	QPushButton b_apply;
-	QPushButton b_close;
-	QPushButton b_lowpass;
-	QPushButton b_highpass;
-	QPushButton b_bandpass;
-	QPushButton b_longdelay;
+	HpsJamPushButton b_defaults;
+	HpsJamPushButton b_disable;
+	HpsJamPushButton b_apply;
+	HpsJamPushButton b_close;
+	HpsJamPushButton b_lowpass;
+	HpsJamPushButton b_highpass;
+	HpsJamPushButton b_bandpass;
+	HpsJamPushButton b_longdelay;
 
 public slots:
 	void handle_defaults();

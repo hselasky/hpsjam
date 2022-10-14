@@ -314,15 +314,7 @@ HpsJamClientButton :: handle_released()
 void
 HpsJamClientButton :: paintEvent(QPaintEvent *event)
 {
-	static const QColor fg(255,255,255,192);
+	_flash = flashing && flashstate;
 
-	QPushButton::paintEvent(event);
-
-	if (flashing && flashstate) {
-		QPainter paint(this);
-
-		paint.setBrush(QBrush());
-		paint.setPen(QPen(QBrush(fg), 2, Qt::SolidLine, Qt::RoundCap));
-		paint.drawRect(QRect(0,0,width(),height()));
-	}
+	HpsJamPushButton::paintEvent(event);
 }

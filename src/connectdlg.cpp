@@ -93,7 +93,7 @@ HpsJamConnectList :: updateSelection(int which)
 	setTextCursor(c);
 }
 
-HpsJamConnectIcon :: HpsJamConnectIcon() : gl(this)
+HpsJamConnectIcon :: HpsJamConnectIcon()
 {
 	selection = 0;
 
@@ -119,6 +119,7 @@ HpsJamConnectIcon :: HpsJamConnectIcon() : gl(this)
 	}
 
 	setTitle(tr("Select icon"));
+	setCollapsed(true);
 }
 
 void
@@ -173,8 +174,8 @@ HpsJamConnect :: HpsJamConnect() : gl(this)
 	gl.addWidget(&name, 1,0);
 	gl.addWidget(&password, 2,0);
 	gl.addWidget(&server, 3,0);
-	gl.setRowStretch(3,1);
-	gl.addWidget(&buttons, 4,0);
+	gl.setRowStretch(4,1);
+	gl.addWidget(&buttons, 5,0);
 
 	connect(&server.list, SIGNAL(valueChanged(const QString)), &server.edit, SLOT(setText(const QString)));
 	connect(&buttons.b_reset, SIGNAL(released()), this, SLOT(handle_reset()));

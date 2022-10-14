@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020-2021 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,7 +26,7 @@
 #ifndef _HPSJAM_CONNECTDLG_H_
 #define	_HPSJAM_CONNECTDLG_H_
 
-#include "hpsjam.h"
+#include "texture.h"
 
 #include <QWidget>
 #include <QGroupBox>
@@ -61,12 +61,11 @@ signals:
 };
 
 class HpsJamIcon;
-class HpsJamConnectIcon : public QGroupBox {
+class HpsJamConnectIcon : public HpsJamGroupBox {
 	Q_OBJECT;
 public:
 	enum { numIcons = HPSJAM_NUM_ICONS };
 
-	QGridLayout gl;
 	HpsJamIcon *icon[numIcons];
 	unsigned selection;
 
@@ -79,16 +78,15 @@ public slots:
 	void handle_selection();
 };
 
-class HpsJamConnectName : public QGroupBox {
+class HpsJamConnectName : public HpsJamGroupBox {
 	Q_OBJECT;
 public:
-	HpsJamConnectName() : gl(this) {
+	HpsJamConnectName() {
 		setTitle(tr("Select nickname"));
 		edit.setText(QString("anonymous"));
 		edit.setMaxLength(32);
 		gl.addWidget(&edit, 0,0);
 	};
-	QGridLayout gl;
 	QLineEdit edit;
 public slots:
 	void setText(const QString other) {
@@ -96,29 +94,28 @@ public slots:
 	};
 };
 
-class HpsJamConnectPassword : public QGroupBox {
+class HpsJamConnectPassword : public HpsJamGroupBox {
 public:
-	HpsJamConnectPassword() : gl(this) {
-		setTitle(tr("Enter your password, if any"));
+	HpsJamConnectPassword() {
+		setTitle(tr("Enter password, if any"));
 		edit.setEchoMode(QLineEdit::Password);
 		edit.setMaxLength(16);
 		gl.addWidget(&edit, 0,0);
+		setCollapsed(true);
 	};
-	QGridLayout gl;
 	QLineEdit edit;
 };
 
-class HpsJamConnectServer : public QGroupBox {
+class HpsJamConnectServer : public HpsJamGroupBox {
 	Q_OBJECT;
 public:
-	HpsJamConnectServer() : gl(this) {
-		setTitle(tr("Select server"));
+	HpsJamConnectServer() {
+		setTitle(tr("Enter server location"));
 		edit.setText(QString("127.0.0.1" ":" HPSJAM_DEFAULT_PORT_STR));
 		gl.addWidget(&edit, 0,0);
 		gl.addWidget(&list, 1,0);
 		gl.setRowStretch(1,1);
 	};
-	QGridLayout gl;
 	QLineEdit edit;
 	HpsJamConnectList list;
 public slots:
@@ -150,9 +147,9 @@ public:
 		gl.addWidget(&b_disconnect, 0,5);
 	};
 	QGridLayout gl;
-	QPushButton b_reset;
-	QPushButton b_connect;
-	QPushButton b_disconnect;
+	HpsJamPushButton b_reset;
+	HpsJamPushButton b_connect;
+	HpsJamPushButton b_disconnect;
 	QComboBox l_multi_port;
 };
 

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,6 +35,8 @@
 #include <QPushButton>
 #include <QTimer>
 
+#include "texture.h"
+
 class HpsJamConnect;
 class HpsJamMixer;
 class HpsJamLyrics;
@@ -67,10 +69,10 @@ public slots:
 	}
 };
 
-class HpsJamClientButton : public QPushButton {
+class HpsJamClientButton : public HpsJamPushButton {
 	Q_OBJECT;
 public:
-	HpsJamClientButton(const QString &str) : QPushButton(str) {
+	HpsJamClientButton(const QString &str) : HpsJamPushButton(str) {
 		flashing = false;
 		flashstate = false;
 		connect(&watchdog, SIGNAL(timeout()), this, SLOT(handle_timeout()));
@@ -91,7 +93,7 @@ public slots:
 	void handle_released();
 };
 
-class HpsJamClient : public QWidget {
+class HpsJamClient : public HpsJamTWidget {
 	Q_OBJECT;
 public:
 	HpsJamClient();

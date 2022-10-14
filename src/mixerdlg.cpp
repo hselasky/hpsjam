@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,12 +35,23 @@
 #include "clientdlg.h"
 
 HpsJamIcon :: HpsJamIcon(const QString &_fname) :
-    fname(_fname), sel(0)
+    fname(_fname)
 {
+	sel = false;
 	enabled = true;
 	if (!fname.isEmpty())
 		svg.load(fname);
 	setFixedSize(64,64);
+	updateBackground();
+}
+
+void
+HpsJamIcon :: updateBackground()
+{
+	if (sel)
+		t.rgb = QColor(255,255,255,192);
+	else
+		t.rgb = QColor(192,192,192,128);
 }
 
 void
@@ -55,40 +66,26 @@ HpsJamIcon :: mouseReleaseEvent(QMouseEvent *event)
 void
 HpsJamIcon :: paintEvent(QPaintEvent *event)
 {
+	if (enabled)
+		HpsJamRWidget::paintEvent(event);
+
 	QPainter paint(this);
 
-	paint.setRenderHints(QPainter::Antialiasing, 1);
-
-	static const QColor gh(192,192,192,127);
-	static const QColor gg(192,192,192);
-	static const QColor bg(255,255,255);
-
-	switch (sel) {
-	case 0:
-		paint.fillRect(QRect(0,0,width(),height()), gh);
-		break;
-	case 1:
-		paint.fillRect(QRect(0,0,width(),height()), gg);
-		break;
-	case 2:
-		paint.fillRect(QRect(0,0,width(),height()), bg);
-		break;
-	default:
-		break;
-	}
+	paint.setRenderHints(QPainter::Antialiasing, true);
 	svg.render(&paint);
+	paint.end();
 
 	if (!enabled)
-		paint.fillRect(QRect(0,0,width(),height()), gh);
+		HpsJamRWidget::paintEvent(event);
 }
 
 void
 HpsJamIcon :: setSelection(bool state)
 {
-	uint8_t _sel = state + 1;
-	if (sel == _sel)
+	if (sel == state)
 		return;
-	sel = _sel;
+	sel = state;
+	updateBackground();
 	update();
 	emit selected();
 }
@@ -103,8 +100,8 @@ HpsJamSlider :: HpsJamSlider()
 	level[0] = 0;
 	level[1] = 0;
 	active = false;
-	setMinimumWidth(dsize);
-	setMinimumHeight(128);
+	setMinimumSize(dsize, 128);
+	setMaximumSize(65535,65535);
 }
 
 void
@@ -325,7 +322,7 @@ HpsJamGain :: handle_gain_down()
 	emit valueChanged(-1);
 }
 
-HpsJamStrip :: HpsJamStrip() : gl(this),
+HpsJamStrip :: HpsJamStrip() :
     b_eq(tr("EQ\nDELAY")),
     b_inv(tr("INV")),
     b_mute(tr("MUTE")),
@@ -333,7 +330,7 @@ HpsJamStrip :: HpsJamStrip() : gl(this),
 {
 	id = -1;
 
-	setMaximumWidth(128);
+	setFixedWidth(128);
 
 	connect(&w_gain, SIGNAL(valueChanged(int)), this, SLOT(handleGain(int)));
 	connect(&w_pan, SIGNAL(valueChanged(int)), this, SLOT(handlePan(int)));
@@ -341,19 +338,21 @@ HpsJamStrip :: HpsJamStrip() : gl(this),
 	connect(&b_eq, SIGNAL(released()), this, SLOT(handleEQShow()));
 	connect(&w_eq.b_apply, SIGNAL(released()), this, SLOT(handleEQApply()));
 	connect(&b_inv, SIGNAL(released()), this, SLOT(handleInv()));
-	connect(&b_solo, SIGNAL(released()), this, SLOT(handleSolo()));
-	connect(&b_mute, SIGNAL(released()), this, SLOT(handleMute()));
+	connect(&b_solo, SIGNAL(pressed()), this, SLOT(handleSolo()));
+	connect(&b_mute, SIGNAL(pressed()), this, SLOT(handleMute()));
 
-	gl.addWidget(&w_icon, 0,0, Qt::AlignCenter);
-	gl.addWidget(&w_name, 1,0, Qt::AlignCenter);
-	gl.addWidget(&b_eq, 2,0);
-	gl.addWidget(&b_inv, 3,0);
-	gl.addWidget(&w_gain, 4,0);
-	gl.addWidget(&w_pan, 5,0);
-	gl.addWidget(&w_slider, 6,0);
+	gl.addWidget(&w_icon, 0,0, 1,2, Qt::AlignCenter);
+	gl.addWidget(&w_name, 1,0, 1,2, Qt::AlignCenter);
+	gl.addWidget(&b_eq, 2,0,1,2);
+	gl.addWidget(&b_inv, 3,0,1,2);
+	gl.addWidget(&w_gain.b_inc, 4,0,1,1);
+	gl.addWidget(&w_gain.b_dec, 4,1,1,1);
+	gl.addWidget(&w_pan.b_l, 5,0,1,1);
+	gl.addWidget(&w_pan.b_r, 5,1,1,1);
+	gl.addWidget(&w_slider, 6,0,1,2);
 	gl.setRowStretch(6,1);
-	gl.addWidget(&b_solo, 7,0);
-	gl.addWidget(&b_mute, 8,0);
+	gl.addWidget(&b_solo, 7,0,1,2);
+	gl.addWidget(&b_mute, 8,0,1,2);
 }
 
 void
@@ -445,10 +444,10 @@ HpsJamMixer :: keyPressEvent(QKeyEvent *event)
 {
 	switch (event->key()) {
 	case Qt::Key_L:
-		self_strip.w_pan.b[0].animateClick();
+		self_strip.w_pan.b_l.animateClick();
 		break;
 	case Qt::Key_R:
-		self_strip.w_pan.b[1].animateClick();
+		self_strip.w_pan.b_r.animateClick();
 		break;
 	case Qt::Key_M:
 		self_strip.b_mute.animateClick();
@@ -705,6 +704,7 @@ HpsJamMixer :: handle_local_eq_changed()
 void
 HpsJamMixer :: enable(unsigned index)
 {
+	peer_strip[index].setCollapsed(false);
 	peer_strip[index].show();
 	if (!hpsjam_client->w_mixer->isVisible())
 		hpsjam_client->b_mixer.setFlashing();

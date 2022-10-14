@@ -26,6 +26,8 @@
 #ifndef _HPSJAM_CHATDLG_H_
 #define	_HPSJAM_CHATDLG_H_
 
+#include "texture.h"
+
 #include <QObject>
 #include <QWidget>
 #include <QGroupBox>
@@ -34,10 +36,10 @@
 #include <QLineEdit>
 #include <QPushButton>
 
-class HpsJamChatLyrics : public QGroupBox {
+class HpsJamChatLyrics : public HpsJamGroupBox {
 	Q_OBJECT;
 public:
-	HpsJamChatLyrics() : gl(this),
+	HpsJamChatLyrics() :
 	    b_send(tr("Send a line of l&yrics")) {
 		setTitle(tr("Send lyrics"));
 #if defined(Q_OS_MACX)
@@ -52,18 +54,17 @@ public:
 
 		connect(&b_send, SIGNAL(released()), this, SLOT(handle_send_lyrics()));
 	};
-	QGridLayout gl;
-	QPushButton b_send;
+	HpsJamPushButton b_send;
 	QPlainTextEdit edit;
 
 public slots:
 	void handle_send_lyrics();
 };
 
-class HpsJamChatBox : public QGroupBox {
+class HpsJamChatBox : public HpsJamGroupBox {
 	Q_OBJECT;
 public:
-	HpsJamChatBox() : gl(this),
+	HpsJamChatBox() :
 	    b_send(tr("SEND")), b_clear(tr("CLEA&R")) {
 #if defined(Q_OS_MACX)
 		b_clear.setShortcut(QKeySequence(Qt::ALT + Qt::Key_R));
@@ -85,9 +86,8 @@ public:
 		connect(&b_clear, SIGNAL(released()), this, SLOT(handle_clear_chat()));
 		connect(&line, SIGNAL(returnPressed()), this, SLOT(handle_send_chat()));
 	};
-	QGridLayout gl;
-	QPushButton b_send;
-	QPushButton b_clear;
+	HpsJamPushButton b_send;
+	HpsJamPushButton b_clear;
 	QPlainTextEdit edit;
 	QLineEdit line;
 
@@ -96,7 +96,7 @@ public slots:
 	void handle_clear_chat();
 };
 
-class HpsJamChat : public QWidget {
+class HpsJamChat : public HpsJamTWidget {
 public:
 	HpsJamChat() : gl(this) {
 		gl.addWidget(&lyrics, 0,0);

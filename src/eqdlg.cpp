@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2019-2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2019-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,8 +32,7 @@
 #include "clientdlg.h"
 #include "peer.h"
 
-HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
-    gl_spec(&g_spec), gl_control(&g_control)
+HpsJamEqualizer :: HpsJamEqualizer() : gl(this)
 {
 	setWindowTitle(QString("HPS JAM Equalizer"));
 	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
@@ -53,17 +52,17 @@ HpsJamEqualizer :: HpsJamEqualizer() : gl(this),
 
 	edit.setTabChangesFocus(true);
 
-	gl_spec.addWidget(&edit, 0,0);
+	g_spec.gl.addWidget(&edit, 0,0);
 
-	gl_control.addWidget(&b_defaults, 0,0);
-	gl_control.addWidget(&b_lowpass, 0,1);
-	gl_control.addWidget(&b_highpass, 1,0);
-	gl_control.addWidget(&b_bandpass, 1,1);
+	g_control.gl.addWidget(&b_defaults, 0,0);
+	g_control.gl.addWidget(&b_lowpass, 0,1);
+	g_control.gl.addWidget(&b_highpass, 1,0);
+	g_control.gl.addWidget(&b_bandpass, 1,1);
 
-	gl_control.addWidget(&b_longdelay, 0,2);
-	gl_control.addWidget(&b_disable, 0,3);
-	gl_control.addWidget(&b_apply, 1,2);
-	gl_control.addWidget(&b_close, 1,3);
+	g_control.gl.addWidget(&b_longdelay, 0,2);
+	g_control.gl.addWidget(&b_disable, 0,3);
+	g_control.gl.addWidget(&b_apply, 1,2);
+	g_control.gl.addWidget(&b_close, 1,3);
 
 	gl.addWidget(&g_spec, 0,0);
 	gl.addWidget(&g_control, 1,0);

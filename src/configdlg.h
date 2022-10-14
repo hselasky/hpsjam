@@ -26,7 +26,7 @@
 #ifndef _HPSJAM_CONFIGDLG_H_
 #define	_HPSJAM_CONFIGDLG_H_
 
-#include "hpsjam.h"
+#include "texture.h"
 
 #include <QWidget>
 #include <QLabel>
@@ -44,10 +44,10 @@ struct hpsjam_audio_format {
 
 extern const struct hpsjam_audio_format hpsjam_audio_format[HPSJAM_AUDIO_FORMAT_MAX];
 
-class HpsJamDeviceSelection : public QGroupBox {
+class HpsJamDeviceSelection : public HpsJamGroupBox {
 	Q_OBJECT;
 public:
-	HpsJamDeviceSelection() : gl(this),
+	HpsJamDeviceSelection() :
 	    b_input_device(),
 	    b_output_device(),
 	    l_jitter_input(tr("Local audio input jitter buffer")),
@@ -117,8 +117,9 @@ public:
 		connect(this, SIGNAL(reconfigure_audio()), this, SLOT(handle_reconfigure_audio()));
 
 		handle_toggle_buffer_samples(0);
+
+		setCollapsed(true);
 	};
-	QGridLayout gl;
 	QListWidget b_input_device;
 	QSpinBox s_input_left;
 	QSpinBox s_input_right;
@@ -131,8 +132,8 @@ public:
 	QLabel l_output;
 	QLabel l_jitter_input;
 	QLabel l_jitter_output;
-	QPushButton b_toggle_buffer_samples;
-	QPushButton b_rescan_device;
+	HpsJamPushButton b_toggle_buffer_samples;
+	HpsJamPushButton b_rescan_device;
 	QLabel l_buffer_samples;
 
 	void refreshStatus();
@@ -153,10 +154,10 @@ public slots:
 	void handle_set_output_jitter(int);
 };
 
-class HpsJamConfigFormat : public QGroupBox {
+class HpsJamConfigFormat : public HpsJamGroupBox {
 	Q_OBJECT;
 public:
-	HpsJamConfigFormat() : gl(this) {
+	HpsJamConfigFormat() {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_FORMAT_MAX; x++) {
 			b[x].setFlat(x != 1);
 			b[x].setText(QString(hpsjam_audio_format[x].descr));
@@ -171,8 +172,7 @@ public:
 	};
 	uint8_t format;
 	uint8_t selection;
-	QPushButton b[HPSJAM_AUDIO_FORMAT_MAX];
-	QGridLayout gl;
+	HpsJamPushButton b[HPSJAM_AUDIO_FORMAT_MAX];
 	QString description;
 
 	void titleRegen() {
@@ -203,10 +203,10 @@ struct hpsjam_audio_levels {
 
 extern const struct hpsjam_audio_levels hpsjam_audio_levels[HPSJAM_AUDIO_LEVELS_MAX];
 
-class HpsJamConfigEffects : public QGroupBox {
+class HpsJamConfigEffects : public HpsJamGroupBox {
 	Q_OBJECT;
 public:
-	HpsJamConfigEffects() : gl(this) {
+	HpsJamConfigEffects() {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_LEVELS_MAX; x++) {
 			b[x].setFlat(x != 0);
 			b[x].setText(hpsjam_audio_levels[x].descr);
@@ -214,10 +214,10 @@ public:
 			gl.addWidget(b + x, 0, x);
 		}
 		selection = 0;
+		setCollapsed(true);
 	};
 	uint8_t selection;
-	QPushButton b[HPSJAM_AUDIO_LEVELS_MAX];
-	QGridLayout gl;
+	HpsJamPushButton b[HPSJAM_AUDIO_LEVELS_MAX];
 	QString description;
 
 	void titleRegen() {
@@ -240,33 +240,33 @@ signals:
 	void valueChanged();
 };
 
-class HpsJamConfigMixer : public QGroupBox {
+class HpsJamConfigMixer : public HpsJamGroupBox {
 	Q_OBJECT;
 public:
-	HpsJamConfigMixer() : gl(this) {
+	HpsJamConfigMixer() {
 		setTitle("Mixer configuration");
 		gl.addWidget(new QLabel("Select maximum number of columns"), 0,0);
 		gl.addWidget(&mixer_cols, 0,1);
 		mixer_cols.setRange(1, HPSJAM_PEERS_MAX + 1);
 		connect(&mixer_cols, SIGNAL(valueChanged(int)), this, SLOT(handle_selection()));
+		setCollapsed(true);
 	};
-	QGridLayout gl;
 	QSpinBox mixer_cols;
 public slots:
 	void handle_selection();
 };
 
-class HpsJamLyricsFormat : public QGroupBox {
+class HpsJamLyricsFormat : public HpsJamGroupBox {
 public:
-	HpsJamLyricsFormat() : gl(this), b_font_select(tr("Select font")) {
+	HpsJamLyricsFormat() : b_font_select(tr("Select font")) {
 		gl.addWidget(&b_font_select, 0,0);
-		setTitle(tr("Lyrics format"));
+		setTitle(tr("Lyrics configuration"));
+		setCollapsed(true);
 	};
-	QGridLayout gl;
-	QPushButton b_font_select;
+	HpsJamPushButton b_font_select;
 };
 
-class HpsJamConfig : public QWidget {
+class HpsJamConfig : public HpsJamTWidget {
 	Q_OBJECT;
 public:
 	HpsJamConfig() : gl(this) {
