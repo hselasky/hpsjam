@@ -37,11 +37,13 @@
 #include "connectdlg.h"
 #include "statsdlg.h"
 #include "helpdlg.h"
+#include "recordingdlg.h"
 #include "peer.h"
 
 HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("S&ERVER")),
     b_mixer(tr("&MIXER")), b_lyrics(tr("&LYRICS")), b_chat(tr("CH&AT")),
-    b_config(tr("CON&FIG")), b_stats(tr("&STATS")), b_help(tr("&HELP"))
+    b_recording(tr("F&ILE")), b_config(tr("CON&FIG")), b_stats(tr("&STATS")),
+    b_help(tr("&HELP"))
 {
 	setWindowTitle(HPSJAM_WINDOW_TITLE " Client " HPSJAM_VERSION_STRING);
 	setWindowIcon(QIcon(QString(HPSJAM_ICON_FILE)));
@@ -51,6 +53,7 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("S&ERVER")),
 	b_mixer.setShortcut(QKeySequence(Qt::ALT + Qt::Key_M));
 	b_lyrics.setShortcut(QKeySequence(Qt::ALT + Qt::Key_L));
 	b_chat.setShortcut(QKeySequence(Qt::ALT + Qt::Key_A));
+	b_recording.setShortcut(QKeySequence(Qt::ALT + Qt::Key_I));
 	b_config.setShortcut(QKeySequence(Qt::ALT + Qt::Key_F));
 	b_stats.setShortcut(QKeySequence(Qt::ALT + Qt::Key_S));
 	b_help.setShortcut(QKeySequence(Qt::ALT + Qt::Key_H));
@@ -60,6 +63,7 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("S&ERVER")),
 	connect(&b_mixer, SIGNAL(released()), this, SLOT(handle_mixer()));
 	connect(&b_lyrics, SIGNAL(released()), this, SLOT(handle_lyrics()));
 	connect(&b_chat, SIGNAL(released()), this, SLOT(handle_chat()));
+	connect(&b_recording, SIGNAL(released()), this, SLOT(handle_recording()));
 	connect(&b_config, SIGNAL(released()), this, SLOT(handle_config()));
 	connect(&b_stats, SIGNAL(released()), this, SLOT(handle_stats()));
 	connect(&b_help, SIGNAL(released()), this, SLOT(handle_help()));
@@ -68,17 +72,19 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("S&ERVER")),
 	gl.addWidget(&b_mixer, 0,1);
 	gl.addWidget(&b_lyrics, 0,2);
 	gl.addWidget(&b_chat, 0,3);
-	gl.addWidget(&b_config, 0,4);
-	gl.addWidget(&b_stats, 0,5);
-	gl.addWidget(&b_help, 0,6);
-	gl.addWidget(&w_stack, 1,0,1,8);
-	gl.setColumnStretch(7,1);
+	gl.addWidget(&b_recording, 0,4);
+	gl.addWidget(&b_config, 0,5);
+	gl.addWidget(&b_stats, 0,6);
+	gl.addWidget(&b_help, 0,7);
+	gl.addWidget(&w_stack, 1,0,1,9);
+	gl.setColumnStretch(8,1);
 	gl.setRowStretch(1,1);
 
 	w_connect = new HpsJamConnect();
 	w_mixer = new HpsJamMixer();
 	w_lyrics = new HpsJamLyrics();
 	w_chat = new HpsJamChat();
+	w_recording = new HpsJamRecording();
 	w_config = new HpsJamConfig();
 	w_stats = new HpsJamStats();
 	w_help = new HpsJamHelp();
@@ -89,6 +95,7 @@ HpsJamClient :: HpsJamClient() : gl(this), b_connect(tr("S&ERVER")),
 	w_stack.addWidget(w_mixer);
 	w_stack.addWidget(w_lyrics);
 	w_stack.addWidget(w_chat);
+	w_stack.addWidget(w_recording);
 	w_stack.addWidget(w_config);
 	w_stack.addWidget(w_stats);
 	w_stack.addWidget(w_help);
@@ -144,6 +151,13 @@ HpsJamClient :: handle_chat()
 {
 	w_stack.setCurrentWidget(w_chat);
 	w_chat->chat.line.setFocus();
+}
+
+void
+HpsJamClient :: handle_recording()
+{
+	w_stack.setCurrentWidget(w_recording);
+	w_recording->setFocus();
 }
 
 void
@@ -292,6 +306,22 @@ HpsJamClient :: playNewMessage()
 
 	QMutexLocker locker(&hpsjam_client_peer->lock);
 	hpsjam_client_peer->audio_effects.playNewMessage(gain);
+}
+
+bool
+HpsJamClient :: pullPlayback(float *pl, float *pr, size_t num)
+{
+	bool retval = w_recording->playback.b_start.isFlat();
+	if (retval)
+		w_recording->playbuf.pull_add_samples(pl, pr, num);
+	return (retval);
+}
+
+void
+HpsJamClient :: pushRecord(float *pl, float *pr, size_t num)
+{
+	if (w_recording->recording.b_start.isFlat())
+		w_recording->recbuf.push_samples(pl, pr, num);
 }
 
 void

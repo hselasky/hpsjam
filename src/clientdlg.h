@@ -41,6 +41,7 @@ class HpsJamConnect;
 class HpsJamMixer;
 class HpsJamLyrics;
 class HpsJamChat;
+class HpsJamRecording;
 class HpsJamConfig;
 class HpsJamStats;
 class HpsJamEqualizer;
@@ -103,6 +104,7 @@ public:
 	HpsJamClientButton b_mixer;
 	HpsJamClientButton b_lyrics;
 	HpsJamClientButton b_chat;
+	HpsJamClientButton b_recording;
 	HpsJamClientButton b_config;
 	HpsJamClientButton b_stats;
 	HpsJamClientButton b_help;
@@ -112,6 +114,7 @@ public:
 	HpsJamMixer *w_mixer;
 	HpsJamLyrics *w_lyrics;
 	HpsJamChat *w_chat;
+	HpsJamRecording *w_recording;
 	HpsJamConfig *w_config;
 	HpsJamStats *w_stats;
 	HpsJamEqualizer *eq_copy;
@@ -134,11 +137,15 @@ public:
 
 	void closeEvent(QCloseEvent *event);
 
+	bool pullPlayback(float *, float *, size_t);
+	void pushRecord(float *, float *, size_t);
+
 public slots:
 	void handle_connect();
 	void handle_mixer();
 	void handle_lyrics();
 	void handle_chat();
+	void handle_recording();
 	void handle_config();
 	void handle_stats();
 	void handle_help();

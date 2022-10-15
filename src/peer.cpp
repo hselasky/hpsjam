@@ -361,7 +361,11 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 	QMutexLocker locker(&lock);
 
 	if (address[0].valid() == false) {
-		if (audio_effects.isActive()) {
+		const bool effects = audio_effects.isActive();
+
+		hpsjam_client->pushRecord(left, right, samples);
+
+		if (effects) {
 			for (size_t x = 0; x != samples; x++) {
 				float temp = audio_effects.getSample();
 
@@ -371,6 +375,14 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 		} else {
 			memset(left, 0, sizeof(left[0]) * samples);
 			memset(right, 0, sizeof(right[0]) * samples);
+		}
+
+		if (hpsjam_client->pullPlayback(left, right, samples) && effects) {
+			/* May need compressor */
+			for (size_t x = 0; x != samples; x++) {
+				hpsjam_stereo_compressor(HPSJAM_SAMPLE_RATE,
+				    local_peak, left[x], right[x]);
+			}
 		}
 		return;
 	}
@@ -391,6 +403,8 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 		memset(left, 0, sizeof(left[0]) * samples);
 		memset(right, 0, sizeof(right[0]) * samples);
 	}
+
+	hpsjam_client->pullPlayback(left, right, samples);
 
 	/* Process equalizer */
 	eq.doit(left, right, samples);
@@ -500,6 +514,8 @@ hpsjam_client_peer :: sound_process(float *left, float *right, size_t samples)
 		hpsjam_stereo_compressor(HPSJAM_SAMPLE_RATE,
 		    local_peak, left[x], right[x]);
 	}
+
+	hpsjam_client->pushRecord(left, right, samples);
 }
 
 size_t
