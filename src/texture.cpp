@@ -226,7 +226,7 @@ HpsJamPushButton :: paintEvent(QPaintEvent *event)
 	t.paintEvent(this, event);
 
 	QPainter paint(this);
-	QString str(QString(" ") + text() + QString(" "));
+	QString str(text());
 	QRect bound = paint.boundingRect(
 	    QRect(0,0,65535,65535), Qt::AlignLeft | Qt::AlignTop | Qt::TextShowMnemonic, str);
 
