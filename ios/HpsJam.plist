@@ -23,7 +23,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<string>YES</string>
 	<key>MinimumOSVersion</key>
-	<string>12.0</string>
+	<string>13.0</string>
 	<key>UIRequiresFullScreen</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
