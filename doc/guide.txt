@@ -1,0 +1,104 @@
+Hi, and welcome to the H-P-S online jamming client.
+
+On top of the screen there is a row of clickable buttons selecting the
+currently visible tab. These can also be reached by the shortcuts as
+explained by the help tab.
+
+The icon you select is visible to the other participants on the
+server. Currently you can only select among pre-defined icons, but in
+the future it may be possible to select a custom on. Selecting an icon
+is not mandatory.
+
+Next enter a nickname. The nickname cannot be more than 32 characters
+and it is recommended to have a shorter one, because it will be shown
+to other participants on the server. The nickname may contain
+non-english characters.
+
+If your server requires a password, enter it now. Else leave the field
+blank as shown.
+
+At last you need to enter a server location. Currently you need to get
+a server location from another person who has already setup a H-P-S
+jam server. There is no centralized list of servers currently. If you
+install the desktop version of H-P-S jam you can setup your own server
+at home. This also requires that you forward some ports from your
+broadband connection to the machine running the H-P-S jam server. How
+exactly to do this will not be covered in this video.
+
+You can easily test H-P-S jam by connecting the client to
+itself. Enter 127.0.0.1 in the line edit and disabling multiport. It
+is recommended to set multiport to on, because it improves the overall
+audio quality. In this example a H-P-S jam server is already running
+at 127.0.0.1.
+
+Now press the connect button. A popup message will appear if not
+successful.
+
+Proceeding to the Mixer tab.
+
+Each participant will get its own fader strip. The Balance fader strip
+has special meaning. It allows you to get local feedback of your audio
+signal to your headphones. The level bar controls how much you will
+hear from the server mix and how much you will hear of just
+yourself. By pulling the bar to the top you will only hear
+yourself. Pulling the balance fader bar to the bottom is the default
+and recommended setting. If you want to delay the signal you hear,
+press the E-Q delay button. How to use this will not be covered. This
+is for advanced users. By pressing I-N-V button you can toggle the
+polarity of the audio signal. By default this should not be needed. By
+pressing the L-button you can pan the signal towards the left
+speaker. By pressing the R-button you can pan the signal towards the
+right speaker. The mute-button mutes all your audio being sent to the
+server.
+
+The other fader strips start at the word mix and a number. All
+controls except pluss, minus, mute and solo are shared for all
+participants. That means when you change E-Q delay or press I-N-V or
+pan the audio signal or change the gain of the audio signal, all
+participants will see and hear the same as you do. If you need to
+change the gain for yourself only, then press the pluss and minus
+buttons. If you don't want to hear another person, then press the mute
+button. If you want to listen to only one person, press the solo
+button.
+
+By pressing the fader strip name you can show or hide all controls
+locally.
+
+Proceeding to the Lyrics tab. This window will show the current
+lyrics, if someone connected to the server is sending lyrics.
+
+Proceeding to the Chat tab. Here you can send lyrics and internal
+server chats to other members. How exactly these features work will
+not be covered in this video.
+
+Proceeding to the Config tab. The most important settings is selecting
+the right audio format. Uplink is what you are transmitting to the
+server and downlink is what you are receiving from the server. Two
+channel 24-bit audio is the recommended setting. The higher the number
+of channels and bits the more capacity the application will use from
+your internet connection. Under audio device configuration you can
+select which sound device to use. By default H-P-S jam will use the
+default system audio output and input device. Under sound effects you
+can make chat messages and new connections to the server audible. By
+default sound effects are off. The remaining configuration items are
+for advanced users and does not need to be changed from the default
+values.
+
+Proceeding to the File tab. Under this tab you will find buttons to
+activate recording and playback. All recordings are stored in the
+system Music folder. If you want to delete a recording it must be done
+from the file explorer in your system. To record something press start
+under audio recording. When you are done recording press stop. To
+playback your recording first press on the filename in the bottom
+window, then press the start button under audio playback.
+
+Proceeding to the next tab. Press stats. This screen gives technical
+information about the current audio signal.
+
+In the end there is the help tab. Press help. This tab gives you full
+overview of all the keyboard shortcuts that are available for H-P-S
+jam.
+
+In the end press Server and then press Disconnect.
+
+Hope you will enjoy using H-P-S jam!
