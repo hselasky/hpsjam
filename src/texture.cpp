@@ -202,7 +202,7 @@ HpsJamRWidget :: paintEvent(QPaintEvent *event)
 }
 
 HpsJamPushButton :: HpsJamPushButton(const QString &str) :
-    t(palette().window().color(), 12)
+    t(QColor(255,255,255), 12)
 {
 	_flat = false;
 	_flash = false;
@@ -241,7 +241,7 @@ HpsJamPushButton :: paintEvent(QPaintEvent *event)
 }
 
 HpsJamGroupBox :: HpsJamGroupBox() :
-     t(QColor(192,255,192,64), 24), gl_inner(this), gl(&w)
+     t(QColor(255,255,255,127), 24), gl_inner(this), gl(&w)
 {
 	collapsed = false;
 	l.t.r = 12;
