@@ -82,8 +82,7 @@ class HpsJamConnectName : public HpsJamGroupBox {
 	Q_OBJECT
 public:
 	HpsJamConnectName() {
-		setTitle(tr("Select nickname"));
-		edit.setText(QString("anonymous"));
+		setTitle(tr("Enter a nickname"));
 		edit.setMaxLength(32);
 		gl.addWidget(&edit, 0,0);
 	};
