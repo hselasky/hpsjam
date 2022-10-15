@@ -25,6 +25,12 @@ Please update both client and server software at the same time!
   both client and server.</li>
   <li>server and mixer access can be password protected.</li>
   <li>low latency MIDI event routing</li>
+  <li>high quality recording and playback</li>
+</ul>
+
+# Users guides
+<ul>
+<li><a href="https://youtu.be/lG3zgNKiQws">Getting started with HpsJam v1.1.1</a></li>
 </ul>
 
 ## How to build client and server under FreeBSD
