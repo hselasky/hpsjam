@@ -60,21 +60,13 @@ public:
 };
 
 class HpsJamRounded {
-	QImage *p;
-	QColor last;
-	QSize s;
 public:
 	int r;
 	QColor rgb;
 
 	HpsJamRounded(const QColor &_rgb, int _r) {
-		p = 0;
-		last = rgb = _rgb;
+		rgb = _rgb;
 		r = _r;
-		s = QSize(0,0);
-	};
-	~HpsJamRounded() {
-		delete p;
 	};
 
 	void paintEvent(QWidget *, QPaintEvent *);

@@ -144,32 +144,32 @@ HpsJamTexture :: paintEvent(QWidget *w, QPaintEvent *event)
 void
 HpsJamRounded :: paintEvent(QWidget *w, QPaintEvent *event)
 {
-	const QSize size = w->size();
+	const QSize s = w->size();
 
-	if (s.width() != size.width() ||
-	    s.height() != size.height() || rgb != last) {
-		delete p;
-		p = 0;
-		s = size;
-		last = rgb;
-	}
 	if (s.width() <= 0 || s.height() <= 0)
 		return;
 
-	if (p == 0) {
-		p = new QImage(s.width(), s.height(), QImage::Format_ARGB32);
-		if (p == 0)
-			return;
+	QImage p(s.width(), s.height(), QImage::Format_ARGB32);
+	QRect clip(event->region().boundingRect());
 
-		p->fill(rgb);
-
-		round_corners(p, r);
+	if (clip.x() == 0 && clip.y() == 0 && clip.size() == s) {
+		/* paint everything */
+		p.fill(rgb);
+	} else {
+		/* only paint the part needed */
+		for (int x = 0; x != clip.width(); x++) {
+			for (int y = 0; y != clip.height(); y++) {
+				p.setPixelColor(clip.x() + x, clip.y() + y, rgb);
+			}
+		}
 	}
+
+	round_corners(&p, r);
 
 	QPainter paint(w);
 
-	paint.setClipRegion(event->region());
-	paint.drawImage(0,0,*p);
+	paint.setClipRegion(clip);
+	paint.drawImage(0,0,p);
 	paint.end();
 };
 
