@@ -150,6 +150,7 @@ RC_FILE		= windows/mainicon.rc
 
 macx {
 QMAKE_INFO_PLIST += mac/HpsJam.plist
+OTHER_FILES += mac/HpsJam.entitlements
 INCLUDEPATH	+= mac
 }
 
