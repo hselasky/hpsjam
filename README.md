@@ -144,7 +144,7 @@ HPS JAM does not collect any information from its users.
   <li>FreeBSD <A HREF="https://www.freshports.org/audio/hpsjam">hpsjam port</A></li>
   <li>Linux</li>
   <li>iOS (See App Store)</li>
-  <li>MacOSX <A HREF="http://www.selasky.org/downloads/HpsJam.dmg">Binary build here</A> (Use Safari to download)</li>
+  <li>MacOSX (See App Store)</li>
   <li>Windows (64-bit) <A HREF="http://www.selasky.org/downloads/hpsjam-binary-win64.zip">Binary build here</A></li>
   <li>Raspberry-Pi <A HREF="https://github.com/kdoren/jambox-pi-gen">JamBox</A></li>
 </ul>
