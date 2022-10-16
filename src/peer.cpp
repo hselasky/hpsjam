@@ -1713,9 +1713,8 @@ static void
 hpsjam_load_float_le32(const char *fname, int &off, int &max, float * &data)
 {
 	QResource res(fname);
-	QByteArray *pba = new QByteArray(res.uncompressedData());
-	data = (float *)pba->data();
-	off = max = pba->length() / 4;
+	data = (float *)res.data();
+	off = max = res.size() / 4;
 
 	/* byte swap, if any */
 	for (int x = 0; x != max; x++) {

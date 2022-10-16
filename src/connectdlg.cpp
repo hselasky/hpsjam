@@ -151,7 +151,8 @@ HpsJamConnectIcon :: loadSelection(QByteArray &ba)
 		ba = QByteArray();
 	} else {
 		QResource res(fname);
-		ba = res.uncompressedData();
+		QByteArray tmp((const char *)res.data(), (int)res.size());
+		ba = tmp;
 	}
 }
 
