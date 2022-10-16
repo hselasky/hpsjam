@@ -26,7 +26,7 @@
 #include "recordingdlg.h"
 #include "peer.h"
 
-#include <string.h>
+#include <strings.h>
 
 #include <QDateTime>
 #include <QStandardPaths>
