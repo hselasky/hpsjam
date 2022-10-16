@@ -176,9 +176,7 @@ QMAKE_IOS_DEPLOYMENT_TARGET= 13.0
 }
 
 macx {
-icons.path= $${DESTDIR}/Contents/Resources
-icons.files= HpsJam.icns
-QMAKE_BUNDLE_DATA+= icons
+QMAKE_ASSET_CATALOGS += ios/Assets.xcassets
 }
 
 !macx:!android:!ios:!win32:unix {
