@@ -1447,8 +1447,7 @@ hpsjam_client_peer :: tick()
 	};
 	size_t num;
 
-	/* read one packet, if any */
-	if ((pkt = input_pkt.first_pkt()) != 0) {
+	while ((pkt = input_pkt.first_pkt())) {
 		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {
 			/* check for unsequenced packets */
 			if (HpsJamReceiveUnSequenced
