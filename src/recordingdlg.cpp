@@ -26,7 +26,7 @@
 #include "recordingdlg.h"
 #include "peer.h"
 
-#include <strings.h>
+#include <string.h>
 
 #include <QDateTime>
 #include <QStandardPaths>
@@ -297,7 +297,7 @@ HpsJamRecording :: open(const QString &str, const char *mod, off_t &filesize)
 			uint8_t buffer[hlen];
 
 			if (::fread(buffer, sizeof(buffer), 1, retval) != 1 ||
-			    ::bcmp(buffer, ref, hlen) != 0) {
+			    ::memcmp(buffer, ref, hlen) != 0) {
 				QMessageBox::information(this, tr("ERROR"),
 				    tr("Cannot open file %1 or unsupported audio format").arg(fname));
 				::fclose(retval);
