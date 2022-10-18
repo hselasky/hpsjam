@@ -32,7 +32,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QGridLayout>
-#include <QGroupBox>
 #include <QSpinBox>
 #include <QListWidget>
 

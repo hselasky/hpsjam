@@ -35,7 +35,6 @@
 #include <QSvgRenderer>
 #include <QLabel>
 #include <QScrollArea>
-#include <QGroupBox>
 #include <QSizePolicy>
 
 #include "texture.h"

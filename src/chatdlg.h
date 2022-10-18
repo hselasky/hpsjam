@@ -30,7 +30,6 @@
 
 #include <QObject>
 #include <QWidget>
-#include <QGroupBox>
 #include <QGridLayout>
 #include <QPlainTextEdit>
 #include <QLineEdit>

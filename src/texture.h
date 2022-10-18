@@ -31,7 +31,6 @@
 #include <QAbstractButton>
 #include <QColor>
 #include <QGridLayout>
-#include <QGroupBox>
 #include <QImage>
 #include <QLabel>
 #include <QPaintEvent>

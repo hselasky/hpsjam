@@ -29,7 +29,6 @@
 #include "texture.h"
 
 #include <QWidget>
-#include <QGroupBox>
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QGridLayout>
