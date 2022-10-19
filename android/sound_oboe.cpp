@@ -104,10 +104,14 @@ public:
 					    (ch == audioOutputSelection[0]) ? (0 + consumer) :
 					    ((ch == audioOutputSelection[1]) ? (1 + consumer) : MAX_BUFFER)];
 
-					for (int32_t x = 0; x != frames; x++) {
+					for (int32_t x = 0; x != frames; x++)
 						((float *)data)[x * 2 + ch] = src[x];
-						src[x] = 0.0f;
-					}
+				}
+
+				/* clear audio buffer */
+				for (int32_t x = 0; x != frames; x++) {
+					audioBuffer[0 + consumer][x] = 0.0f;
+					audioBuffer[1 + consumer][x] = 0.0f;
 				}
 
 				/* check if ring-buffer is empty */
