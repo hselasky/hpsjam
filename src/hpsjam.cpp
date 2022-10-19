@@ -93,7 +93,7 @@ static const struct option hpsjam_opts[] = {
 	{ "connect", required_argument, NULL, 'c'},
 	{ "audio-uplink-format", required_argument, NULL, 'U'},
 	{ "audio-downlink-format", required_argument, NULL, 'D'},
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO)
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO) || defined(HAVE_OBOE_AUDIO)
 	{ "audio-input-device", required_argument, NULL, 'I'},
 	{ "audio-output-device", required_argument, NULL, 'O'},
 	{ "audio-input-left", required_argument, NULL, 'l'},
@@ -101,6 +101,8 @@ static const struct option hpsjam_opts[] = {
 	{ "audio-input-right", required_argument, NULL, 'r'},
 	{ "audio-output-right", required_argument, NULL, 'R'},
 	{ "audio-buffer-samples", required_argument, NULL, 'b'},
+#endif
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO)
 	{ "midi-port-name", required_argument, NULL, 'n'},
 #endif
 #ifdef HAVE_JACK_AUDIO
@@ -179,7 +181,7 @@ usage(void)
 		"	[--audio-downlink-format <0..%u>] \\\n"
 		"	[--audio-input-jitter <0..%u milliseconds, Default is 8 ms>] \\\n"
 		"	[--audio-output-jitter <0..%u milliseconds, Default is 8 ms>] \\\n"
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO)
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO) || defined(HAVE_OBOE_AUDIO)
 		"	[--audio-input-device <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-output-device <0,1,2,3 ... , Default is 0>] \\\n"
 		"	[--audio-input-left <0,1,2,3 ... , Default is 0>] \\\n"
@@ -187,6 +189,8 @@ usage(void)
 		"	[--audio-input-right <0,1,2,3 ... , Default is 1>] \\\n"
 		"	[--audio-output-right <0,1,2,3 ... , Default is 1>] \\\n"
 		"	[--audio-buffer-samples <Default is 96>] \\\n"
+#endif
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO)
 		"	[--midi-port-name <name>, Default is hpsjam] \\\n"
 #endif
 		"	[--mixer-password <64_bit_hexadecimal_password>] \\\n"
@@ -227,7 +231,7 @@ main(int argc, char **argv)
 	int icon_nr = -1;
 	int uplink_format = -1;
 	int downlink_format = -1;
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO)
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO) || defined(HAVE_OBOE_AUDIO)
 	int input_device = -1;
 	int output_device = -1;
 	int input_left = -1;
@@ -302,7 +306,7 @@ main(int argc, char **argv)
 			if (downlink_format < 0 || downlink_format > HPSJAM_AUDIO_FORMAT_MAX - 1)
 				usage();
 			break;
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO)
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO) || defined(HAVE_OBOE_AUDIO)
 		case 'I':
 			input_device = atoi(optarg);
 			if (input_device < 0)
@@ -433,7 +437,7 @@ main(int argc, char **argv)
 		/* set consistent double click interval */
 		app.setDoubleClickInterval(250);
 
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO) || defined(HAVE_JACK_AUDIO)
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO) || defined(HAVE_JACK_AUDIO) || defined(HAVE_OBOE_AUDIO)
 		hpsjam_sound_rescan();
 #endif
 		hpsjam_default_midi = new hpsjam_midi_buffer[1];
@@ -448,7 +452,7 @@ main(int argc, char **argv)
 		if (output_jitter > -1)
 			hpsjam_client->w_config->audio_dev.s_jitter_output.setValue(output_jitter);
 
-#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO)
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO) || defined(HAVE_OBOE_AUDIO)
 		if (input_device < 0)
 			input_device = hpsjam_client->input_device;
 		if (output_device < 0)
@@ -497,19 +501,6 @@ main(int argc, char **argv)
 						"that the sample rate is set to %1Hz.").arg(HPSJAM_SAMPLE_RATE));
 			}
 		}
-
-		if (buffer_samples > 0)
-			hpsjam_client->w_config->audio_dev.handle_toggle_buffer_samples(buffer_samples);
-		if (output_left > -1)
-			hpsjam_client->w_config->audio_dev.handle_set_output_left(output_left + 1);
-		if (output_right > -1)
-			hpsjam_client->w_config->audio_dev.handle_set_output_right(output_right + 1);
-		if (input_left > -1)
-			hpsjam_client->w_config->audio_dev.handle_set_input_left(input_left + 1);
-		if (input_right > -1)
-			hpsjam_client->w_config->audio_dev.handle_set_input_right(input_right + 1);
-
-		hpsjam_client->w_config->audio_dev.refreshStatus();
 #endif
 
 #ifdef HAVE_ASIO_AUDIO
@@ -525,7 +516,25 @@ main(int argc, char **argv)
 						"sample rate is different from %1Hz.").arg(HPSJAM_SAMPLE_RATE));
 			}
 		}
+#endif
 
+#ifdef HAVE_OBOE_AUDIO
+		if (input_device > -1) {
+			if (hpsjam_client->w_config->audio_dev.handle_set_input_device(input_device) < 0) {
+				new HpsJamMessageBox(hpsjam_client, QObject::tr("NO AUDIO"),
+				    QObject::tr("Cannot find the specified audio device"));
+			}
+		} else {
+			if (hpsjam_sound_init(0, 0)) {
+				new HpsJamMessageBox(hpsjam_client, QObject::tr("NO AUDIO"),
+				    QObject::tr("Cannot connect to OBOE subsystem or\n"
+						"sample rate is different from %1Hz or\n"
+						"check HpsJam permissions.").arg(HPSJAM_SAMPLE_RATE));
+			}
+		}
+#endif
+
+#if defined(HAVE_MAC_AUDIO) || defined(HAVE_IOS_AUDIO) || defined(HAVE_ASIO_AUDIO) || defined(HAVE_OBOE_AUDIO)
 		if (buffer_samples > 0)
 			hpsjam_client->w_config->audio_dev.handle_toggle_buffer_samples(buffer_samples);
 		if (output_left > -1)

@@ -1,3 +1,6 @@
 [submodule "kissfft"]
 	path = kissfft
 	url = https://github.com/mborgerding/kissfft.git
+[submodule "android/oboe"]
+	path = android/oboe
+	url = https://github.com/google/oboe

@@ -98,6 +98,31 @@ LIBS+=		-framework CoreMIDI
 DEFINES		+= HAVE_MAC_AUDIO
 }
 
+android {
+QT += gui-private
+ANDROID_TARGET_SDK_VERSION=31
+
+DISTFILES+= \
+	android/AndroidManifest.xml
+
+ANDROID_PACKAGE_SOURCE_DIR= $${PWD}/android
+
+# OBOE audio support
+INCLUDEPATH+= \
+        android/oboe/include \
+        android/oboe/src
+
+DEFINES+= HAVE_OBOE_AUDIO
+LIBS += -lOpenSLES
+CONFIG += c++17
+SOURCES += \
+        $$files(android/oboe/src/*.cpp, true)
+HEADERS += \
+        $$files(android/oboe/src/*.h, true)
+
+SOURCES += android/sound_oboe.cpp
+}
+
 # IOS audio backend
 ios {
 SOURCES		+= ios/sound_ios.mm
@@ -114,7 +139,7 @@ QMAKE_MAC_XCODE_SETTINGS += Q_ENABLE_BITCODE
 }
 
 # JACK audio backend
-!macx:!win32:!ios {
+!macx:!win32:!ios:!android {
 SOURCES		+= linux/sound_jack.cpp
 LIBS		+= -L$${PREFIX}/lib -ljack
 DEFINES		+= HAVE_JACK_AUDIO
