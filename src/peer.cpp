@@ -23,9 +23,9 @@
  * SUCH DAMAGE.
  */
 
-#include <QResource>
 #include <QTextStream>
 #include <QMutexLocker>
+#include <QFile>
 
 #include "hpsjam.h"
 #include "peer.h"
@@ -1046,16 +1046,12 @@ hpsjam_server_peer :: audio_import()
 	    <class hpsjam_server_peer>(*this);
 }
 
-#ifndef Q_OS_IOS
-#include <QFile>
-#endif
-
 void
 hpsjam_server_peer :: send_welcome_message()
 {
 	if (hpsjam_welcome_message_file == 0)
 		return;
-#ifndef Q_OS_IOS
+
 	QFile file(hpsjam_welcome_message_file);
 
 	if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -1074,7 +1070,6 @@ hpsjam_server_peer :: send_welcome_message()
 		pres->packet.type = HPSJAM_TYPE_CHAT_REPLY;
 		pres->insert_tail(&output_pkt.head);
 	}
-#endif
 }
 
 static void
@@ -1712,8 +1707,16 @@ hpsjam_cli_process(const struct hpsjam_socket_address &addr, const char *data, s
 static void
 hpsjam_load_float_le32(const char *fname, int &off, int &max, float * &data)
 {
-	QResource res(fname);
-	QByteArray *pba = new QByteArray(res.uncompressedData());
+	QFile file(fname);
+
+	if (!file.open(QIODevice::ReadOnly)) {
+		off = 0;
+		max = 0;
+		data = 0;
+		return;
+	}
+
+	QByteArray *pba = new QByteArray(file.readAll());
 	data = (float *)pba->data();
 	off = max = pba->length() / 4;
 
