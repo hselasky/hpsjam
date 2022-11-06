@@ -62,12 +62,9 @@ hpsjam_audio_buffer :: adjustBuffer()
 
 	int missing = getWaterRef();
 
-	/* Adjust buffer if outside 4 ms window. */
-	int missing_aligned = missing - (missing % (2 * HPSJAM_DEF_SAMPLES));
-
-	if (missing_aligned == 0) {
+	if (missing == 0) {
 		memcpy(samples, buffer, sizeof(samples[0]) * total);
-	} else if (missing_aligned > 0) {
+	} else if (missing > 0) {
 		size_t to = total - missing;
 		if (to == 0 || to > HPSJAM_MAX_SAMPLES)
 			to = 1;
@@ -76,11 +73,39 @@ hpsjam_audio_buffer :: adjustBuffer()
 		total = to;
 	} else {
 		size_t to = total - missing;
-		if (to == 0 || to > HPSJAM_MAX_SAMPLES)
+		if (to > HPSJAM_MAX_SAMPLES)
 			to = HPSJAM_MAX_SAMPLES;
-		for (size_t x = 0; x != to; x++)
-			samples[x] = buffer[(total * x) / to];
-		total = to;
+		if (to > 1 && total > 1) {
+			to -= 1;
+			total -= 1;
+
+			/* keep last sample the same */
+			samples[to] = buffer[total];
+
+			for (size_t x = 0; x < to; ) {
+				size_t src = (total * x) / to;
+				size_t next;
+
+				/* figure out how many samples to go */
+				for (next = x + 1; next != to &&
+				     ((total * next) / to) == src; next++)
+					;
+
+				float delta = (buffer[src + 1] - buffer[src]) / (ssize_t)(next - x);
+				float start = buffer[src];
+
+				/* linear interpolation */
+				for (; x < next; x++) {
+					samples[x] = start;
+					start += delta;
+				}
+			}
+			total = to + 1;
+		} else {
+			for (size_t x = 0; x != to; x++)
+				samples[x] = buffer[(total * x) / to];
+			total = to;
+		}
 	}
 
 	/* Reset the water level after filling samples. */
