@@ -139,9 +139,12 @@ public:
 	int getWaterRef() const {
 		if (low_water > high_water)
 			return (0);	/* normal */
-		ssize_t diff = high_water - low_water;
-		ssize_t middle = low_water + (diff / 2) -
-		    (ssize_t)target_water;
+		ssize_t diff = (high_water - low_water) / 2;
+		/* too much noise, allow bigger buffer */
+		if (diff > target_water)
+			return (0);
+		/* try to fit the buffer at the target level */
+		ssize_t middle = low_water + diff - (ssize_t)target_water;
 		return (middle);
 	};
 
