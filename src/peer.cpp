@@ -1386,8 +1386,8 @@ hpsjam_server_tick()
 		hpsjam_timer_adjust = -1;	/* go faster */
 	}
 
-	/* Adjust all buffers every 8 seconds approximately. */
-	unsigned y = (hpsjam_ticks & 8191);
+	/* Adjust all buffers every 16 seconds approximately. */
+	unsigned y = (hpsjam_ticks & 0x3fff);
 	if (y < hpsjam_num_server_peers) {
 		hpsjam_server_peer &peer = hpsjam_server_peers[y];
 
@@ -1640,8 +1640,8 @@ hpsjam_client_peer :: tick()
 	HpsJamSendPacket
 	    <class hpsjam_client_peer>(*this);
 
-	/* Adjust all buffers every 8 seconds approximately. */
-	if ((hpsjam_ticks & 8191) == 0) {
+	/* Adjust all buffers every 16 seconds approximately. */
+	if ((hpsjam_ticks & 0x3fff) == 0) {
 		out_audio[0].adjustBuffer();
 		out_audio[1].adjustBuffer();
 		in_audio[0].adjustBuffer();
