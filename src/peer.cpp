@@ -761,7 +761,7 @@ hpsjam_server_peer :: audio_export()
 		return;
 	}
 
-	while ((pkt = input_pkt.first_pkt())) {
+	while ((pkt = input_pkt.first_pkt(in_audio[0].total == 0))) {
 		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {
 			/* check for unsequenced packets */
 			if (HpsJamReceiveUnSequenced
@@ -1442,7 +1442,7 @@ hpsjam_client_peer :: tick()
 	};
 	size_t num;
 
-	while ((pkt = input_pkt.first_pkt())) {
+	while ((pkt = input_pkt.first_pkt(in_audio[0].total == 0))) {
 		for (ptr = pkt->start; ptr->valid(pkt->end); ptr = ptr->next()) {
 			/* check for unsequenced packets */
 			if (HpsJamReceiveUnSequenced

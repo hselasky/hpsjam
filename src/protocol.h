@@ -473,7 +473,7 @@ struct hpsjam_input_packetizer {
 		last_seqno = 0;
 	};
 
-	const union hpsjam_frame *first_pkt() {
+	const union hpsjam_frame *first_pkt(bool low_water) {
 		enum {
 			NMAX = 5,
 			BMAX = HPSJAM_SEQ_MAX / NMAX
@@ -555,45 +555,55 @@ struct hpsjam_input_packetizer {
 			case 0:
 				if (delta >= (HPSJAM_SEQ_MAX / 2))
 					break;
-				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 
 				if (valid[x] & HPSJAM_MASK_VALID) {
 					/* got frame */
+					last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 					return (current + x);
 				} else if (valid[x + 1] & valid[x + 2] & HPSJAM_MASK_VALID) {
 					/* can recover */
+					last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 					current[x + 2].do_xor(current[x + 1]);
 					jitter.rx_loss();
 					return (current + x + 2);
-				} else {
+				} else if (low_water) {
+					last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 					jitter.rx_loss();
 					jitter.rx_damage();
 					/* fill frame with silence */
 					current[x].clear();
 					current[x].start[0].putSilence(HPSJAM_NOM_SAMPLES);
 					return (current + x);
+				} else {
+					/* wait a bit for packet */
+					return (NULL);
 				}
 				break;
 			case 1:
 				if (delta >= (HPSJAM_SEQ_MAX / 2))
 					break;
-				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 
 				if (valid[x] & HPSJAM_MASK_VALID) {
 					/* got frame */
+					last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 					return (current + x);
 				} else if (valid[x - 1] & valid[x + 1] & HPSJAM_MASK_VALID) {
 					/* can recover */
+					last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 					current[x + 1].do_xor(current[x - 1]);
 					jitter.rx_loss();
 					return (current + x + 1);
-				} else {
+				} else if (low_water) {
+					last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 					jitter.rx_loss();
 					jitter.rx_damage();
 					/* fill frame with silence */
 					current[x].clear();
 					current[x].start[0].putSilence(HPSJAM_NOM_SAMPLES);
 					return (current + x);
+				} else {
+					/* wait a bit for packet */
+					return (NULL);
 				}
 				break;
 			default:
