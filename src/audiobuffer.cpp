@@ -24,6 +24,7 @@
  */
 
 #include "audiobuffer.h"
+#include "spectralysis.h"
 
 void
 hpsjam_audio_buffer :: adjustBuffer()
@@ -110,4 +111,145 @@ hpsjam_audio_buffer :: adjustBuffer()
 
 	/* Reset the water level after filling samples. */
 	low_water = high_water = target_water;
+}
+
+/* remove samples from buffer, must be called periodically */
+void
+hpsjam_audio_buffer :: remSamples(float *dst, size_t num)
+{
+	size_t fwd;
+
+	doWater(num);
+
+	/* fill missing samples with data from ping pong buffer, if any */
+	if (num > total) {
+		hpsjam_create_ping_pong_buffer(ping_pong_data, ping_pong_data, ping_pong_offset, fadeSamples);
+
+		float gain = 1.0f;
+
+		/* fill end of buffer using ping pong data */
+		for (size_t x = total; x != num; x++) {
+			gain -= gain / HPSJAM_SAMPLE_RATE;
+			dst[x] = ping_pong_data[(x - total) % fadeSamples] * gain;
+		}
+
+		/* update ping pong offset and gain */
+		ping_pong_offset = (num - total) % fadeSamples;
+
+		for (size_t x = 0; x != fadeSamples; x++)
+			ping_pong_data[x] *= gain;
+
+		/* update last sample */
+		last_sample = dst[num - 1];
+
+		num = total;
+		fade_in = fadeSamples;
+	}
+
+	/* setup forward size */
+	fwd = HPSJAM_MAX_SAMPLES - consumer;
+
+	/* copy samples from ring-buffer */
+	while (num != 0) {
+		if (fwd > num)
+			fwd = num;
+		memcpy(dst, samples + consumer, sizeof(samples[0]) * fwd);
+		dst += fwd;
+		num -= fwd;
+		consumer += fwd;
+		total -= fwd;
+		if (consumer == HPSJAM_MAX_SAMPLES) {
+			consumer = 0;
+			fwd = HPSJAM_MAX_SAMPLES;
+		} else {
+			assert(num == 0);
+			break;
+		}
+	}
+}
+
+/* add samples to buffer */
+void
+hpsjam_audio_buffer :: addSamples(const float *src, size_t num)
+{
+	size_t producer = (consumer + total) % HPSJAM_MAX_SAMPLES;
+	size_t fwd = HPSJAM_MAX_SAMPLES - producer;
+	size_t max = HPSJAM_MAX_SAMPLES - total;
+
+	if (num > max)
+		num = max;
+
+	/* copy samples to ring-buffer */
+	while (num != 0) {
+		if (fwd > num)
+			fwd = num;
+		if (fwd != 0) {
+			/* check if there was a discontinuity, and fade in audio */
+			if (fade_in != 0) {
+				for (size_t x = 0; x != fwd; x++) {
+					const float f = (float)fade_in / (float)fadeSamples;
+					const float s = ping_pong_data[(ping_pong_offset + x) % fadeSamples];
+
+					samples[producer + x] = src[x] - f * src[x] + s * f;
+					fade_in -= (fade_in != 0);
+				}
+			} else {
+				memcpy(samples + producer, src, sizeof(samples[0]) * fwd);
+			}
+
+			/* add all samples to ping pong buffer */
+			for (size_t off = (fwd < fadeSamples) ? 0 : (fwd - fadeSamples); off != fwd; off++)
+				addPingPongBuffer(samples[producer + off]);
+
+			/* update last sample */
+			last_sample = samples[producer + fwd - 1];
+			src += fwd;
+			num -= fwd;
+			total += fwd;
+			producer += fwd;
+		}
+		if (producer == HPSJAM_MAX_SAMPLES) {
+			producer = 0;
+			fwd = HPSJAM_MAX_SAMPLES;
+		} else {
+			assert(num == 0);
+			break;
+		}
+	}
+}
+
+/* add silence to buffer */
+void
+hpsjam_audio_buffer :: addSilence(size_t num)
+{
+	size_t producer = (consumer + total) % HPSJAM_MAX_SAMPLES;
+	size_t fwd = HPSJAM_MAX_SAMPLES - producer;
+	size_t max = HPSJAM_MAX_SAMPLES - total;
+
+	if (num > max)
+		num = max;
+
+	/* copy samples to ring-buffer */
+	while (num != 0) {
+		if (fwd > num)
+			fwd = num;
+		if (fwd != 0) {
+			for (size_t x = 0; x != fwd; x++) {
+				last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
+				samples[producer + x] = last_sample;
+				addPingPongBuffer(last_sample);
+			}
+			fade_in = fadeSamples;
+			num -= fwd;
+			total += fwd;
+			producer += fwd;
+		}
+		if (producer == HPSJAM_MAX_SAMPLES) {
+			producer = 0;
+			fwd = HPSJAM_MAX_SAMPLES;
+		} else {
+			assert(num == 0);
+			break;
+		}
+	}
 }

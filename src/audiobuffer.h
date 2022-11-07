@@ -91,7 +91,9 @@ class hpsjam_audio_buffer {
 	enum { fadeSamples = HPSJAM_DEF_SAMPLES };
 public:
 	float samples[HPSJAM_MAX_SAMPLES];
+	float ping_pong_data[fadeSamples];
 	float last_sample;
+	size_t ping_pong_offset;
 	size_t consumer;
 	size_t total;
 	uint16_t fade_in;
@@ -99,21 +101,32 @@ public:
 	uint16_t high_water;
 	uint16_t target_water;
 
-	void doWater() {
-		if (low_water > total)
-			low_water = total;
+	void doWater(size_t num) {
+		if (num > total)
+			low_water = 0;
+		else if (low_water > total - num)
+			low_water = total - num;
+
 		if (high_water < total)
 			high_water = total;
 	};
 
 	void clear() {
 		memset(samples, 0, sizeof(samples));
+		memset(ping_pong_data, 0, sizeof(ping_pong_data));
+		ping_pong_offset = 0;
 		last_sample = 0;
 		consumer = 0;
 		total = 0;
 		fade_in = fadeSamples;
 		low_water = HPSJAM_MAX_SAMPLES;
 		high_water = 0;
+	};
+
+	void addPingPongBuffer(float sample) {
+		ping_pong_data[ping_pong_offset] = sample;
+		if (++ping_pong_offset == fadeSamples)
+			ping_pong_offset = 0;
 	};
 
 	hpsjam_audio_buffer() {
@@ -160,119 +173,10 @@ public:
 			return (1);	/* normal */
 	};
 
-	/* remove samples from buffer, must be called periodically */
-	void remSamples(float *dst, size_t num) {
-		size_t fwd;
-
-		doWater();
-
-		/* fill missing samples with last value, if any */
-		if (num > total) {
-			for (size_t x = total; x != num; x++) {
-				last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
-				dst[x] = last_sample;
-			}
-			num = total;
-			fade_in = fadeSamples;
-		}
-
-		/* setup forward size */
-		fwd = HPSJAM_MAX_SAMPLES - consumer;
-
-		/* copy samples from ring-buffer */
-		while (num != 0) {
-			if (fwd > num)
-				fwd = num;
-			memcpy(dst, samples + consumer, sizeof(samples[0]) * fwd);
-			dst += fwd;
-			num -= fwd;
-			consumer += fwd;
-			total -= fwd;
-			if (consumer == HPSJAM_MAX_SAMPLES) {
-				consumer = 0;
-				fwd = HPSJAM_MAX_SAMPLES;
-			} else {
-				assert(num == 0);
-				break;
-			}
-		}
-	};
-
-	/* add samples to buffer */
-	void addSamples(const float *src, size_t num) {
-		size_t producer = (consumer + total) % HPSJAM_MAX_SAMPLES;
-		size_t fwd = HPSJAM_MAX_SAMPLES - producer;
-		size_t max = HPSJAM_MAX_SAMPLES - total;
-
-		if (num > max)
-			num = max;
-
-		/* copy samples to ring-buffer */
-		while (num != 0) {
-			if (fwd > num)
-				fwd = num;
-			if (fwd != 0) {
-				/* check if there was a discontinuity, and fade in audio */
-				if (fade_in != 0) {
-					for (size_t x = 0; x != fwd; x++) {
-						const float f = (float)fade_in / (float)fadeSamples;
-						last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
-						samples[producer + x] = src[x] - f * src[x] + last_sample * f;
-						fade_in -= (fade_in != 0);
-					}
-				} else {
-					memcpy(samples + producer, src, sizeof(samples[0]) * fwd);
-				}
-				/* update last sample */
-				last_sample = samples[producer + fwd - 1];
-				src += fwd;
-				num -= fwd;
-				total += fwd;
-				producer += fwd;
-			}
-			if (producer == HPSJAM_MAX_SAMPLES) {
-				producer = 0;
-				fwd = HPSJAM_MAX_SAMPLES;
-			} else {
-				assert(num == 0);
-				break;
-			}
-		}
-	};
-
-	/* add silence to buffer */
-	void addSilence(size_t num) {
-		size_t producer = (consumer + total) % HPSJAM_MAX_SAMPLES;
-		size_t fwd = HPSJAM_MAX_SAMPLES - producer;
-		size_t max = HPSJAM_MAX_SAMPLES - total;
-
-		if (num > max)
-			num = max;
-
-		/* copy samples to ring-buffer */
-		while (num != 0) {
-			if (fwd > num)
-				fwd = num;
-			if (fwd != 0) {
-				for (size_t x = 0; x != fwd; x++) {
-					last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
-					samples[producer + x] = last_sample;
-				}
-				fade_in = fadeSamples;
-				num -= fwd;
-				total += fwd;
-				producer += fwd;
-			}
-			if (producer == HPSJAM_MAX_SAMPLES) {
-				producer = 0;
-				fwd = HPSJAM_MAX_SAMPLES;
-			} else {
-				assert(num == 0);
-				break;
-			}
-		}
-	};
 	void adjustBuffer();
+	void remSamples(float *, size_t);
+	void addSamples(const float *, size_t);
+	void addSilence(size_t);
 };
 
 #endif		/* _HPSJAM_AUDIOBUFFER_H_ */
