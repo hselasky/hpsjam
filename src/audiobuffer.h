@@ -93,13 +93,14 @@ public:
 	float samples[HPSJAM_MAX_SAMPLES];
 	float ping_pong_data[fadeSamples];
 	float last_sample;
-	size_t ping_pong_offset;
 	size_t consumer;
 	size_t total;
 	uint16_t fade_in;
 	uint16_t low_water;
 	uint16_t high_water;
 	uint16_t target_water;
+	uint16_t ping_pong_offset;
+	bool adjust_buffer;
 
 	void doWater(size_t num) {
 		if (num > total)
@@ -121,6 +122,7 @@ public:
 		fade_in = fadeSamples;
 		low_water = HPSJAM_MAX_SAMPLES;
 		high_water = 0;
+		adjust_buffer = false;
 	};
 
 	void addPingPongBuffer(float sample) {
@@ -173,7 +175,10 @@ public:
 			return (1);	/* normal */
 	};
 
-	void adjustBuffer();
+	void adjustBuffer() {
+		adjust_buffer = true;
+	};
+	void doAdjustBuffer(int);
 	void remSamples(float *, size_t);
 	void addSamples(const float *, size_t);
 	void addSilence(size_t);

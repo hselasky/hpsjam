@@ -27,18 +27,23 @@
 #include "spectralysis.h"
 
 void
-hpsjam_audio_buffer :: adjustBuffer()
+hpsjam_audio_buffer :: doAdjustBuffer(int missing)
 {
-	/* do nothing, if buffer is empty */
-	if (total == 0)
+	/* do nothing, if buffer is empty or nothing is missing */
+	if (missing == 0 || total == 0)
 		return;
 
 	float buffer[HPSJAM_MAX_SAMPLES];
 	float *dst = buffer;
 	size_t fwd = HPSJAM_MAX_SAMPLES - consumer;
 	size_t num = total;
+	size_t to = total - missing;
 
-	/* Copy samples from ring-buffer */
+	/* check if target buffer size is sane, else return */
+	if (to < 2 || to > HPSJAM_MAX_SAMPLES)
+		return;
+
+	/* move all samples from ring-buffer to temporary buffer */
 	while (num != 0) {
 		if (fwd > num)
 			fwd = num;
@@ -55,58 +60,52 @@ hpsjam_audio_buffer :: adjustBuffer()
 		}
 	}
 
-	/* Reset the buffer consumer */
+	/* reset the buffer consumer */
 	consumer = 0;
 
-	int missing = getWaterRef();
+	to -= 1;
+	total -= 1;
 
-	if (missing == 0) {
-		memcpy(samples, buffer, sizeof(samples[0]) * total);
-	} else if (missing > 0) {
-		size_t to = total - missing;
-		if (to == 0 || to > HPSJAM_MAX_SAMPLES)
-			to = 1;
-		for (size_t x = 0; x != to; x++)
-			samples[x] = buffer[(total * x) / to];
-		total = to;
-	} else {
-		size_t to = total - missing;
-		if (to > HPSJAM_MAX_SAMPLES)
-			to = HPSJAM_MAX_SAMPLES;
-		if (to > 1 && total > 1) {
-			to -= 1;
-			total -= 1;
+	/* keep last sample the same */
+	samples[to] = buffer[total];
 
-			/* keep last sample the same */
-			samples[to] = buffer[total];
+	/* linear interpolation */
+	for (size_t x = 0; x < to; ) {
+		size_t src_start = (total * x) / to;
+		size_t src_end;
+		size_t dst_next = x + 1;
 
-			for (size_t x = 0; x < to; ) {
-				size_t src = (total * x) / to;
-				size_t next;
+		/* figure out how many samples to input */
+		for (;;) {
+			src_end = (total * dst_next) / to;
+			if (dst_next == to)
+				break;
+			if (src_end != src_start)
+				break;
+			dst_next++;
+		}
 
-				/* figure out how many samples to go */
-				for (next = x + 1; next != to &&
-				     ((total * next) / to) == src; next++)
-					;
+		float start = 0.0f;
 
-				float delta = (buffer[src + 1] - buffer[src]) / (ssize_t)(next - x);
-				float start = buffer[src];
+		/* average the samples being compressed */
+		for (size_t y = src_start; y != src_end; y++)
+			start += buffer[y];
 
-				/* linear interpolation */
-				for (; x < next; x++) {
-					samples[x] = start;
-					start += delta;
-				}
-			}
-			total = to + 1;
-		} else {
-			for (size_t x = 0; x != to; x++)
-				samples[x] = buffer[(total * x) / to];
-			total = to;
+		if (start != 0.0f)
+			start /= (ssize_t)(src_end - src_start);
+
+		float delta = (buffer[src_end] - start) / (ssize_t)(dst_next - x);
+
+		for (; x < dst_next; x++) {
+			samples[x] = start;
+			start += delta;
 		}
 	}
 
-	/* Reset the water level after filling samples. */
+	/* Set new total buffer size */
+	total = to + 1;
+
+	/* Reset the water level after adjusting samples. */
 	low_water = high_water = target_water;
 }
 
@@ -114,9 +113,23 @@ hpsjam_audio_buffer :: adjustBuffer()
 void
 hpsjam_audio_buffer :: remSamples(float *dst, size_t num)
 {
+	size_t middle;
 	size_t fwd;
+	int missing;
 
 	doWater(num);
+
+	/* check if it is time to adjust buffer */
+	if (adjust_buffer) {
+		missing = getWaterRef();
+		middle = (high_water + low_water) / 2;
+
+		/* only adjust when the buffer is above middle full */
+		if (total >= middle) {
+			doAdjustBuffer(missing);
+			adjust_buffer = false;
+		}
+	}
 
 	/* copy samples from ring-buffer */
 	while (num != 0) {
