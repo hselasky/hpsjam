@@ -29,6 +29,10 @@
 void
 hpsjam_audio_buffer :: adjustBuffer()
 {
+	/* do nothing, if buffer is empty */
+	if (total == 0)
+		return;
+
 	float buffer[HPSJAM_MAX_SAMPLES];
 	float *dst = buffer;
 	size_t fwd = HPSJAM_MAX_SAMPLES - consumer;
@@ -53,13 +57,6 @@ hpsjam_audio_buffer :: adjustBuffer()
 
 	/* Reset the buffer consumer */
 	consumer = 0;
-
-	/* Check for empty buffer */
-	if (total == 0) {
-		total = 1;
-		buffer[0] = last_sample;
-		fade_in = fadeSamples;
-	}
 
 	int missing = getWaterRef();
 
@@ -121,50 +118,24 @@ hpsjam_audio_buffer :: remSamples(float *dst, size_t num)
 
 	doWater(num);
 
-	/* fill missing samples with data from ping pong buffer, if any */
-	if (num > total) {
-		hpsjam_create_ping_pong_buffer(ping_pong_data, ping_pong_data, ping_pong_offset, fadeSamples);
-
-		float gain = 1.0f;
-
-		/* fill end of buffer using ping pong data */
-		for (size_t x = total; x != num; x++) {
-			gain -= gain / HPSJAM_SAMPLE_RATE;
-			dst[x] = ping_pong_data[(x - total) % fadeSamples] * gain;
-		}
-
-		/* update ping pong offset and gain */
-		ping_pong_offset = (num - total) % fadeSamples;
-
-		for (size_t x = 0; x != fadeSamples; x++)
-			ping_pong_data[x] *= gain;
-
-		/* update last sample */
-		last_sample = dst[num - 1];
-
-		num = total;
-		fade_in = fadeSamples;
-	}
-
-	/* setup forward size */
-	fwd = HPSJAM_MAX_SAMPLES - consumer;
-
 	/* copy samples from ring-buffer */
 	while (num != 0) {
+		/* if the buffer is empty, fill it with silence */
+		if (total == 0)
+			addSilence(fadeSamples);
+		/* setup forward size */
+		fwd = HPSJAM_MAX_SAMPLES - consumer;
 		if (fwd > num)
 			fwd = num;
+		if (fwd > total)
+			fwd = total;
 		memcpy(dst, samples + consumer, sizeof(samples[0]) * fwd);
 		dst += fwd;
 		num -= fwd;
 		consumer += fwd;
 		total -= fwd;
-		if (consumer == HPSJAM_MAX_SAMPLES) {
+		if (consumer == HPSJAM_MAX_SAMPLES)
 			consumer = 0;
-			fwd = HPSJAM_MAX_SAMPLES;
-		} else {
-			assert(num == 0);
-			break;
-		}
 	}
 }
 
@@ -197,7 +168,7 @@ hpsjam_audio_buffer :: addSamples(const float *src, size_t num)
 				memcpy(samples + producer, src, sizeof(samples[0]) * fwd);
 			}
 
-			/* add all samples to ping pong buffer */
+			/* add all required samples to ping pong buffer */
 			for (size_t off = (fwd < fadeSamples) ? 0 : (fwd - fadeSamples); off != fwd; off++)
 				addPingPongBuffer(samples[producer + off]);
 
@@ -229,16 +200,33 @@ hpsjam_audio_buffer :: addSilence(size_t num)
 	if (num > max)
 		num = max;
 
+	/* fill missing samples with data from ping pong buffer, if any */
+	hpsjam_create_ping_pong_buffer(ping_pong_data, ping_pong_data,
+	    ping_pong_offset, fadeSamples);
+
 	/* copy samples to ring-buffer */
 	while (num != 0) {
 		if (fwd > num)
 			fwd = num;
 		if (fwd != 0) {
+			float gain = 1.0f;
+
+			/* fill end of buffer using ping pong data */
 			for (size_t x = 0; x != fwd; x++) {
-				last_sample -= last_sample / HPSJAM_SAMPLE_RATE;
-				samples[producer + x] = last_sample;
-				addPingPongBuffer(last_sample);
+				gain -= gain / (HPSJAM_SAMPLE_RATE / 8);
+				samples[producer + x] =
+				    ping_pong_data[(ping_pong_offset + x) % fadeSamples] * gain;
 			}
+
+			/* update ping pong offset and gain */
+			ping_pong_offset = (ping_pong_offset + fwd) % fadeSamples;
+
+			for (size_t x = 0; x != fadeSamples; x++)
+				ping_pong_data[x] *= gain;
+
+			/* update last sample */
+			last_sample = samples[producer + fwd - 1];
+
 			fade_in = fadeSamples;
 			num -= fwd;
 			total += fwd;
@@ -247,9 +235,6 @@ hpsjam_audio_buffer :: addSilence(size_t num)
 		if (producer == HPSJAM_MAX_SAMPLES) {
 			producer = 0;
 			fwd = HPSJAM_MAX_SAMPLES;
-		} else {
-			assert(num == 0);
-			break;
 		}
 	}
 }
