@@ -37,7 +37,7 @@ void
 HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 {
 	constexpr unsigned N = HPSJAM_MAX_JITTER;
-	uint64_t packet_loss;
+	uint64_t packet_recover;
 	uint64_t packet_damage;
 	uint16_t ping_time;
 	uint16_t jitter_time;
@@ -58,7 +58,7 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 
 		assert(sizeof(stats) >= sizeof(hpsjam_client_peer->input_pkt.jitter.stats));
 		memcpy(stats, hpsjam_client_peer->input_pkt.jitter.stats, sizeof(stats));
-		packet_loss = hpsjam_client_peer->input_pkt.jitter.packet_loss;
+		packet_recover = hpsjam_client_peer->input_pkt.jitter.packet_recover;
 		packet_damage = hpsjam_client_peer->input_pkt.jitter.packet_damage;
 		ping_time = hpsjam_client_peer->output_pkt.ping_time;
 		jitter_time = hpsjam_client_peer->input_pkt.jitter.get_jitter_in_ms();
@@ -84,12 +84,12 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 
 	paint.fillRect(frame, bg);
 
-	l_status[0].setText(QString("Network :: %1 packets lost and %2 damaged. Round trip time is %3ms+%4ms")
-	    .arg(packet_loss).arg(packet_damage).arg(ping_time).arg(jitter_time));
-	l_status[2].setText(QString("Local audio output :: Low and high water is %1 and %2, adjusting %3 samples, %4 ms jitter.")
+	l_status[0].setText(QString("Network :: %1 recovered and %2 damaged. Round trip time is %3ms+%4ms")
+	    .arg(packet_recover).arg(packet_damage).arg(ping_time).arg(jitter_time));
+	l_status[2].setText(QString("Local audio output :: Buffer level is %1 and %2, adjusting %3 samples, %4 ms jitter.")
 	    .arg(low_water[0]).arg(high_water[0]).arg(adjust[0])
 	    .arg((high_water[0] - low_water[0] + HPSJAM_DEF_SAMPLES - 1) / HPSJAM_DEF_SAMPLES));
-	l_status[1].setText(QString("Local audio input :: Low and high water is %1 and %2, adjusting %3 samples, %4 ms jitter.")
+	l_status[1].setText(QString("Local audio input :: Buffer level is %1 and %2, adjusting %3 samples, %4 ms jitter.")
 	    .arg(low_water[1]).arg(high_water[1]).arg(adjust[1])
 	    .arg((high_water[1] - low_water[1] + HPSJAM_DEF_SAMPLES - 1) / HPSJAM_DEF_SAMPLES));
 

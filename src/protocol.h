@@ -479,14 +479,15 @@ struct hpsjam_input_packetizer {
 		const uint8_t rx_seqno = frame.hdr.getSequence();
 		unsigned delta = (HPSJAM_SEQ_MAX + rx_seqno - (unsigned)last_seqno) % HPSJAM_SEQ_MAX;
 
+		/* count all packets */
+		jitter.rx_packet();
+
 		/* check for out-of-order packet */
 		if (delta >= (HPSJAM_SEQ_MAX / 2))
 			return;
 
 		current[rx_seqno] = frame;
 		valid[rx_seqno] = HPSJAM_MASK_VALID;
-
-		jitter.rx_packet();
 	};
 };
 

@@ -39,7 +39,7 @@
 
 struct hpsjam_jitter {
 	float stats[HPSJAM_MAX_JITTER];
-	uint64_t packet_loss;
+	uint64_t packet_recover;
 	uint64_t packet_damage;
 	uint16_t counter;
 	uint16_t jitter_ticks;
@@ -86,9 +86,8 @@ struct hpsjam_jitter {
 		}
 	};
 
-	void rx_loss() {
-		counter++;
-		packet_loss++;
+	void rx_recover() {
+		packet_recover++;
 	};
 
 	void rx_damage() {

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2020 Hans Petter Selasky. All rights reserved.
+ * Copyright (c) 2020-2022 Hans Petter Selasky. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -520,11 +520,10 @@ hpsjam_input_packetizer::first_pkt(bool low_water)
 				/* can recover */
 				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 				current[x + 2].do_xor(current[x + 1]);
-				jitter.rx_loss();
+				jitter.rx_recover();
 				return (current + x + 2);
 			} else if (low_water) {
 				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
-				jitter.rx_loss();
 				jitter.rx_damage();
 				/* fill frame with silence */
 				current[x].clear();
@@ -547,11 +546,10 @@ hpsjam_input_packetizer::first_pkt(bool low_water)
 				/* can recover */
 				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 				current[x + 1].do_xor(current[x - 1]);
-				jitter.rx_loss();
+				jitter.rx_recover();
 				return (current + x + 1);
 			} else if (low_water) {
 				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
-				jitter.rx_loss();
 				jitter.rx_damage();
 				/* fill frame with silence */
 				current[x].clear();
@@ -563,16 +561,9 @@ hpsjam_input_packetizer::first_pkt(bool low_water)
 			}
 			break;
 		default:
-			if (delta < (HPSJAM_SEQ_MAX / 2)) {
+			if (delta < (HPSJAM_SEQ_MAX / 2))
 				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
 
-				if (~valid[x - 2] & HPSJAM_MASK_VALID)
-					jitter.rx_loss();
-				if (~valid[x - 1] & HPSJAM_MASK_VALID)
-					jitter.rx_loss();
-				if (~valid[x - 0] & HPSJAM_MASK_VALID)
-					jitter.rx_loss();
-			}
 			valid[x - 2] &= ~HPSJAM_MASK_VALID;
 			valid[x - 1] &= ~HPSJAM_MASK_VALID;
 			valid[x - 0] &= ~HPSJAM_MASK_VALID;
