@@ -450,4 +450,140 @@ hpsjam_packet::getRawData(const char **pp, size_t &len) const
 		return (true);
 	}
 	return (false);
-};
+}
+
+const union hpsjam_frame *
+hpsjam_input_packetizer::first_pkt(bool low_water)
+{
+	enum {
+		NMAX = 5,
+		BMAX = HPSJAM_SEQ_MAX / NMAX
+	};
+	uint64_t mask;
+	uint64_t start;
+	unsigned min_x;
+	unsigned delta;
+	unsigned x;
+	unsigned y;
+
+	mask = 0;
+	for (x = 0; x != BMAX; x++) {
+		for (y = 0; y != NMAX; y++) {
+			if (valid[NMAX * x + y] == HPSJAM_MASK_VALID) {
+				mask |= 1ULL << x;
+				break;
+			}
+		}
+	}
+
+	/* check if no packets can be received */
+	if (mask == 0)
+		return (NULL);
+
+	/* try to continue at the last sequence number */
+	mask |= 1ULL << (last_seqno / NMAX);
+
+	/*
+	 * Figure out the rotation which gives the smallest
+	 * value. This gives an indication where to start
+	 * reading the frames:
+	 */
+	start = mask;
+	min_x = 0;
+	for (x = 0; x != BMAX; x++) {
+		if (start > mask) {
+			start = mask;
+			min_x = x;
+		}
+		if (mask & 1) {
+			mask >>= 1;
+			mask |= 1ULL << (BMAX - 1);
+		} else {
+			mask >>= 1;
+		}
+	}
+
+	for (x = min_x * NMAX;;) {
+		/* check if packet arrived too late */
+		delta = (HPSJAM_SEQ_MAX + x - (unsigned)last_seqno) % HPSJAM_SEQ_MAX;
+
+		switch (x % HPSJAM_RED_MAX) {
+		case 0:
+			if (delta >= (HPSJAM_SEQ_MAX / 2))
+				break;
+
+			if (valid[x] & HPSJAM_MASK_VALID) {
+				/* got frame */
+				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
+				return (current + x);
+			} else if (valid[x + 1] & valid[x + 2] & HPSJAM_MASK_VALID) {
+				/* can recover */
+				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
+				current[x + 2].do_xor(current[x + 1]);
+				jitter.rx_loss();
+				return (current + x + 2);
+			} else if (low_water) {
+				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
+				jitter.rx_loss();
+				jitter.rx_damage();
+				/* fill frame with silence */
+				current[x].clear();
+				current[x].start[0].putSilence(HPSJAM_NOM_SAMPLES);
+				return (current + x);
+			} else {
+				/* wait a bit for packet */
+				return (NULL);
+			}
+			break;
+		case 1:
+			if (delta >= (HPSJAM_SEQ_MAX / 2))
+				break;
+
+			if (valid[x] & HPSJAM_MASK_VALID) {
+				/* got frame */
+				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
+				return (current + x);
+			} else if (valid[x - 1] & valid[x + 1] & HPSJAM_MASK_VALID) {
+				/* can recover */
+				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
+				current[x + 1].do_xor(current[x - 1]);
+				jitter.rx_loss();
+				return (current + x + 1);
+			} else if (low_water) {
+				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
+				jitter.rx_loss();
+				jitter.rx_damage();
+				/* fill frame with silence */
+				current[x].clear();
+				current[x].start[0].putSilence(HPSJAM_NOM_SAMPLES);
+				return (current + x);
+			} else {
+				/* wait a bit for packet */
+				return (NULL);
+			}
+			break;
+		default:
+			if (delta < (HPSJAM_SEQ_MAX / 2)) {
+				last_seqno = (x + 1) % HPSJAM_SEQ_MAX;
+
+				if (~valid[x - 2] & HPSJAM_MASK_VALID)
+					jitter.rx_loss();
+				if (~valid[x - 1] & HPSJAM_MASK_VALID)
+					jitter.rx_loss();
+				if (~valid[x - 0] & HPSJAM_MASK_VALID)
+					jitter.rx_loss();
+			}
+			valid[x - 2] &= ~HPSJAM_MASK_VALID;
+			valid[x - 1] &= ~HPSJAM_MASK_VALID;
+			valid[x - 0] &= ~HPSJAM_MASK_VALID;
+			break;
+		}
+		x++;
+		x %= HPSJAM_SEQ_MAX;
+
+		/* check if we are back to the start */
+		if (x == (min_x * NMAX))
+			break;
+	}
+	return (NULL);
+}
