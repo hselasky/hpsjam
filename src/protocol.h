@@ -488,13 +488,15 @@ struct hpsjam_input_packetizer {
 		unsigned x;
 		unsigned y;
 
-		mask = 0;
+		/* try to continue at the last sequence number */
+		mask = 1ULL << (last_seqno / NMAX);
 		for (x = 0; x != BMAX; x++) {
 			for (y = 0; y != NMAX; y++) {
-				if (valid[NMAX * x + y] == HPSJAM_MASK_VALID)
+				if (valid[NMAX * x + y] == HPSJAM_MASK_VALID) {
+					mask |= 1ULL << x;
 					break;
+				}
 			}
-			mask |= ((uint64_t)(y != NMAX)) << x;
 		}
 
 		/* check if no packets can be received */
