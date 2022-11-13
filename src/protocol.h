@@ -79,6 +79,8 @@ enum {
 	HPSJAM_TYPE_LOCAL_GAIN_REPLY,
 	HPSJAM_TYPE_LOCAL_PAN_REPLY,
 	HPSJAM_TYPE_LOCAL_EQ_REPLY,
+	HPSJAM_TYPE_SET_PORT_ORDER_REQUEST,
+	HPSJAM_TYPE_SET_PORT_ORDER_REPLY,
 };
 
 struct hpsjam_header {
@@ -93,6 +95,8 @@ struct hpsjam_header {
 		sequence = seq;
 	};
 };
+
+struct hpsjam_input_packetizer;
 
 struct hpsjam_packet {
 	uint8_t length;
@@ -251,6 +255,9 @@ struct hpsjam_packet {
 		putS32(8, (uint32_t)(passwd >> 32));
 		putS32(12, features);
 	};
+
+	void setPortOrder(const struct hpsjam_input_packetizer &);
+	bool getPortOrder(uint8_t *, size_t) const;
 };
 
 struct hpsjam_packet_entry;
@@ -313,6 +320,7 @@ public:
 	uint8_t pend_seqno; /* pending sequence number */
 	uint8_t peer_seqno; /* peer sequence number */
 	uint8_t seqno;	/* current sequence number */
+	uint8_t port_mapping[HPSJAM_PORTS_MAX];
 	bool send_ack;
 	size_t offset;	/* current data offset */
 	size_t d_len;	/* maximum XOR frame length */
@@ -348,6 +356,8 @@ public:
 		offset = 0;
 		current.clear();
 		mask.clear();
+		for (unsigned x = 0; x != HPSJAM_PORTS_MAX; x++)
+			port_mapping[x] = x;
 
 		while ((pkt = TAILQ_FIRST(&head))) {
 			pkt->remove(&head);
@@ -458,9 +468,15 @@ signals:
 	void pendingTimeout();
 };
 
+struct hpsjam_time_variance {
+	int32_t score;
+	int32_t port;
+};
+
 struct hpsjam_input_packetizer {
 	struct hpsjam_jitter jitter;
 	union hpsjam_frame current[HPSJAM_SEQ_MAX];
+	int32_t time_variance[HPSJAM_PORTS_MAX];
 	uint8_t valid[HPSJAM_SEQ_MAX];
 	uint8_t last_seqno;
 #define	HPSJAM_MASK_VALID 1
@@ -470,8 +486,15 @@ struct hpsjam_input_packetizer {
 		for (size_t x = 0; x != HPSJAM_SEQ_MAX; x++)
 			current[x].clear();
 		memset(valid, 0, sizeof(valid));
+		memset(time_variance, 0, sizeof(time_variance));
 		last_seqno = 0;
 	};
+
+	void reset_time_variance() {
+		memset(time_variance, 0, sizeof(time_variance));
+	};
+
+	void sort_time_variance(uint8_t *, size_t) const;
 
 	const union hpsjam_frame *first_pkt(bool low_water);
 
@@ -483,8 +506,13 @@ struct hpsjam_input_packetizer {
 		jitter.rx_packet();
 
 		/* check for out-of-order packet */
-		if (delta >= (HPSJAM_SEQ_MAX / 2))
+		if (delta >= (HPSJAM_SEQ_MAX / 2)) {
+			/* too late */
+			time_variance[rx_seqno % HPSJAM_PORTS_MAX] += delta - HPSJAM_SEQ_MAX;
 			return;
+		} else {
+			time_variance[rx_seqno % HPSJAM_PORTS_MAX] += delta;
+		}
 
 		current[rx_seqno] = frame;
 		valid[rx_seqno] = HPSJAM_MASK_VALID;

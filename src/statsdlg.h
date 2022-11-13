@@ -36,7 +36,7 @@
 
 class HpsJamStatsGraph : public QWidget {
 public:
-	QLabel l_status[3];
+	QLabel l_status[4];
 	void paintEvent(QPaintEvent *);
 };
 
@@ -51,8 +51,9 @@ public:
 		gl.addWidget(&w_graph.l_status[0], 0,0);
 		gl.addWidget(&w_graph.l_status[1], 1,0);
 		gl.addWidget(&w_graph.l_status[2], 2,0);
-		gl.addWidget(&w_graph, 3,0);
-		gl.setRowStretch(3,1);
+		gl.addWidget(&w_graph.l_status[3], 3,0);
+		gl.addWidget(&w_graph, 4,0);
+		gl.setRowStretch(4,1);
 		connect(&timer, SIGNAL(timeout()), this, SLOT(handle_timer()));
 		timer.start(1000);
 	};

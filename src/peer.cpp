@@ -37,6 +37,19 @@
 
 #include "timer.h"
 
+#define	HPSJAM_ADJUST_TICKS 0x3fff	/* ticks */
+
+template <typename T>
+void HpsJamSendPortOrderRequest(T &s)
+{
+	if (s.output_pkt.find(HPSJAM_TYPE_SET_PORT_ORDER_REQUEST) == 0) {
+		struct hpsjam_packet_entry *pkt = new struct hpsjam_packet_entry;
+		pkt->packet.setPortOrder(s.input_pkt);
+		pkt->packet.type = HPSJAM_TYPE_SET_PORT_ORDER_REQUEST;
+		pkt->insert_tail(&s.output_pkt.head);
+	}
+}
+
 Q_DECL_EXPORT void
 hpsjam_peer_receive(const struct hpsjam_socket_address &src,
     const struct hpsjam_socket_address &dst, const union hpsjam_frame &frame)
@@ -645,10 +658,16 @@ void HpsJamSendPacket(T &s)
 	}
 done:
 	/* send a packet */
-	if (s.multi_port && (s.multi_wait == 0 || s.multi_wait-- == 0))
-		s.output_pkt.send(s.address[s.output_pkt.seqno % HPSJAM_PORTS_MAX]);
-	else
-		s.output_pkt.send(s.address[0]);
+	if (s.multi_port) {
+		if (s.multi_wait == 0) {
+			s.output_pkt.send(s.address[
+			    s.output_pkt.port_mapping[s.output_pkt.seqno % HPSJAM_PORTS_MAX]]);
+			return;
+		} else {
+			s.multi_wait--;
+		}
+	}
+	s.output_pkt.send(s.address[0]);
 }
 
 template <typename T>
@@ -996,7 +1015,6 @@ hpsjam_server_peer :: audio_export()
 					}
 				}
 				break;
-
 			case HPSJAM_TYPE_FADER_BITS_REQUEST:
 				if (ptr->getFaderData(mix, index, &data, num)) {
 					if (mix != 0 || num <= 0)
@@ -1007,6 +1025,20 @@ hpsjam_server_peer :: audio_export()
 					memcpy(bits + index, data, num);
 				}
 				break;
+			case HPSJAM_TYPE_SET_PORT_ORDER_REQUEST:
+				if (ptr->getPortOrder(output_pkt.port_mapping, HPSJAM_PORTS_MAX)) {
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.length = 1;
+					pres->packet.sequence[0] = 0;
+					pres->packet.sequence[1] = 0;
+					pres->packet.type = HPSJAM_TYPE_SET_PORT_ORDER_REPLY;
+					pres->insert_tail(&output_pkt.head);
+				}
+				break;
+			case HPSJAM_TYPE_SET_PORT_ORDER_REPLY:
+				input_pkt.reset_time_variance();
+				break;
+
 			default:
 				break;
 			}
@@ -1387,7 +1419,7 @@ hpsjam_server_tick()
 	}
 
 	/* Adjust all buffers every 16 seconds approximately. */
-	unsigned y = (hpsjam_ticks & 0x3fff);
+	unsigned y = (hpsjam_ticks & HPSJAM_ADJUST_TICKS);
 	if (y < hpsjam_num_server_peers) {
 		hpsjam_server_peer &peer = hpsjam_server_peers[y];
 
@@ -1397,6 +1429,9 @@ hpsjam_server_tick()
 			peer.out_buffer[1].adjustBuffer();
 			peer.in_audio[0].adjustBuffer();
 			peer.in_audio[1].adjustBuffer();
+
+			HpsJamSendPortOrderRequest
+			    <class hpsjam_server_peer>(peer);
 		}
 	}
 
@@ -1592,6 +1627,19 @@ hpsjam_client_peer :: tick()
 					emit receivedFaderDisconnect(mix, index);
 				}
 				break;
+			case HPSJAM_TYPE_SET_PORT_ORDER_REQUEST:
+				if (ptr->getPortOrder(output_pkt.port_mapping, HPSJAM_PORTS_MAX)) {
+					pres = new struct hpsjam_packet_entry;
+					pres->packet.length = 1;
+					pres->packet.sequence[0] = 0;
+					pres->packet.sequence[1] = 0;
+					pres->packet.type = HPSJAM_TYPE_SET_PORT_ORDER_REPLY;
+					pres->insert_tail(&output_pkt.head);
+				}
+				break;
+			case HPSJAM_TYPE_SET_PORT_ORDER_REPLY:
+				input_pkt.reset_time_variance();
+				break;
 			default:
 				break;
 			}
@@ -1641,11 +1689,14 @@ hpsjam_client_peer :: tick()
 	    <class hpsjam_client_peer>(*this);
 
 	/* Adjust all buffers every 16 seconds approximately. */
-	if ((hpsjam_ticks & 0x3fff) == 0) {
+	if ((hpsjam_ticks & HPSJAM_ADJUST_TICKS) == 0) {
 		out_audio[0].adjustBuffer();
 		out_audio[1].adjustBuffer();
 		in_audio[0].adjustBuffer();
 		in_audio[1].adjustBuffer();
+
+		HpsJamSendPortOrderRequest
+		    <class hpsjam_client_peer>(*this);
 	}
 }
 

@@ -43,6 +43,7 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 	uint16_t jitter_time;
 	uint16_t low_water[2];
 	uint16_t high_water[2];
+	uint8_t ports[HPSJAM_PORTS_MAX];
 	int adjust[2];
 	QRect frame(16, 16, width() - 32, height() - 32);
 	float stats[N] = {};
@@ -68,6 +69,7 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 		high_water[1] = hpsjam_client_peer->out_audio[0].high_water;
 		adjust[0] = hpsjam_client_peer->in_audio[0].getWaterRef();
 		adjust[1] = hpsjam_client_peer->out_audio[0].getWaterRef();
+		memcpy(ports, hpsjam_client_peer->output_pkt.port_mapping, sizeof(ports));
 	}
 
 	/* make room for text */
@@ -92,6 +94,16 @@ HpsJamStatsGraph :: paintEvent(QPaintEvent *event)
 	l_status[1].setText(QString("Local audio input :: Buffer level is %1 and %2, adjusting %3 samples, %4 ms jitter.")
 	    .arg(low_water[1]).arg(high_water[1]).arg(adjust[1])
 	    .arg((high_water[1] - low_water[1] + HPSJAM_DEF_SAMPLES - 1) / HPSJAM_DEF_SAMPLES));
+
+	QString portorder("Transmit port order :: ");
+
+	for (unsigned i = 0; i != HPSJAM_PORTS_MAX; i++) {
+		portorder += QString("%1").arg((int)ports[i]);
+		if (i != HPSJAM_PORTS_MAX - 1)
+			portorder += ",";
+	}
+
+	l_status[3].setText(portorder);
 
 	for (unsigned i = xmax = 0; i != N; i++) {
 		if (stats[xmax] < stats[i]) {

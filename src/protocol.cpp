@@ -452,6 +452,50 @@ hpsjam_packet::getRawData(const char **pp, size_t &len) const
 	return (false);
 }
 
+void
+hpsjam_packet::setPortOrder(const struct hpsjam_input_packetizer &in)
+{
+	const size_t tot = 1 + (HPSJAM_PORTS_MAX + 3) / 4;
+
+	assert(tot <= 255);
+
+	length = tot;
+	sequence[0] = 0;
+	sequence[1] = 0;
+
+	/* set port order */
+	in.sort_time_variance(sequence + 2, (tot - 1) * 4);
+}
+
+bool
+hpsjam_packet::getPortOrder(uint8_t *dst, size_t max) const
+{
+	if (length >= 1) {
+		size_t len = (length - 1) * 4;
+		uint32_t mask = 0;
+
+		if (len > max)
+			len = max;
+
+		for (size_t x = 0; x != len; x++) {
+			const uint8_t z = ((const uint8_t *)(sequence + 2))[x];
+			mask |= 1U << (z % HPSJAM_PORTS_MAX);
+		}
+
+		/* check we have a one-to-one mapping */
+		if (mask != ((1U << max) - 1U))
+			return (false);
+
+		/* get port order */
+		for (size_t x = 0; x != len; x++) {
+			const uint8_t z = ((const uint8_t *)(sequence + 2))[x];
+			dst[x] = z % HPSJAM_PORTS_MAX;
+		}
+		return (true);
+	}
+	return (false);
+}
+
 const union hpsjam_frame *
 hpsjam_input_packetizer::first_pkt(bool low_water)
 {
@@ -577,4 +621,39 @@ hpsjam_input_packetizer::first_pkt(bool low_water)
 			break;
 	}
 	return (NULL);
+}
+
+void
+hpsjam_input_packetizer :: sort_time_variance(uint8_t *ptr, size_t num) const
+{
+	struct hpsjam_time_variance temp[HPSJAM_PORTS_MAX];
+	unsigned x,y,z;
+
+	memset(ptr, 0, num);
+
+	if (num < HPSJAM_PORTS_MAX)
+		return;
+
+	for (x = 0; x != HPSJAM_PORTS_MAX; x++) {
+		temp[x].score = time_variance[x];
+		temp[x].port = x;
+	}
+
+	/* sort by score */
+	for (x = 0; x != HPSJAM_PORTS_MAX; x++) {
+		for (y = x + 1; y != HPSJAM_PORTS_MAX; y++) {
+			if (temp[x].score > temp[y].score) {
+				struct hpsjam_time_variance t = temp[x];
+				temp[x] = temp[y];
+				temp[y] = t;
+			}
+		}
+	}
+
+	/* build new order of ports */
+	for (x = z = 0; x != HPSJAM_RED_MAX; x++) {
+		for (y = 0; y != HPSJAM_PORTS_MAX; y += HPSJAM_RED_MAX, z++) {
+			ptr[x + y] = temp[z].port;
+		}
+	}
 }
