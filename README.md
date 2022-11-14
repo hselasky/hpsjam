@@ -26,6 +26,7 @@ Please update both client and server software at the same time!
   <li>server and mixer access can be password protected.</li>
   <li>low latency MIDI event routing</li>
   <li>high quality recording and playback</li>
+  <li>multi-path UDP transport to optimize latency and jitter</li>
 </ul>
 
 # Users guides
