@@ -27,6 +27,7 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QFontMetrics>
 
 #include "hpsjam.h"
 #include "peer.h"
@@ -330,7 +331,9 @@ HpsJamStrip :: HpsJamStrip() :
 {
 	id = -1;
 
-	setFixedWidth(128);
+	QFontMetrics m(font());
+
+	setFixedWidth(m.boundingRect(QChar('_')).width() * 10 + 24);
 
 	connect(&w_gain, SIGNAL(valueChanged(int)), this, SLOT(handleGain(int)));
 	connect(&w_pan, SIGNAL(valueChanged(int)), this, SLOT(handlePan(int)));
