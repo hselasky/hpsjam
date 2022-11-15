@@ -335,7 +335,11 @@ HpsJamStrip :: HpsJamStrip() :
 
 	QFontMetrics m(font());
 
-	setFixedWidth(m.boundingRect(QChar('_')).width() * 10 + 24);
+	int temp = m.boundingRect(QChar('_')).width() * 10 + 24;
+	if (temp < 128)
+		temp = 128;
+
+	setFixedWidth(temp);
 
 	connect(&w_gain, SIGNAL(valueChanged(int)), this, SLOT(handleGain(int)));
 	connect(&w_pan, SIGNAL(valueChanged(int)), this, SLOT(handlePan(int)));
