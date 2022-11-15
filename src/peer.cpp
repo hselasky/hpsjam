@@ -1408,11 +1408,15 @@ hpsjam_server_tick()
 	hpsjam_execute(&hpsjam_server_audio_import);
 
 	/* adjust timer, if any */
-	if (hpsjam_server_adjust[1] >= hpsjam_server_adjust[0] &&
-	    hpsjam_server_adjust[1] >= hpsjam_server_adjust[2]) {
+	if (hpsjam_server_adjust[hpsjam_audio_buffer::WATER_NORMAL] >=
+	    hpsjam_server_adjust[hpsjam_audio_buffer::WATER_LOW] &&
+	    hpsjam_server_adjust[hpsjam_audio_buffer::WATER_NORMAL] >=
+	    hpsjam_server_adjust[hpsjam_audio_buffer::WATER_HIGH]) {
 		hpsjam_timer_adjust = 0;	/* go normal */
-	} else if (hpsjam_server_adjust[0] >= hpsjam_server_adjust[1] &&
-		   hpsjam_server_adjust[0] >= hpsjam_server_adjust[2]) {
+	} else if (hpsjam_server_adjust[hpsjam_audio_buffer::WATER_LOW] >=
+		   hpsjam_server_adjust[hpsjam_audio_buffer::WATER_NORMAL] &&
+		   hpsjam_server_adjust[hpsjam_audio_buffer::WATER_LOW] >=
+		   hpsjam_server_adjust[hpsjam_audio_buffer::WATER_HIGH]) {
 		hpsjam_timer_adjust = 1;	/* go slower */
 	} else {
 		hpsjam_timer_adjust = -1;	/* go faster */
@@ -1667,12 +1671,12 @@ hpsjam_client_peer :: tick()
 	out_audio[0].remSamples(audio[0], HPSJAM_DEF_SAMPLES);
 	out_audio[1].remSamples(audio[1], HPSJAM_DEF_SAMPLES);
 
-	/* check if we should adjust the timer */
+	/* check if we should adjust the timer, based on current audio input buffer */
 	switch (out_audio[0].getLowWater()) {
-	case 0:
+	case hpsjam_audio_buffer::WATER_LOW:
 		hpsjam_timer_adjust = 1;	/* go slower */
 		break;
-	case 1:
+	case hpsjam_audio_buffer::WATER_NORMAL:
 		hpsjam_timer_adjust = 0;	/* go normal */
 		break;
 	default:

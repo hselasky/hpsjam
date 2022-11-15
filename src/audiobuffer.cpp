@@ -37,11 +37,11 @@ hpsjam_audio_buffer :: doAdjustBuffer(int missing)
 
 	/* do nothing, if buffer is empty or nothing is missing */
 	if (missing == 0 || total == 0)
-		goto done;
+		return;
 
 	/* check if target buffer size is sane, else return */
 	if (to < 2 || to > HPSJAM_MAX_SAMPLES)
-		goto done;
+		return;
 
 	/* move all samples from ring-buffer to temporary buffer */
 	while (num != 0) {
@@ -104,9 +104,6 @@ hpsjam_audio_buffer :: doAdjustBuffer(int missing)
 
 	/* Set new total buffer size */
 	total = to + 1;
-done:
-	/* Reset the water level after adjusting samples. */
-	low_water = high_water = target_water;
 }
 
 /* remove samples from buffer, must be called periodically */
