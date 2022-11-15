@@ -219,7 +219,7 @@ HpsJamPushButton :: paintEvent(QPaintEvent *event)
 		if ((isFlat() || isDown()) ^ _flash)
 			t.rgb.setAlpha(255);
 		else
-			t.rgb.setAlpha(127);
+			t.rgb.setAlpha(63);
 	} else {
 		t.rgb.setAlpha(0);
 	}
@@ -230,8 +230,12 @@ HpsJamPushButton :: paintEvent(QPaintEvent *event)
 	QRect bound = paint.boundingRect(
 	    QRect(0,0,65535,65535), Qt::AlignLeft | Qt::AlignTop | Qt::TextShowMnemonic, str);
 
+	QFont f(font());
+
+	f.setBold(true);
+
 	paint.setPen(Qt::black);
-	paint.setFont(font());
+	paint.setFont(f);
 	paint.drawText(QRect(QPoint(0,0),size()),
 	    Qt::AlignCenter | Qt::TextShowMnemonic, str);
 
@@ -251,7 +255,7 @@ HpsJamGroupBox :: HpsJamGroupBox() :
 	gl_inner.addWidget(&w, 1,0,1,1);
 	gl_inner.setRowStretch(1,1);
 
-	connect(&l, SIGNAL(released()), this, SLOT(handle_toggle_collapsed()));
+	connect(&l, SIGNAL(pressed()), this, SLOT(handle_toggle_collapsed()));
 }
 
 void
@@ -268,6 +272,8 @@ HpsJamGroupBox :: setCollapsed(bool _value)
 	if (collapsed == _value)
 		return;
 	collapsed = _value;
+	l.setFlat(_value);
+
 	if (_value)
 		w.hide();
 	else

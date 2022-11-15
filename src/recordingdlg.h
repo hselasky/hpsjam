@@ -41,6 +41,8 @@ public:
 		gl.addWidget(&b_stop, 0,0);
 		gl.addWidget(&b_start, 0,1);
 
+		b_start.t.rgb = QColor(255,127,127,255);
+		b_stop.t.rgb = QColor(255,127,127,255);
 		b_stop.setFlat(true);
 	};
 	HpsJamPushButton b_stop;

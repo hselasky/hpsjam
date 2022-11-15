@@ -158,9 +158,9 @@ class HpsJamConfigFormat : public HpsJamGroupBox {
 public:
 	HpsJamConfigFormat() {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_FORMAT_MAX; x++) {
-			b[x].setFlat(x != 1);
+			b[x].setFlat(x == 1);
 			b[x].setText(QString(hpsjam_audio_format[x].descr));
-			connect(&b[x], SIGNAL(released()), this, SLOT(handle_selection()));
+			connect(&b[x], SIGNAL(pressed()), this, SLOT(handle_selection()));
 			if (x == 0)
 				gl.addWidget(b + x, 0, 0);
 			else
@@ -180,7 +180,7 @@ public:
 
 	void setIndex(unsigned index) {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_FORMAT_MAX; x++) {
-			b[x].setFlat(x != index);
+			b[x].setFlat(x == index);
 			if (x != index || hpsjam_audio_format[x].format == format)
 				continue;
 			format = hpsjam_audio_format[x].format;
@@ -207,9 +207,9 @@ class HpsJamConfigEffects : public HpsJamGroupBox {
 public:
 	HpsJamConfigEffects() {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_LEVELS_MAX; x++) {
-			b[x].setFlat(x != 0);
+			b[x].setFlat(x == 0);
 			b[x].setText(hpsjam_audio_levels[x].descr);
-			connect(&b[x], SIGNAL(released()), this, SLOT(handle_selection()));
+			connect(&b[x], SIGNAL(pressed()), this, SLOT(handle_selection()));
 			gl.addWidget(b + x, 0, x);
 		}
 		selection = 0;
@@ -225,7 +225,7 @@ public:
 
 	void setIndex(unsigned index) {
 		for (unsigned x = 0; x != HPSJAM_AUDIO_LEVELS_MAX; x++) {
-			b[x].setFlat(x != index);
+			b[x].setFlat(x == index);
 			if (x != index || index == selection)
 				continue;
 			selection = index;
