@@ -186,9 +186,10 @@ HpsJamSlider :: paintEvent(QPaintEvent *event)
 
 	/* select foreground color */
 	static const QColor fg(0, 0, 0);
+	static const QColor fg_t(0, 0, 0, 127);
 
 	/* select background color */
-	static const QColor bg(255, 255, 255);
+	static const QColor bg(255, 255, 255, 127);
 
 	/* select gain color */
 	static const QColor gc(192, 192, 192);
@@ -240,7 +241,8 @@ HpsJamSlider :: paintEvent(QPaintEvent *event)
 
 	target = QRect(2, (1.0f - value) * (height() - dsize), width() - 4, dsize);
 
-	paint.setPen(QPen(QBrush(fg), 2));
+	paint.setPen(QPen(fg, 2));
+	paint.setBrush(QBrush(fg_t));
 	paint.drawRect(target);
 
 	int p_off = pan * ((target.width() - dsize) / 2);
