@@ -143,8 +143,15 @@ HpsJamSlider :: adjustPan(float _pan)
 	else if (pan < -1.0f)
 		pan = -1.0f;
 
-	if (_pan != 0.0f)
+	if (_pan != 0.0f) {
+		/* align to zero when crossing zero */
+		if (pan - _pan < 0.0f && pan > 0.0f)
+			pan = 0.0f;
+		else if (pan - _pan > 0.0f && pan < 0.0f)
+			pan = 0.0f;
+
 		update();
+	}
 }
 
 void
