@@ -34,16 +34,20 @@ Please update both client and server software at the same time!
 <li><a href="https://youtu.be/lG3zgNKiQws">Getting started with HpsJam v1.1.1</a></li>
 </ul>
 
-## How to build client and server under FreeBSD
+## How to build client and server under FreeBSD after cloning this repository
 <ul>
+  <li>git submodule init</li>
+  <li>git submodule update </li>
   <li>qmake PREFIX=/usr/local</li>
   <li>make all</li>
   <li>make install</li>
 </ul>
 
-## How to build server under Ubuntu Linux
+## How to build server under Ubuntu Linux after cloning this repository
 <ul>
   <li>sudo apt-get install git build-essential qt5-qmake qtbase5-dev qtbase5-dev-tools libqt5svg5-dev libqt5webenginewidgets5 libqt5webchannel5-dev qtwebengine5-dev libjack-dev jackd</li>
+  <li>git submodule init</li>
+  <li>git submodule update </li>
   <li>qmake PREFIX=/usr WITHOUT_AUDIO=YES QMAKE_CFLAGS_ISYSTEM="-I"</li>
   <li>make all</li>
   <li>make install</li>
