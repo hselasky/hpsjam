@@ -53,8 +53,11 @@ Please update both client and server software at the same time!
   <li>make install</li>
 </ul>
 
-NOTE 1) By giving qmake the "WITHOUT_AUDIO=YES" flag you can skip the jack dependency for the server side.
-NOTE 2) By giving qmake the "QMAKE_CFLAGS_ISYSTEM=-I" flag you can fix the following compile error "fatal error: stdlib.h: No such file or directory"
+### Notes
+<ul>
+  <li>By giving qmake the "WITHOUT_AUDIO=YES" flag you can skip the jack dependency for the server side.</li>
+  <li>By giving qmake the "QMAKE_CFLAGS_ISYSTEM=-I" flag you can fix the following compile error "fatal error: stdlib.h: No such file or directory"</li>
+</ul>
 
 ## Dependencies
 <ul>
